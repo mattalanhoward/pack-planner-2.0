@@ -1,6 +1,7 @@
 // server/src/app.js
 require('dotenv').config();
 const express = require('express');
+const cors    = require('cors');
 const mongoose = require('mongoose');
 
 const authRoutes = require('./routes/auth');
@@ -12,6 +13,12 @@ const gearItemRoutes = require('./routes/gearItems');
 // ... any other routes
 
 const app = express();
+
+// Enable CORS for your frontend origin
+app.use(cors({
+  origin: 'http://localhost:5173',   // allow only your Vite dev server
+  credentials: true                  // if you ever use cookies
+}));
 
 app.use(express.json());
 

@@ -8,11 +8,18 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
-  "keywords": ["express", "mongodb", "mongoose", "jwt", "kanban"],
+  "keywords": [
+    "express",
+    "mongodb",
+    "mongoose",
+    "jwt",
+    "kanban"
+  ],
   "author": "Your Name <you@example.com>",
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",

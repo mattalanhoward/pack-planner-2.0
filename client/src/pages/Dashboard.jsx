@@ -1,44 +1,37 @@
+// src/pages/Dashboard.jsx
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import GearListView from './GearListView';
 
 export default function Dashboard() {
-  const [currentList, setCurrentList] = useState({ _id: null, title: '' });
+  const [currentList, setCurrentList]     = useState(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
 
-  // Called by Sidebar whenever it adds an item
   const handleItemAdded = () => {
     setRefreshToggle(prev => !prev);
   };
 
-  // Called by Sidebar when user selects or creates a list
-  const handleSelectList = list => {
-    setCurrentList(list);
-  };
-
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex overflow-hidden">
+      {/* Sidebar */}
       <Sidebar
-        currentListId={currentList._id}
-        onSelectList={handleSelectList}
+        currentListId={currentList?._id}
+        onSelectList={list => setCurrentList(list)}
         onItemAdded={handleItemAdded}
       />
 
-      <div className="flex-1 flex flex-col">
-        <TopBar title={currentList.title || 'Select a list'} />
+      {/* Main area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar */}
+        <TopBar title={currentList?.title || 'Select a list'} />
 
-        <div className="flex-1 overflow-auto bg-gray-50">
-          {currentList._id ? (
-            <GearListView
-              listId={currentList._id}
-              refreshToggle={refreshToggle}
-            />
-          ) : (
-            <div className="p-6 text-gray-500">
-              Select or create a gear list
-            </div>
-          )}
+        {/* Board: horizontal scroll only */}
+        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-gray-50">
+          <GearListView
+            listId={currentList?._id}
+            refreshToggle={refreshToggle}
+          />
         </div>
       </div>
     </div>

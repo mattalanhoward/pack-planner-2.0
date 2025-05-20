@@ -9,6 +9,7 @@ import {
   pointerWithin,
   DragOverlay,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors
@@ -24,16 +25,20 @@ import {
 
 import { CSS } from '@dnd-kit/utilities';
 
-// Make any element draggable by its `id`
+// Draggable wrapper
 function SortableItem({ id, children }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition
-  };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition
+      }}
+      {...attributes}
+      {...listeners}
+    >
       {children}
     </div>
   );
@@ -46,25 +51,21 @@ export default function GearListView({ listId, refreshToggle }) {
   const [error, setError]                     = useState('');
   const [activeId, setActiveId]               = useState(null);
 
-  // Load columns and their cards
+  // Fetch columns & cards
   useEffect(() => {
-    async function loadBoard() {
-      if (!listId) return;
+    if (!listId) return;
+    (async () => {
       setLoading(true);
-      setError('');
       try {
         const { data: cats } = await api.get(`/lists/${listId}/categories`);
         setCategories(cats);
-
         const map = {};
-        await Promise.all(
-          cats.map(async cat => {
-            const { data: items } = await api.get(
-              `/lists/${listId}/categories/${cat._id}/items`
-            );
-            map[cat._id] = items;
-          })
-        );
+        for (let cat of cats) {
+          const { data: items } = await api.get(
+            `/lists/${listId}/categories/${cat._id}/items`
+          );
+          map[cat._id] = items;
+        }
         setItemsByCategory(map);
       } catch (err) {
         console.error(err);
@@ -72,17 +73,17 @@ export default function GearListView({ listId, refreshToggle }) {
       } finally {
         setLoading(false);
       }
-    }
-    loadBoard();
+    })();
   }, [listId, refreshToggle]);
 
-  // Set up DnD sensors
+  // DnD-kit sensors
   const sensors = useSensors(
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Persist reordering of columns
+  // Reordering logic (same as before) …
   const reorderCategories = async (oldIndex, newIndex) => {
     const arr = [...categories];
     const [moved] = arr.splice(oldIndex, 1);
@@ -94,7 +95,6 @@ export default function GearListView({ listId, refreshToggle }) {
     );
   };
 
-  // Persist reorder within a category
   const reorderItems = async (catId, oldIndex, newIndex) => {
     const arr = [...(itemsByCategory[catId] || [])];
     const [moved] = arr.splice(oldIndex, 1);
@@ -106,55 +106,44 @@ export default function GearListView({ listId, refreshToggle }) {
     );
   };
 
-  // Track drag start to show overlay
-  const handleDragStart = ({ active }) => {
-    setActiveId(active.id.toString());
-  };
+  const handleDragStart = ({ active }) => setActiveId(active.id.toString());
 
-  // Global drag end
   const handleDragEnd = async ({ active, over }) => {
     setActiveId(null);
     if (!over) return;
-
-    const activeIdStr = active.id.toString();
-    const overIdStr   = over.id.toString();
-
-    // 1) Column reordering?
+    const a = active.id.toString();
+    const o = over.id.toString();
     const catIds = categories.map(c => c._id);
-    if (catIds.includes(activeIdStr) && catIds.includes(overIdStr)) {
-      return reorderCategories(
-        catIds.indexOf(activeIdStr),
-        catIds.indexOf(overIdStr)
-      );
+
+    // Column reorder
+    if (catIds.includes(a) && catIds.includes(o)) {
+      return reorderCategories(catIds.indexOf(a), catIds.indexOf(o));
     }
 
-    // 2) Card drag
-    // Find source category
-    let sourceCat;
-    for (const [catId, items] of Object.entries(itemsByCategory)) {
-      if (items.some(it => it._id === activeIdStr)) {
+    // Card drag: find source category
+    let sourceCat = null;
+    for (let [catId, items] of Object.entries(itemsByCategory)) {
+      if (items.some(it => it._id === a)) {
         sourceCat = catId;
         break;
       }
     }
     if (!sourceCat) return;
 
-    // Case A: dropped onto another card?
-    for (const [catId, items] of Object.entries(itemsByCategory)) {
-      const overIndex = items.findIndex(it => it._id === overIdStr);
+    // Dropped onto another card
+    for (let [catId, items] of Object.entries(itemsByCategory)) {
+      const overIndex = items.findIndex(it => it._id === o);
       if (overIndex !== -1) {
-        // same-cat or cross-cat insert before overIndex
         if (catId === sourceCat) {
-          return reorderItems(sourceCat, 
-            items.findIndex(it => it._id === activeIdStr),
+          return reorderItems(
+            sourceCat,
+            items.findIndex(it => it._id === a),
             overIndex
           );
         } else {
-          // cross-category
-          const moved = itemsByCategory[sourceCat].find(it => it._id === activeIdStr);
-          // remove from source
-          const newSource = itemsByCategory[sourceCat].filter(it => it._id !== activeIdStr);
-          // insert into destination at overIndex
+          // cross-column
+          const moved = itemsByCategory[sourceCat].find(it => it._id === a);
+          const newSource = itemsByCategory[sourceCat].filter(it => it._id !== a);
           const newDest = [...items];
           newDest.splice(overIndex, 0, moved);
           setItemsByCategory(prev => ({
@@ -163,51 +152,48 @@ export default function GearListView({ listId, refreshToggle }) {
             [catId]: newDest
           }));
           return api.patch(
-            `/lists/${listId}/categories/${sourceCat}/items/${activeIdStr}`,
+            `/lists/${listId}/categories/${sourceCat}/items/${a}`,
             { category: catId, position: overIndex }
           );
         }
       }
     }
 
-    // Case B: dropped onto a column container (empty space or header)
-    // If overIdStr is a category id, append to end
-    if (catIds.includes(overIdStr)) {
-      const destCat = overIdStr;
-      const sourceItems = itemsByCategory[sourceCat] || [];
-      const destItems = itemsByCategory[destCat] || [];
-      const oldIndex = sourceItems.findIndex(it => it._id === activeIdStr);
-      const newIndex = destItems.length; // append
-
-      if (sourceCat === destCat) {
+    // Dropped into empty column => append
+    if (catIds.includes(o)) {
+      const destCat = o;
+      const src = itemsByCategory[sourceCat] || [];
+      const dst = itemsByCategory[destCat] || [];
+      const oldIndex = src.findIndex(it => it._id === a);
+      const newIndex = dst.length;
+      if (destCat === sourceCat) {
         return reorderItems(sourceCat, oldIndex, newIndex - 1);
-      } else {
-        const moved = sourceItems.find(it => it._id === activeIdStr);
-        setItemsByCategory(prev => {
-          const copy = { ...prev };
-          copy[sourceCat] = prev[sourceCat].filter(it => it._id !== activeIdStr);
-          copy[destCat] = [...prev[destCat], moved];
-          return copy;
-        });
-        return api.patch(
-          `/lists/${listId}/categories/${sourceCat}/items/${activeIdStr}`,
-          { category: destCat, position: newIndex }
-        );
       }
+      const moved = src.find(it => it._id === a);
+      setItemsByCategory(prev => {
+        const copy = { ...prev };
+        copy[sourceCat] = prev[sourceCat].filter(it => it._id !== a);
+        copy[destCat] = [...prev[destCat], moved];
+        return copy;
+      });
+      return api.patch(
+        `/lists/${listId}/categories/${sourceCat}/items/${a}`,
+        { category: destCat, position: newIndex }
+      );
     }
   };
 
   if (loading) return <div className="p-6">Loading board…</div>;
   if (error)   return <div className="p-6 text-red-500">{error}</div>;
 
-  // For drag overlay
+  // Drag overlay ghost
   const flatItems = Object.values(itemsByCategory).flat();
   const activeItem = flatItems.find(it => it._id === activeId);
 
   return (
-    <div className="p-6">
+    <div className="h-full flex flex-col p-6 min-w-min">
       <Link to="/dashboard" className="text-blue-500 hover:underline">
-        &larr; Back to dashboard
+        &larr; Back
       </Link>
 
       <DndContext
@@ -217,26 +203,27 @@ export default function GearListView({ listId, refreshToggle }) {
         onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
       >
-        {/* Categories */}
         <SortableContext
           items={categories.map(c => c._id)}
           strategy={horizontalListSortingStrategy}
         >
-          <div className="flex space-x-4 overflow-x-auto mt-4">
+          {/* Columns container */}
+          <div className="flex flex-row space-x-4 mt-4 h-full">
             {categories.map(cat => (
               <SortableItem key={cat._id} id={cat._id}>
-                <div className="w-64 bg-gray-100 p-3 rounded flex flex-col">
+                {/* Each column is flex-col full height */}
+                <div className="flex flex-col w-64 bg-gray-100 p-3 rounded h-full">
                   <h2 className="font-semibold mb-2">{cat.title}</h2>
 
-                  {/* Cards */}
                   <SortableContext
                     items={(itemsByCategory[cat._id] || []).map(i => i._id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="flex-1 min-h-[4rem] overflow-auto space-y-2">
+                    {/* Card list: flex-1 plus vertical scroll */}
+                    <div className="flex-1 overflow-y-auto space-y-2">
                       {(itemsByCategory[cat._id] || []).map(item => (
                         <SortableItem key={item._id} id={item._id}>
-                          <GearItemCard item={item} onEdit={() => {}} />
+                          <GearItemCard item={item} />
                         </SortableItem>
                       ))}
                     </div>
@@ -247,7 +234,6 @@ export default function GearListView({ listId, refreshToggle }) {
           </div>
         </SortableContext>
 
-        {/* Drag overlay */}
         <DragOverlay>
           {activeItem && (
             <div className="w-64 h-24 rounded border-2 border-gray-400 opacity-50 pointer-events-none" />

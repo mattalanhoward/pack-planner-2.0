@@ -1,21 +1,21 @@
 // src/components/TopBar.jsx
 import React from 'react';
-import { FaStar } from 'react-icons/fa';
 import useAuth from '../hooks/useAuth';
+import { FaStar } from 'react-icons/fa';
 
 export default function TopBar({ title }) {
   const { logout } = useAuth();
   return (
-    <header className="flex justify-between items-center p-4 bg-white shadow">
+    <header className="flex-shrink-0 sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-white shadow">
       <div className="flex items-center space-x-2">
         <h1 className="text-xl font-bold">{title}</h1>
-        <FaStar className="cursor-pointer text-yellow-500" />
+        <FaStar className="text-yellow-500" />
       </div>
       <button
         onClick={logout}
-        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+        className="text-sm text-gray-600 hover:text-gray-800"
       >
-        Log Out
+        Logout
       </button>
     </header>
   );

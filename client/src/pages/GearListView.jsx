@@ -2,33 +2,45 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { DndContextWrapper } from '../components/DndContextWrapper';
+import GearItemCard from '../components/GearItemCard';
 
 export default function GearListView({ listId, refreshToggle }) {
-  const [categories, setCategories]         = useState([]);
+  const [categories, setCategories]           = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState({});
+  const [loading, setLoading]                 = useState(false);
+  const [error, setError]                     = useState('');
 
   useEffect(() => {
-    async function loadBoard() {
+    const loadBoard = async () => {
       if (!listId) return;
+      setLoading(true);
+      setError('');
+      try {
+        // 1️⃣ fetch columns
+        const { data: cats } = await api.get(
+          `/lists/${listId}/categories`
+        );
+        setCategories(cats);
 
-      // 1️⃣ fetch columns
-      const { data: cats } = await api.get(
-        `/lists/${listId}/categories`
-      );
-      setCategories(cats);
+        // 2️⃣ fetch items for each category in parallel
+        const map = {};
+        await Promise.all(
+          cats.map(async (cat) => {
+            const { data: items } = await api.get(
+              `/lists/${listId}/categories/${cat._id}/items`
+            );
+            map[cat._id] = items;
+          })
+        );
+        setItemsByCategory(map);
+      } catch (err) {
+        console.error('Error loading board:', err);
+        setError('Failed to load board.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // 2️⃣ fetch items for each category
-      const map = {};
-      await Promise.all(
-        cats.map(async cat => {
-          const { data: items } = await api.get(
-            `/lists/${listId}/categories/${cat._id}/items`
-          );
-          map[cat._id] = items;
-        })
-      );
-      setItemsByCategory(map);
-    }
     loadBoard();
   }, [listId, refreshToggle]);
 
@@ -39,11 +51,23 @@ export default function GearListView({ listId, refreshToggle }) {
     reordered.splice(newIndex, 0, moved);
     setCategories(reordered);
 
-    await api.patch(
-      `/lists/${listId}/categories/${moved._id}/position`,
-      { position: newIndex }
-    );
+    try {
+      await api.patch(
+        `/lists/${listId}/categories/${moved._id}/position`,
+        { position: newIndex }
+      );
+    } catch (err) {
+      console.error('Failed to reorder category:', err);
+      // optionally revert UI change or show error
+    }
   };
+
+  if (loading) {
+    return <div className="p-6">Loading board…</div>;
+  }
+  if (error) {
+    return <div className="p-6 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="p-6">
@@ -65,12 +89,14 @@ export default function GearListView({ listId, refreshToggle }) {
               <h2 className="font-semibold mb-2">{cat.title}</h2>
               <div className="flex-1 overflow-auto space-y-2">
                 {(itemsByCategory[cat._id] || []).map(item => (
-                  <div
+                  <GearItemCard
                     key={item._id}
-                    className="bg-white p-2 rounded shadow"
-                  >
-                    {item.name}
-                  </div>
+                    item={item}
+                    onEdit={itm => {
+                      // TODO: open edit modal for this item
+                      console.log('Edit', itm);
+                    }}
+                  />
                 ))}
               </div>
             </div>

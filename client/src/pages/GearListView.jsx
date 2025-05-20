@@ -192,9 +192,6 @@ export default function GearListView({ listId, refreshToggle }) {
 
   return (
     <div className="h-full flex flex-col p-6 min-w-min">
-      <Link to="/dashboard" className="text-blue-500 hover:underline">
-        &larr; Back
-      </Link>
 
       <DndContext
         sensors={sensors}

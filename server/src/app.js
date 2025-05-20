@@ -9,6 +9,8 @@ const gearListRoutes = require('./routes/gearLists');
 const authMiddleware  = require('./middleware/auth');
 const categoriesRoutes = require('./routes/categories');
 const gearItemRoutes = require('./routes/gearItems');
+const globalItemsRoutes = require('./routes/globalItems');
+
 
 // ... any other routes
 
@@ -27,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/lists', gearListRoutes);
 app.use('/api/lists/:listId/categories', categoriesRoutes);
 app.use('/api/lists/:listId/categories/:catId/items', gearItemRoutes);
+app.use('/api/global/items', globalItemsRoutes);
 
 
 

@@ -29,8 +29,8 @@ router.post('/', async (req, res) => {
     const { listId, catId } = req.params;
     const payload = { ...req.body, category: catId };
     // basic validation
-    if (payload.position == null || !payload.name || payload.weight == null || payload.price == null) {
-      return res.status(400).json({ message: 'Required fields: name, weight, price, position' });
+    if (payload.position == null || !payload.name) {
+      return res.status(400).json({ message: 'Required fields: name, position' });
     }
     // verify category under the right list
     const cat = await Category.findOne({ _id: catId, gearList: listId });

@@ -10,8 +10,8 @@ const gearItemSchema = new mongoose.Schema({
   itemType:   { type: String },
   name:       { type: String, required: true },
   description:{ type: String },
-  weight:     { type: Number, required: true }, // grams
-  price:      { type: Number, required: true }, // USD
+  weight:     { type: Number}, // grams
+  price:      { type: Number }, // USD
   link:       { type: String },
   worn:       { type: Boolean, default: false },
   consumable: { type: Boolean, default: false },

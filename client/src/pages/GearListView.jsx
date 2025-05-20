@@ -1,27 +1,46 @@
-// src/pages/GearListView.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { DndContextWrapper } from '../components/DndContextWrapper';
 
-export default function GearListView() {
-  const { listId } = useParams();
-  const [categories, setCategories] = useState([]);
+export default function GearListView({ listId, refreshToggle }) {
+  const [categories, setCategories]         = useState([]);
+  const [itemsByCategory, setItemsByCategory] = useState({});
 
   useEffect(() => {
-    async function fetchCategories() {
-      const resp = await api.get(`/lists/${listId}/categories`);
-      setCategories(resp.data);
-    }
-    fetchCategories();
-  }, [listId]);
+    async function loadBoard() {
+      if (!listId) return;
 
+      // 1️⃣ fetch columns
+      const { data: cats } = await api.get(
+        `/lists/${listId}/categories`
+      );
+      setCategories(cats);
+
+      // 2️⃣ fetch items for each category
+      const map = {};
+      await Promise.all(
+        cats.map(async cat => {
+          const { data: items } = await api.get(
+            `/lists/${listId}/categories/${cat._id}/items`
+          );
+          map[cat._id] = items;
+        })
+      );
+      setItemsByCategory(map);
+    }
+    loadBoard();
+  }, [listId, refreshToggle]);
+
+  // Handle drag-and-drop reordering of columns
   const handleCategoryReorder = async (oldIndex, newIndex) => {
     const reordered = [...categories];
-    arrayMove(reordered, oldIndex, newIndex);
+    const [moved]   = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
     setCategories(reordered);
+
     await api.patch(
-      `/lists/${listId}/categories/${reordered[newIndex]._id}/position`,
+      `/lists/${listId}/categories/${moved._id}/position`,
       { position: newIndex }
     );
   };
@@ -31,8 +50,8 @@ export default function GearListView() {
       <Link to="/dashboard" className="text-blue-500 hover:underline">
         &larr; Back to dashboard
       </Link>
-      <h1 className="text-2xl font-bold my-4">Gear List</h1>
-      <div className="flex space-x-4 overflow-x-auto">
+
+      <div className="flex space-x-4 overflow-x-auto mt-4">
         <DndContextWrapper
           items={categories.map(c => c._id)}
           onDragEnd={handleCategoryReorder}
@@ -41,10 +60,19 @@ export default function GearListView() {
             <div
               key={cat._id}
               id={cat._id}
-              className="w-64 bg-gray-100 p-3 rounded"
+              className="w-64 bg-gray-100 p-3 rounded flex flex-col"
             >
               <h2 className="font-semibold mb-2">{cat.title}</h2>
-              {/* TODO: map items here */}
+              <div className="flex-1 overflow-auto space-y-2">
+                {(itemsByCategory[cat._id] || []).map(item => (
+                  <div
+                    key={item._id}
+                    className="bg-white p-2 rounded shadow"
+                  >
+                    {item.name}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </DndContextWrapper>

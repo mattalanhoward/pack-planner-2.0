@@ -3,7 +3,6 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const GearList = require('../models/gearList');
 const Category = require('../models/category');
-const DEFAULT_CATEGORIES = require('../constants/defaultCategories');
 
 const router = express.Router();
 
@@ -21,62 +20,33 @@ router.get('/', async (req, res) => {
   }
 });
 
-// // POST /api/lists
-// // Create a new gear list and auto-seed default categories
-// router.post('/', async (req, res) => {
-//   try {
-//     const { title } = req.body;
-//     if (!title) {
-//       return res.status(400).json({ message: 'Title is required.' });
-//     }
-
-//     // Create the gear list document
-//     const newList = await GearList.create({
-//       owner: req.userId,
-//       title
-//     });
-
-//     // Auto-seed default categories
-//     await Promise.all(
-//       DEFAULT_CATEGORIES.map((catTitle, index) =>
-//         Category.create({
-//           gearList: newList._id,
-//           title: catTitle,
-//           position: index
-//         })
-//       )
-//     );
-
-//     // Fetch seeded categories
-//     const createdCategories = await Category.find({ gearList: newList._id }).sort('position');
-
-//     // Return both list and its categories
-//     res.status(201).json({ list: newList, categories: createdCategories });
-//   } catch (err) {
-//     console.error('Error creating list with defaults:', err);
-//     res.status(500).json({ message: 'Server error' });
-//   }
-// });
-
+// POST /api/lists — create a new gear list with one sample category
 router.post('/', async (req, res) => {
   try {
-    const newList = await GearList.create({ owner: req.userId, title: req.body.title });
-    console.log('🆕 New list created:', newList._id);
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required.' });
+    }
 
-    // seed
-    await Promise.all(
-      DEFAULT_CATEGORIES.map((title, idx) => {
-        console.log('Seeding category:', title);
-        return Category.create({ gearList: newList._id, title, position: idx });
-      })
-    );
+    // Create the gear list document
+    const newList = await GearList.create({
+      owner: req.userId,
+      title
+    });
 
-    const createdCategories = await Category.find({ gearList: newList._id }).sort('position');
-    console.log('🌱 Seeded categories:', createdCategories.map(c => c.title));
+    // Seed exactly one sample category
+    const sampleCategory = await Category.create({
+      gearList: newList._id,
+      title: 'Sample Category',
+      position: 0
+    });
 
-    res.status(201).json({ list: newList, categories: createdCategories });
+    res.status(201).json({
+      list: newList,
+      categories: [sampleCategory]
+    });
   } catch (err) {
-    console.error('Error creating list with defaults:', err);
+    console.error('Error creating list with sample category:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -104,7 +74,7 @@ router.patch('/:listId', async (req, res) => {
   }
 });
 
-// DELETE /api/lists/:listId — remove a gear list
+// DELETE /api/lists/:listId — remove a gear list (and its categories)
 router.delete('/:listId', async (req, res) => {
   try {
     const { listId } = req.params;
@@ -115,6 +85,8 @@ router.delete('/:listId', async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: 'Gear list not found.' });
     }
+    // Cascade-delete its categories
+    await Category.deleteMany({ gearList: listId });
     res.json({ message: 'Gear list deleted.' });
   } catch (err) {
     console.error('Error DELETE /api/lists/:listId:', err);

@@ -46,6 +46,40 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PATCH /api/lists/:listId/categories/:catId
+// Allows updating title (and optionally position) in one go
+router.patch('/:catId', async (req, res) => {
+  try {
+    const { listId, catId } = req.params;
+    const { title, position } = req.body;
+    if (title == null && position == null) {
+      return res.status(400).json({ message: 'Nothing to update.' });
+    }
+
+    // Verify ownership
+    const list = await GearList.findOne({ _id: listId, owner: req.userId });
+    if (!list) return res.status(404).json({ message: 'Gear list not found.' });
+
+    // Build update object
+    const update = {};
+    if (title != null)    update.title = title;
+    if (position != null) update.position = position;
+
+    const updated = await Category.findOneAndUpdate(
+      { _id: catId, gearList: listId },
+      update,
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ message: 'Category not found.' });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error('Error PATCH /categories/:catId:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // PATCH /api/lists/:listId/categories/:catId/position
 router.patch('/:catId/position', async (req, res) => {
   try {

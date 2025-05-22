@@ -18,26 +18,47 @@ import { CSS } from '@dnd-kit/utilities';
 import { FaGripVertical, FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 
 export default function GearListView({ listId }) {
+  const [listName, setListName] = useState('');
   const [categories, setCategories] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [newTitle, setNewTitle] = useState('');
 
+  // Fetch and set list title
+  useEffect(() => {
+    async function fetchList() {
+      try {
+        // Fetch all lists and find this one (no dedicated GET /lists/:id endpoint)
+        const { data } = await api.get('/lists');
+        const list = data.find(l => l._id === listId);
+        setListName(list ? list.title : '');
+      } catch (err) {
+        console.error('Error fetching list name:', err);
+      }
+    }
+    if (listId) fetchList();
+  }, [listId]);
+
   // Load categories
   useEffect(() => {
     async function fetchCategories() {
-      const { data } = await api.get(`/lists/${listId}/categories`);
-      setCategories(data);
+      try {
+        const { data } = await api.get(`/lists/${listId}/categories`);
+        setCategories(data);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
     }
-    fetchCategories();
+    if (listId) fetchCategories();
   }, [listId]);
 
+  // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Handle drag end: update only moved category position
+  // Handle drag end: update only moved category's position
   const handleDragEnd = async ({ active, over }) => {
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = categories.findIndex(c => c._id === active.id);
       const newIndex = categories.findIndex(c => c._id === over.id);
       const newCats = arrayMove(categories, oldIndex, newIndex).map((c, idx) => ({ ...c, position: idx }));
@@ -57,23 +78,44 @@ export default function GearListView({ listId }) {
   const startEdit = id => setEditingId(id);
   const cancelEdit = () => setEditingId(null);
   const saveEdit = async (id, title) => {
-    await api.patch(`/lists/${listId}/categories/${id}`, { title });
-    setEditingId(null);
-    setCategories(prev => prev.map(c => c._id === id ? { ...c, title } : c));
+    try {
+      const { data: updated } = await api.patch(
+        `/lists/${listId}/categories/${id}`,
+        { title }
+      );
+      setCategories(prev => prev.map(c => c._id === id ? updated : c));
+      setEditingId(null);
+    } catch (err) {
+      console.error('Error updating category title:', err);
+    }
   };
   const deleteCategory = async id => {
     if (!window.confirm('Delete this category?')) return;
-    await api.delete(`/lists/${listId}/categories/${id}`);
-    setCategories(prev => prev.filter(c => c._id !== id));
+    try {
+      await api.delete(`/lists/${listId}/categories/${id}`);
+      setCategories(prev => prev.filter(c => c._id !== id));
+    } catch (err) {
+      console.error('Error deleting category:', err);
+    }
   };
 
-  // Add new category at top left
+  // Add new category at top
   const addCategoryTop = async () => {
     const title = newTitle.trim() || 'New Category';
-    const position = 0;
-    const { data } = await api.post(`/lists/${listId}/categories`, { title, position });
-    setCategories(prev => [data, ...prev.map((c, i) => ({ ...c, position: i + 1 }))]);
-    setNewTitle('');
+    try {
+      const { data } = await api.post(
+        `/lists/${listId}/categories`,
+        { title, position: 0 }
+      );
+      // Prepend and re-index positions
+      setCategories(prev => [
+        data,
+        ...prev.map((c, i) => ({ ...c, position: i + 1 }))
+      ]);
+      setNewTitle('');
+    } catch (err) {
+      console.error('Error adding category:', err);
+    }
   };
 
   // Sortable column component
@@ -82,6 +124,7 @@ export default function GearListView({ listId }) {
     const style = { transform: CSS.Transform.toString(transform), transition };
     const [localTitle, setLocalTitle] = useState(category.title);
 
+    // Sync localTitle when entering edit
     useEffect(() => {
       if (editingId === category._id) setLocalTitle(category.title);
     }, [editingId, category]);
@@ -112,14 +155,18 @@ export default function GearListView({ listId }) {
             </>
           )}
         </div>
-        {/* Placeholder for items */}
-        <div className="h-48 bg-white rounded p-1">...</div>
+        <div className="h-48 bg-white rounded p-1 overflow-y-auto">
+          {/* Items would render here */}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-4">
+      {/* Display current list name */}
+      <h2 className="text-2xl font-semibold mb-2">{listName}</h2>
+
       {/* Top-left add category */}
       <div className="flex items-center mb-4">
         <input
@@ -132,10 +179,13 @@ export default function GearListView({ listId }) {
           <FaPlus />
         </button>
       </div>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={categories.map(c => c._id)} strategy={horizontalListSortingStrategy}>
-          <div className="flex overflow-x-auto">
-            {categories.map(category => <SortableColumn key={category._id} category={category} />)}
+          <div className="flex flex-nowrap overflow-x-auto">
+            {categories.map(category => (
+              <SortableColumn key={category._id} category={category} />
+            ))}
           </div>
         </SortableContext>
       </DndContext>

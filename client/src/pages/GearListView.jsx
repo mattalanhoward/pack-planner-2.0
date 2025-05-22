@@ -16,18 +16,23 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FaGripVertical, FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import GearItemCard from '../components/GearItemCard';
+import AddGearItemModal from '../components/AddGearItemModal';
+import GearItemModal from '../components/GearItemModal';
 
 export default function GearListView({ listId }) {
   const [listName, setListName] = useState('');
   const [categories, setCategories] = useState([]);
+  const [itemsMap, setItemsMap] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [newTitle, setNewTitle] = useState('');
+  const [showItemModalCat, setShowItemModalCat] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
 
-  // Fetch and set list title
+  // Fetch and set list name via GET /lists
   useEffect(() => {
     async function fetchList() {
       try {
-        // Fetch all lists and find this one (no dedicated GET /lists/:id endpoint)
         const { data } = await api.get('/lists');
         const list = data.find(l => l._id === listId);
         setListName(list ? list.title : '');
@@ -51,12 +56,42 @@ export default function GearListView({ listId }) {
     if (listId) fetchCategories();
   }, [listId]);
 
+  // Load items for each category
+  useEffect(() => {
+    categories.forEach(cat => {
+      fetchItems(cat._id);
+    });
+  }, [categories]);
+
+  const fetchItems = async catId => {
+    try {
+      const { data } = await api.get(
+        `/lists/${listId}/categories/${catId}/items`
+      );
+      setItemsMap(prev => ({ ...prev, [catId]: data }));
+    } catch (err) {
+      console.error('Error fetching items:', err);
+    }
+  };
+
+  const deleteItem = async (catId, itemId) => {
+    if (!window.confirm('Delete this item?')) return;
+    try {
+      await api.delete(
+        `/lists/${listId}/categories/${catId}/items/${itemId}`
+      );
+      fetchItems(catId);
+    } catch (err) {
+      console.error('Error deleting item:', err);
+    }
+  };
+
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  // Handle drag end: update only moved category's position
+  // Handle drag end: update moved category position
   const handleDragEnd = async ({ active, over }) => {
     if (over && active.id !== over.id) {
       const oldIndex = categories.findIndex(c => c._id === active.id);
@@ -74,7 +109,7 @@ export default function GearListView({ listId }) {
     }
   };
 
-  // CRUD handlers
+  // CRUD handlers for categories
   const startEdit = id => setEditingId(id);
   const cancelEdit = () => setEditingId(null);
   const saveEdit = async (id, title) => {
@@ -94,6 +129,11 @@ export default function GearListView({ listId }) {
     try {
       await api.delete(`/lists/${listId}/categories/${id}`);
       setCategories(prev => prev.filter(c => c._id !== id));
+      setItemsMap(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     } catch (err) {
       console.error('Error deleting category:', err);
     }
@@ -107,11 +147,7 @@ export default function GearListView({ listId }) {
         `/lists/${listId}/categories`,
         { title, position: 0 }
       );
-      // Prepend and re-index positions
-      setCategories(prev => [
-        data,
-        ...prev.map((c, i) => ({ ...c, position: i + 1 }))
-      ]);
+      setCategories(prev => [data, ...prev.map((c, i) => ({ ...c, position: i + 1 }))]);
       setNewTitle('');
     } catch (err) {
       console.error('Error adding category:', err);
@@ -124,13 +160,17 @@ export default function GearListView({ listId }) {
     const style = { transform: CSS.Transform.toString(transform), transition };
     const [localTitle, setLocalTitle] = useState(category.title);
 
-    // Sync localTitle when entering edit
     useEffect(() => {
       if (editingId === category._id) setLocalTitle(category.title);
     }, [editingId, category]);
 
+    // Handler to open gear-item edit modal
+    const handleItemEdit = item => {
+      setEditingItem({ categoryId: category._id, item });
+    };
+
     return (
-      <div ref={setNodeRef} style={style} className="bg-gray-100 rounded p-2 m-2 w-64">
+      <div ref={setNodeRef} style={style} className="bg-gray-100 rounded p-2 m-2 w-64 flex-shrink-0">
         <div className="flex items-center mb-2">
           <FaGripVertical {...attributes} {...listeners} className="mr-2 cursor-grab" />
           {editingId === category._id ? (
@@ -155,8 +195,33 @@ export default function GearListView({ listId }) {
             </>
           )}
         </div>
-        <div className="h-48 bg-white rounded p-1 overflow-y-auto">
-          {/* Items would render here */}
+        <div className="h-48 bg-white rounded p-1 overflow-y-auto flex flex-col">
+          {/* Render gear items */}
+          {itemsMap[category._id]?.map(item => (
+            <GearItemCard
+              key={item._id}
+              item={item}
+              onEdit={handleItemEdit}
+              onDelete={() => deleteItem(category._id, item._id)}
+            />
+          ))}
+          {/* Add-new button at column bottom */}
+<button
+  onClick={() => setShowItemModalCat(category._id)}
+  className="mt-auto p-1 bg-green-600 text-white rounded"
+>
+  <FaPlus /> Add Item
+</button>
+
+{/* Board-scoped AddGearItemModal */}
+{showItemModalCat === category._id && (
+  <AddGearItemModal
+    listId={listId}
+    categoryId={category._id}
+    onClose={() => setShowItemModalCat(null)}
+    onAdded={() => fetchItems(category._id)}
+  />
+)}
         </div>
       </div>
     );
@@ -189,6 +254,17 @@ export default function GearListView({ listId }) {
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Gear-item edit modal */}
+      {editingItem && (
+        <GearItemModal
+          listId={listId}
+          categoryId={editingItem.categoryId}
+          item={editingItem.item}
+          onClose={() => setEditingItem(null)}
+          onSaved={() => fetchItems(editingItem.categoryId)}
+        />
+      )}
     </div>
   );
 }

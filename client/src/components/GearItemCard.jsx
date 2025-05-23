@@ -1,8 +1,18 @@
 // src/components/GearItemCard.jsx
 import React from 'react';
-import { FaUtensils, FaTshirt, FaEdit } from 'react-icons/fa';
+import {
+  FaUtensils,
+  FaTshirt,
+  FaTrash,
+} from 'react-icons/fa';
 
-export default function GearItemCard({ item, onEdit }) {
+export default function GearItemCard({
+  item,
+  onToggleConsumable,
+  onToggleWorn,
+  onQuantityChange,
+  onDelete,
+}) {
   return (
     <div className="bg-white p-3 rounded shadow flex flex-col justify-between">
       {/* First row: Item Type */}
@@ -16,22 +26,28 @@ export default function GearItemCard({ item, onEdit }) {
         {item.name}
       </div>
 
-      {/* Third row: Weight, Consumable, Worn, Price link/text, Quantity, Edit */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
+      {/* Third row: Weight + inline toggles, price, qty, delete */}
+      <div className="flex items-center justify-between text-sm text-gray-600 mt-3">
         {/* Weight */}
         <span>{item.weight != null ? `${item.weight}g` : ''}</span>
 
-        <div className="flex items-center space-x-2">
-          {/* Consumable: utensils icon */}
+        <div className="flex items-center space-x-3">
+          {/* Consumable toggle */}
           <FaUtensils
-            title="Consumable"
-            className={item.consumable ? 'text-green-600' : 'opacity-30'}
+            title="Toggle consumable"
+            onClick={() => onToggleConsumable(item._id)}
+            className={`cursor-pointer ${
+              item.consumable ? 'text-green-600' : 'opacity-30'
+            }`}
           />
 
-          {/* Worn: t-shirt icon */}
+          {/* Worn toggle */}
           <FaTshirt
-            title="Worn"
-            className={item.worn ? 'text-blue-600' : 'opacity-30'}
+            title="Toggle worn"
+            onClick={() => onToggleWorn(item._id)}
+            className={`cursor-pointer ${
+              item.worn ? 'text-blue-600' : 'opacity-30'
+            }`}
           />
 
           {/* Price */}
@@ -50,12 +66,26 @@ export default function GearItemCard({ item, onEdit }) {
             )
           )}
 
-          {/* Quantity */}
-          <span>× {item.quantity}</span>
+          {/* Quantity selector */}
+          <select
+            value={item.quantity}
+            onChange={e => onQuantityChange(item._id, Number(e.target.value))}
+            className="border rounded p-1"
+          >
+            {[...Array(10)].map((_, i) => (
+              <option key={i+1} value={i+1}>
+                {i+1}
+              </option>
+            ))}
+          </select>
 
-          {/* Edit icon */}
-          <button onClick={() => onEdit(item)} className="hover:text-gray-800">
-            <FaEdit title="Edit item" />
+          {/* Delete icon */}
+          <button
+            onClick={() => onDelete(item._id)}
+            className="hover:text-gray-800"
+            title="Delete item"
+          >
+            <FaTrash />
           </button>
         </div>
       </div>

@@ -66,6 +66,45 @@ export default function GearListView({
     setItemsMap(m => ({ ...m, [catId]: data }));
   };
 
+  // —— New inline‐edit handlers —— //
+
+  const toggleConsumable = async (catId, itemId) => {
+    const item = itemsMap[catId].find(i => i._id === itemId);
+    await api.patch(
+      `/lists/${listId}/categories/${catId}/items/${itemId}`,
+      { consumable: !item.consumable }
+    );
+    fetchItems(catId);
+  };
+
+  const toggleWorn = async (catId, itemId) => {
+    const item = itemsMap[catId].find(i => i._id === itemId);
+    await api.patch(
+      `/lists/${listId}/categories/${catId}/items/${itemId}`,
+      { worn: !item.worn }
+    );
+    fetchItems(catId);
+  };
+
+  const updateQuantity = async (catId, itemId, qty) => {
+    await api.patch(
+      `/lists/${listId}/categories/${catId}/items/${itemId}`,
+      { quantity: qty }
+    );
+    fetchItems(catId);
+  };
+
+  // —— end inline‐edit handlers —— //
+
+  // 6) Delete / edit item
+  const deleteItem = async (catId, itemId) => {
+    if (!window.confirm('Delete this item?')) return;
+    await api.delete(
+      `/lists/${listId}/categories/${catId}/items/${itemId}`
+    );
+    fetchItems(catId);
+  };
+
   // 4) Add new category
   const confirmAddCat = async () => {
     const title = newCatName.trim();
@@ -99,17 +138,8 @@ export default function GearListView({
       `/lists/${listId}/categories/${id}`,
       { title }
     );
-    setCategories(c => c.map(x => x._id === id ? data : x));
+    setCategories(c => c.map(x => (x._id === id ? data : x)));
     setEditingCatId(null);
-  };
-
-  // 6) Delete / edit item
-  const deleteItem = async (catId, itemId) => {
-    if (!window.confirm('Delete this item?')) return;
-    await api.delete(
-      `/lists/${listId}/categories/${catId}/items/${itemId}`
-    );
-    fetchItems(catId);
   };
 
   // 7) DnD setup
@@ -136,6 +166,7 @@ export default function GearListView({
       useSortable({ id: category._id });
     const style = { transform: CSS.Transform.toString(transform), transition };
     const [local, setLocal] = useState(category.title);
+    const catId = category._id;
 
     return (
       <div
@@ -193,14 +224,14 @@ export default function GearListView({
         </div>
 
         <div className="flex flex-col h-48 overflow-auto space-y-2 mb-2">
-          {itemsMap[category._id]?.map(item => (
+          {itemsMap[catId]?.map(item => (
             <GearItemCard
               key={item._id}
               item={item}
-              onEdit={() =>
-                setEditingItem({ categoryId: category._id, item })
-              }
-              onDelete={() => deleteItem(category._id, item._id)}
+              onToggleConsumable={id => toggleConsumable(catId, id)}
+              onToggleWorn={id => toggleWorn(catId, id)}
+              onQuantityChange={(id, qty) => updateQuantity(catId, id, qty)}
+              onDelete={id => deleteItem(catId, id)}
             />
           ))}
         </div>
@@ -283,7 +314,7 @@ export default function GearListView({
         </SortableContext>
       </DndContext>
 
-      {/* Edit Gear-Item Modal */}
+      {/* Edit Gear-Item Modal (now unused) */}
       {/* {editingItem && (
         <GearItemModal
           listId={listId}

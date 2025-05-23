@@ -5,12 +5,11 @@ import { FaTimes, FaSearch, FaSave } from 'react-icons/fa';
 
 export default function AddGearItemModal({ listId, categoryId, onClose, onAdded }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [results, setResults]         = useState([]);
+  const [selected, setSelected]       = useState(null);
+  const [quantity, setQuantity]       = useState(1);
+  const [notes, setNotes]             = useState('');
+  const [saving, setSaving]           = useState(false);
 
   // Fetch global items matching searchQuery
   useEffect(() => {
@@ -26,31 +25,37 @@ export default function AddGearItemModal({ listId, categoryId, onClose, onAdded 
   }, [searchQuery]);
 
   const handleSave = async () => {
-    if (!selected) return alert('Please select an item');
+    if (!selected) {
+      return alert('Please select an item');
+    }
     setSaving(true);
+
     try {
       const payload = {
-        brand:      selected.brand,
-        itemType:   selected.itemType,
-        name:       selected.name,
+        globalItem:  selected._id,           // ← include the template ID
+        brand:       selected.brand,
+        itemType:    selected.itemType,
+        name:        selected.name,
         description: notes || selected.description,
-        weight:     selected.weight,
-        price:      selected.price,
-        link:       selected.link,
-        worn:       selected.worn,
-        consumable: selected.consumable,
+        weight:      selected.weight,
+        price:       selected.price,
+        link:        selected.link,
+        worn:        selected.worn,
+        consumable:  selected.consumable,
         quantity,
-        position:   0
+        position:    0                       // you can adjust this logic as needed
       };
+
       await api.post(
         `/lists/${listId}/categories/${categoryId}/items`,
         payload
       );
+
       onAdded();
       onClose();
     } catch (err) {
       console.error('Error adding gear item:', err);
-      alert('Failed to add item');
+      alert(err.response?.data?.message || 'Failed to add item');
     } finally {
       setSaving(false);
     }
@@ -59,6 +64,7 @@ export default function AddGearItemModal({ listId, categoryId, onClose, onAdded 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+        {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Add Gear Item</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -79,19 +85,22 @@ export default function AddGearItemModal({ listId, categoryId, onClose, onAdded 
 
         {/* Results List */}
         <ul className="max-h-40 overflow-y-auto mb-4">
-          {results.map(item => (
-            <li
-              key={item._id}
-              onClick={() => setSelected(item)}
-              className={`p-2 rounded cursor-pointer mb-1 ${
-                selected?._id === item._id ? 'bg-blue-100' : 'hover:bg-gray-100'
-              }`}
-            >
-              <div className="font-medium">{item.name}</div>
-              <div className="text-sm text-gray-600">{item.brand} — {item.itemType}</div>
-            </li>
-          ))}
-          {results.length === 0 && (
+          {results.length > 0 ? (
+            results.map(item => (
+              <li
+                key={item._id}
+                onClick={() => setSelected(item)}
+                className={`p-2 rounded cursor-pointer mb-1 ${
+                  selected?._id === item._id ? 'bg-blue-100' : 'hover:bg-gray-100'
+                }`}
+              >
+                <div className="font-medium">{item.name}</div>
+                <div className="text-sm text-gray-600">
+                  {item.brand} — {item.itemType}
+                </div>
+              </li>
+            ))
+          ) : (
             <li className="text-gray-500 p-2">No items found</li>
           )}
         </ul>

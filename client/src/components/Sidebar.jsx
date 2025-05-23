@@ -1,126 +1,157 @@
 // src/components/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { FaChevronLeft, FaChevronRight, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaPlus,
+  FaEdit,
+  FaTrash,
+} from 'react-icons/fa';
 import GlobalItemModal from './GlobalItemModal';
+import GlobalItemEditModal from './GlobalItemEditModal';
 
-export default function Sidebar({ currentListId, onSelectList, onItemAdded }) {
-  const [collapsed, setCollapsed]       = useState(false);
-  const [lists, setLists]               = useState([]);
-  const [newListTitle, setNewListTitle] = useState('');
-  const [editingId, setEditingId]       = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [items, setItems]               = useState([]);
-  const [categories, setCategories]     = useState([]);
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [showModal, setShowModal]       = useState(false);
+export default function Sidebar({
+  currentListId,
+  onSelectList,
+  onItemAdded,
+  onTemplateEdited,      // <— new prop
+}) {
+  const [collapsed, setCollapsed]         = useState(false);
+  const [lists, setLists]                 = useState([]);
+  const [newListTitle, setNewListTitle]   = useState('');
+  const [editingId, setEditingId]         = useState(null);
+  const [editingTitle, setEditingTitle]   = useState('');
+  const [categories, setCategories]       = useState([]);
+  const [items, setItems]                 = useState([]);
+  const [searchQuery, setSearchQuery]     = useState('');
+  const [showCreateModal, setShowCreateModal]     = useState(false);
+  const [editingGlobalItem, setEditingGlobalItem] = useState(null);
 
-  // Fetch all gear lists
+  // 1) Fetch all gear lists
   const fetchLists = async () => {
     try {
       const { data } = await api.get('/lists');
       setLists(data);
     } catch (err) {
       console.error('Error fetching lists:', err);
+      alert('Failed to load your gear lists.');
     }
   };
 
-  // Fetch global items
+  // 2) Fetch all global items (master catalog)
   const fetchGlobalItems = async () => {
     try {
-      const { data } = await api.get('/global/items', { params: { search: searchQuery } });
+      const { data } = await api.get('/global/items', {
+        params: { search: searchQuery }
+      });
       setItems(data);
     } catch (err) {
-      console.error('Error fetching items:', err);
+      console.error('Error fetching global items:', err);
+      alert('Failed to load catalog items.');
     }
   };
 
+  // 3) On mount, load lists
   useEffect(() => {
     fetchLists();
   }, []);
 
-  // Auto-select first list
+  // 4) Auto-select first list if none
   useEffect(() => {
-    if (!currentListId && lists.length) {
+    if (!currentListId && lists.length > 0) {
       onSelectList(lists[0]._id);
     }
   }, [lists, currentListId, onSelectList]);
 
-  // Fetch categories for selected list
+  // 5) Load categories when list changes
   useEffect(() => {
-    if (!currentListId) return;
-    api.get(`/lists/${currentListId}/categories`)
-       .then(r => setCategories(r.data))
-       .catch(err => console.error('Error fetching categories:', err));
+    if (!currentListId) {
+      setCategories([]);
+      return;
+    }
+    (async () => {
+      try {
+        const { data } = await api.get(`/lists/${currentListId}/categories`);
+        setCategories(data);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+      }
+    })();
   }, [currentListId]);
 
+  // 6) Reload catalog on search change
   useEffect(() => {
     fetchGlobalItems();
   }, [searchQuery]);
 
-  // Create a new gear list
+  // === Gear‐list CRUD ===
+
   const createList = async () => {
     const title = newListTitle.trim();
     if (!title) return;
     try {
-      const {
-        data: { list, categories: seeded }
-      } = await api.post('/lists', { title });
+      await api.post('/lists', { title });
       setNewListTitle('');
-      setLists(prev => [...prev, list]);
-      onSelectList(list._id);
-      setCategories(seeded);
+      await fetchLists();
     } catch (err) {
       console.error('Error creating list:', err);
-      alert('Could not create list');
+      const msg = err.response?.data?.message || 'Could not create list.';
+      alert(msg);
     }
   };
 
-  // Inline editing
-  const startEdit = (id, title) => {
-    setEditingId(id);
-    setEditingTitle(title);
-  };
-  const saveEdit = async id => {
+  const startEditList  = (id, title) => { setEditingId(id); setEditingTitle(title); };
+  const saveEditList   = async id => {
     const title = editingTitle.trim();
     if (!title) return;
     try {
-      const { data: updated } = await api.patch(`/lists/${id}`, { title });
+      await api.patch(`/lists/${id}`, { title });
       setEditingId(null);
       setEditingTitle('');
-      setLists(prev => prev.map(l => (l._id === id ? updated : l)));
+      await fetchLists();
       if (currentListId === id) onSelectList(id);
     } catch (err) {
       console.error('Error updating list:', err);
-      alert('Could not update list');
+      alert('Could not update list name.');
     }
   };
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingTitle('');
-  };
+  const cancelEditList = () => { setEditingId(null); setEditingTitle(''); };
 
-  // Delete list
   const deleteList = async id => {
     if (!window.confirm('Delete this gear list? This cannot be undone.')) return;
     try {
       await api.delete(`/lists/${id}`);
-      setLists(prev => prev.filter(l => l._id !== id));
+      await fetchLists();
       if (currentListId === id) onSelectList(null);
     } catch (err) {
       console.error('Error deleting list:', err);
-      alert('Could not delete list');
+      alert('Could not delete list.');
     }
   };
 
-  // Add a global item
+  // === Global‐item (catalog) actions ===
+
   const addToList = async item => {
-    let cat = categories.find(c => c._id === item.category?._id);
-    if (!cat && categories.length) cat = categories[0];
-    if (!cat) return alert('No category available to add item to');
-    // Exclude metadata fields from payload (_id, category, timestamps)
-    const { _id, category: _cat, __v, createdAt, updatedAt, ...rest } = item;
-    const payload = { ...rest, position: 0 };
+    if (!currentListId || categories.length === 0) {
+      return alert('Pick or create a list with at least one category first.');
+    }
+    const cat = categories[0]; // default to first category
+
+    const payload = {
+      globalItem:  item._id,
+      brand:       item.brand,
+      itemType:    item.itemType,
+      name:        item.name,
+      description: item.description,
+      weight:      item.weight,
+      price:       item.price,
+      link:        item.link,
+      worn:        item.worn,
+      consumable:  item.consumable,
+      quantity:    item.quantity,
+      position:    0
+    };
 
     try {
       await api.post(
@@ -129,19 +160,35 @@ export default function Sidebar({ currentListId, onSelectList, onItemAdded }) {
       );
       onItemAdded();
     } catch (err) {
-      console.error('Error adding item:', err);
-      alert('Could not add item');
+      console.error('Error adding catalog item to list:', err);
+      alert('Failed to add item into your list.');
     }
   };
 
-  const widthClass = collapsed ? 'w-6' : 'w-64';
+  const deleteGlobalItem = async id => {
+    if (!window.confirm('Delete this global template and all its instances?')) return;
+    try {
+      await api.delete(`/global/items/${id}`);
+      fetchGlobalItems();
+      onTemplateEdited();     // <— notify boards to refresh
+    } catch (err) {
+      console.error('Error deleting global item:', err);
+      const msg = err.response?.data?.message || 'Could not delete template.';
+      alert(msg);
+    }
+  };
+
+  // === Presentation ===
+
+  const widthClass = collapsed ? 'w-10' : 'w-80';
 
   return (
     <div className="h-full flex">
-      <div className={`relative bg-gray-100 transition-all ${widthClass}`}>        
+      <div className={`relative bg-pine text-sand transition-all duration-300 ${widthClass}`}>
+        {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(c => !c)}
-          className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
+          className="absolute top-4 right-4 bg-sand text-pine rounded-full p-1 shadow-lg"
         >
           {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
         </button>
@@ -149,11 +196,11 @@ export default function Sidebar({ currentListId, onSelectList, onItemAdded }) {
         {!collapsed && (
           <div className="h-full flex flex-col">
             {/* Gear Lists */}
-            <section className="flex flex-col h-1/3 p-4 border-b">
-              <h2 className="font-semibold mb-2">Gear Lists</h2>
-              <div className="flex mb-2">
+            <section className="flex flex-col h-1/3 p-4 border-b border-sand">
+              <h2 className="font-bold mb-2 text-sand">Gear Lists</h2>
+              <div className="flex mb-3">
                 <input
-                  className="flex-1 border rounded p-1"
+                  className="flex-1 rounded-lg p-2 text-pine"
                   placeholder="New list"
                   value={newListTitle}
                   onChange={e => setNewListTitle(e.target.value)}
@@ -161,32 +208,48 @@ export default function Sidebar({ currentListId, onSelectList, onItemAdded }) {
                 <button
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 p-1 bg-blue-600 text-white rounded"
+                  className="ml-2 px-4 bg-teal text-white rounded-lg shadow"
                 >
                   Create
                 </button>
               </div>
-              <ul className="overflow-y-auto flex-1 space-y-1">
-                {lists.map(list => (
-                  <li key={list._id} className="flex items-center">
-                    {editingId === list._id ? (
+              <ul className="flex-1 overflow-auto space-y-1">
+                {lists.map(l => (
+                  <li key={l._id} className="flex items-center">
+                    {editingId === l._id ? (
                       <>
-                        <input className="flex-1 border rounded p-1" value={editingTitle} onChange={e => setEditingTitle(e.target.value)} />
-                        <button onClick={() => saveEdit(list._id)} className="ml-2 p-1 text-green-600">Save</button>
-                        <button onClick={cancelEdit} className="ml-1 p-1 text-gray-600">Cancel</button>
+                        <input
+                          className="flex-1 rounded-lg p-1 text-pine"
+                          value={editingTitle}
+                          onChange={e => setEditingTitle(e.target.value)}
+                        />
+                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sand">
+                          Save
+                        </button>
+                        <button onClick={cancelEditList} className="ml-1 text-sand">
+                          Cancel
+                        </button>
                       </>
                     ) : (
                       <>
                         <button
-                          onClick={() => onSelectList(list._id)}
-                          className={`flex-1 text-left p-1 rounded ${
-                            list._id === currentListId ? 'bg-blue-500 text-white' : 'hover:bg-gray-200'
+                          onClick={() => onSelectList(l._id)}
+                          className={`flex-1 text-left p-2 rounded-lg ${
+                            l._id === currentListId
+                              ? 'bg-teal text-white'
+                              : 'hover:bg-sand hover:text-pine'
                           }`}
                         >
-                          {list.title}
+                          {l.title}
                         </button>
-                        <FaEdit onClick={() => startEdit(list._id, list.title)} className="ml-2 cursor-pointer text-gray-600" />
-                        <FaTrash onClick={() => deleteList(list._id)} className="ml-2 cursor-pointer text-red-600" />
+                        <FaEdit
+                          onClick={() => startEditList(l._id, l.title)}
+                          className="ml-2 cursor-pointer text-pine"
+                        />
+                        <FaTrash
+                          onClick={() => deleteList(l._id)}
+                          className="ml-2 cursor-pointer text-ember"
+                        />
                       </>
                     )}
                   </li>
@@ -194,47 +257,79 @@ export default function Sidebar({ currentListId, onSelectList, onItemAdded }) {
               </ul>
             </section>
 
-            {/* Gear Items */}
+            {/* Catalog / Global Items */}
             <section className="flex flex-col h-2/3 p-4">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-semibold">Gear Items</h2>
-                <button onClick={() => currentListId && setShowModal(true)} disabled={!currentListId || !categories.length} className="p-1 disabled:opacity-50">
+              <div className="flex justify-between items-center mb-2 text-sand">
+                <h2 className="font-bold">Catalog</h2>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="p-1"
+                  disabled={!currentListId || categories.length === 0}
+                >
                   <FaPlus />
                 </button>
               </div>
 
               <input
-                className="w-full border rounded p-1 mb-2"
-                placeholder="Search items"
+                className="w-full rounded-lg p-2 text-pine border border-pine mb-3"
+                placeholder="Search catalog"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
 
-              <div className="overflow-y-auto flex-1">
-                <ul className="space-y-1">
-                  {items.length > 0 ? (
-                    items.map(item => {
-                      const canAdd = !!categories.length;
-                      return (
-                        <li key={item._id} className="flex justify-between items-center p-1 hover:bg-gray-200">
-                          <span>{item.itemType} – {item.name}</span>
-                          <button onClick={() => addToList(item)} disabled={!canAdd} className="p-1 bg-green-600 text-white rounded disabled:opacity-50">
-                            <FaPlus />
-                          </button>
-                        </li>
-                      );
-                    })
-                  ) : (
-                    <li className="text-gray-500 p-2">No items</li>
-                  )}
-                </ul>
-              </div>
+              <ul className="overflow-auto flex-1 space-y-2">
+                {items.length > 0 ? (
+                  items.map(item => (
+                    <li
+                      key={item._id}
+                      className="flex justify-between items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-pine">
+                          {item.itemType} – {item.name}
+                        </span>
+                        <FaEdit
+                          onClick={() => setEditingGlobalItem(item)}
+                          className="cursor-pointer text-teal hover:text-teal-700"
+                          title="Edit global template"
+                        />
+                        <FaTrash
+                          onClick={() => deleteGlobalItem(item._id)}
+                          className="cursor-pointer text-ember hover:text-ember/80"
+                          title="Delete global template"
+                        />
+                      </div>
+                      <button
+                        onClick={() => addToList(item)}
+                        disabled={!categories.length}
+                        className="p-1 bg-teal text-white rounded-lg disabled:opacity-50"
+                      >
+                        <FaPlus />
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-pine/70 p-2">No catalog items</li>
+                )}
+              </ul>
 
-              {showModal && (
+              {showCreateModal && (
                 <GlobalItemModal
                   categories={categories}
-                  onClose={() => setShowModal(false)}
-                  onCreated={fetchGlobalItems}
+                  onClose={() => { setShowCreateModal(false); fetchGlobalItems(); }}
+                  onCreated={() => { setShowCreateModal(false); fetchGlobalItems(); onTemplateEdited(); }}
+                />
+              )}
+
+              {editingGlobalItem && (
+                <GlobalItemEditModal
+                  item={editingGlobalItem}
+                  onClose={() => setEditingGlobalItem(null)}
+                  onSaved={() => {
+                    fetchGlobalItems();
+                    setEditingGlobalItem(null);
+                    onTemplateEdited();   // <— notify Dashboard
+                  }}
                 />
               )}
             </section>

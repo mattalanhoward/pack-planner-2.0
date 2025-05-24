@@ -23,7 +23,7 @@ export default function Dashboard() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* TopBar spans full width */}
       <header className="w-full bg-white shadow p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">PackPlanner</h1>
@@ -32,7 +32,7 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar
           currentListId={currentListId}
           onSelectList={setCurrentListId}

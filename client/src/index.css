@@ -1,4 +1,6 @@
-@import "tailwindcss";
-/* @tailwind base;
+/* client/src/index.css */
+@tailwind base;
 @tailwind components;
-@tailwind utilities; */
+@tailwind utilities;
+
+@import './App.css'; /* Make sure App.css is in src, otherwise adjust path */

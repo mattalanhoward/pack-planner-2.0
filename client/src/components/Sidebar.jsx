@@ -183,7 +183,7 @@ export default function Sidebar({
   const widthClass = collapsed ? 'w-10' : 'w-80';
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex overflow-hidden">
       <div className={`relative bg-pine text-sand transition-all duration-300 ${widthClass}`}>
         {/* Collapse toggle */}
         <button
@@ -194,9 +194,9 @@ export default function Sidebar({
         </button>
 
         {!collapsed && (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists */}
-            <section className="flex flex-col h-1/3 p-4 border-b border-sand">
+            <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
               <h2 className="font-bold mb-2 text-sand">Gear Lists</h2>
               <div className="flex mb-3">
                 <input
@@ -213,7 +213,7 @@ export default function Sidebar({
                   Create
                 </button>
               </div>
-              <ul className="flex-1 overflow-auto space-y-1">
+              <ul className="overflow-y-auto flex-1 space-y-1">
                 {lists.map(l => (
                   <li key={l._id} className="flex items-center">
                     {editingId === l._id ? (
@@ -258,7 +258,7 @@ export default function Sidebar({
             </section>
 
             {/* Catalog / Global Items */}
-            <section className="flex flex-col h-2/3 p-4">
+            <section className="flex flex-col flex-1 p-4 overflow-hidden">
               <div className="flex justify-between items-center mb-2 text-sand">
                 <h2 className="font-bold">Catalog</h2>
                 <button
@@ -277,7 +277,7 @@ export default function Sidebar({
                 onChange={e => setSearchQuery(e.target.value)}
               />
 
-              <ul className="overflow-auto flex-1 space-y-2">
+              <ul className="overflow-y-auto flex-1 space-y-2">
                 {items.length > 0 ? (
                   items.map(item => (
                     <li

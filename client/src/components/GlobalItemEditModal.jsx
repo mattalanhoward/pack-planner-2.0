@@ -4,27 +4,36 @@ import { FaTimes, FaCheck } from 'react-icons/fa';
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
+    category: '',
+    itemType: '',
     name: '',
     brand: '',
     description: '',
-    weight: 0,
-    price: 0,
+    weight: '',
+    price: '',
     link: '',
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [worn, setWorn]             = useState(false);
+  const [consumable, setConsumable] = useState(false);
+  const [quantity, setQuantity]     = useState(1);
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState('');
 
   useEffect(() => {
-    if (item) {
-      setForm({
-        name: item.name || '',
-        brand: item.brand || '',
-        description: item.description || '',
-        weight: item.weight || 0,
-        price: item.price || 0,
-        link: item.link || '',
-      });
-    }
+    if (!item) return;
+    setForm({
+      category:    item.category || '',
+      itemType:    item.itemType || '',
+      name:        item.name || '',
+      brand:       item.brand || '',
+      description: item.description || '',
+      weight:      item.weight || '',
+      price:       item.price || '',
+      link:        item.link || '',
+    });
+    setWorn(item.worn);
+    setConsumable(item.consumable);
+    setQuantity(item.quantity || 1);
   }, [item]);
 
   const handleChange = e => {
@@ -33,36 +42,38 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   };
 
   const validate = () => {
-    if (!form.name.trim()) return 'Name is required.';
-    if (form.weight < 0) return 'Weight cannot be negative.';
-    if (form.price < 0) return 'Price cannot be negative.';
-    try {
-      if (form.link && !/^https?:\/\//.test(form.link)) throw 0;
-    } catch {
+    if (!form.name.trim())                  return 'Name is required.';
+    if (Number(form.weight) < 0)            return 'Weight cannot be negative.';
+    if (Number(form.price) < 0)             return 'Price cannot be negative.';
+    if (form.link && !/^https?:\/\//.test(form.link))
       return 'Link must be a valid URL.';
-    }
     return '';
   };
 
   const handleSave = async () => {
     const err = validate();
-    if (err) {
-      setError(err);
-      return;
-    }
-    if (!window.confirm('This change will apply to every instance of this item. Continue?')) {
-      return;
-    }
+    if (err)      return setError(err);
+    if (
+      !window.confirm(
+        'This change will apply to every instance of this item. Continue?'
+      )
+    ) return;
+
     setSaving(true);
     setError('');
     try {
       await api.patch(`/global/items/${item._id}`, {
-        name: form.name.trim(),
-        brand: form.brand.trim(),
+        category:    form.category,
+        itemType:    form.itemType,
+        name:        form.name.trim(),
+        brand:       form.brand.trim(),
         description: form.description.trim(),
-        weight: Number(form.weight),
-        price: Number(form.price),
-        link: form.link.trim(),
+        weight:      Number(form.weight),
+        price:       Number(form.price),
+        link:        form.link.trim(),
+        worn,
+        consumable,
+        quantity,
       });
       onSaved();
       onClose();
@@ -76,17 +87,43 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-sand rounded-xl shadow-2xl max-w-md w-full p-6">
+      <div className="bg-sand rounded-lg shadow-2xl max-w-lg w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-pine">Edit Global Item</h2>
-          <button onClick={onClose} disabled={saving} className="text-ember hover:text-ember/80">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="text-ember hover:text-ember/80"
+          >
             <FaTimes />
           </button>
         </div>
+
         {error && <div className="text-ember mb-2">{error}</div>}
-        <div className="space-y-4">
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-pine">Name*</label>
+            <label className="block text-sm font-medium text-pine mb-1">Category</label>
+            <input
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Item Type</label>
+            <input
+              name="itemType"
+              value={form.itemType}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Name</label>
             <input
               name="name"
               value={form.name}
@@ -94,8 +131,9 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-pine">Brand</label>
+            <label className="block text-sm font-medium text-pine mb-1">Brand</label>
             <input
               name="brand"
               value={form.brand}
@@ -103,40 +141,45 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-pine">Description</label>
+            <label className="block text-sm font-medium text-pine mb-1">Weight (g)</label>
+            <input
+              type="number"
+              name="weight"
+              min="0"
+              value={form.weight}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Price (USD)</label>
+            <input
+              type="number"
+              name="price"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-pine mb-1">Description</label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-              rows={3}
+              rows={2}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-pine">Weight (g)</label>
-              <input
-                type="number"
-                name="weight"
-                value={form.weight}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-pine">Price ($)</label>
-              <input
-                type="number"
-                name="price"
-                value={form.price}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-              />
-            </div>
-          </div>
+
           <div>
-            <label className="block text-sm font-medium text-pine">Link</label>
+            <label className="block text-sm font-medium text-pine mb-1">Link</label>
             <input
               name="link"
               value={form.link}
@@ -144,12 +187,46 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Quantity</label>
+            <input
+              type="number"
+              name="quantity"
+              min="1"
+              value={quantity}
+              onChange={e => setQuantity(Number(e.target.value))}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
         </div>
-        <div className="mt-6 flex justify-end space-x-2">
+
+        <div className="flex items-center space-x-4 mt-4">
+          <label className="inline-flex items-center text-pine">
+            <input
+              type="checkbox"
+              checked={worn}
+              onChange={e => setWorn(e.target.checked)}
+              className="mr-2"
+            />
+            Worn
+          </label>
+          <label className="inline-flex items-center text-pine">
+            <input
+              type="checkbox"
+              checked={consumable}
+              onChange={e => setConsumable(e.target.checked)}
+              className="mr-2"
+            />
+            Consumable
+          </label>
+        </div>
+
+        <div className="flex justify-end space-x-2 mt-6">
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 bg-sand rounded hover:bg-sunset text-pine"
+            className="px-4 py-2 bg-sand rounded hover:bg-sand/90 text-pine"
           >
             Cancel
           </button>

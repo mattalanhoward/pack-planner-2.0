@@ -5,9 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        midnight: '#121063',
-        tahiti: '#3ab7bf',
-        bermuda: '#78dcca',
         pine: '#264653',
         teal: '#2A9D8F',
         sand: '#E9C46A',

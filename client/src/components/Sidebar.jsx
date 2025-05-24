@@ -244,7 +244,7 @@ export default function Sidebar({
                         </button>
                         <FaEdit
                           onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-pine"
+                          className="ml-2 cursor-pointer text-sand"
                         />
                         <FaTrash
                           onClick={() => deleteList(l._id)}
@@ -285,12 +285,12 @@ export default function Sidebar({
                       className="flex justify-between items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
                     >
                       <div className="flex items-center space-x-2">
-                        <span className="text-pine">
+                        <span className="text-sand">
                           {item.itemType} – {item.name}
                         </span>
                         <FaEdit
                           onClick={() => setEditingGlobalItem(item)}
-                          className="cursor-pointer text-teal hover:text-teal-700"
+                          className="cursor-pointer text-sand hover:text-sand-700"
                           title="Edit global template"
                         />
                         <FaTrash

@@ -1,166 +1,186 @@
-// src/components/GlobalItemModal.jsx
 import React, { useState } from 'react';
 import api from '../services/api';
+import { FaTimes } from 'react-icons/fa';
 
 export default function GlobalItemModal({ categories = [], onClose, onCreated }) {
-  // Required
-  const [category, setCategory]       = useState('');
-  const [name, setName]               = useState('');
-  // Optional
-  const [brand, setBrand]             = useState('');
-  const [itemType, setItemType]       = useState('');
+  const [category, setCategory]     = useState('');
+  const [itemType, setItemType]     = useState('');
+  const [name, setName]             = useState('');
+  const [brand, setBrand]           = useState('');
   const [description, setDescription] = useState('');
-  const [weight, setWeight]           = useState(''); // we'll parse to Number if provided
-  const [price, setPrice]             = useState(''); // parse to Number
-  const [link, setLink]               = useState('');
-  const [worn, setWorn]               = useState(false);
-  const [consumable, setConsumable]   = useState(false);
-  const [quantity, setQuantity]       = useState(1);
+  const [weight, setWeight]         = useState('');
+  const [price, setPrice]           = useState('');
+  const [link, setLink]             = useState('');
+  const [worn, setWorn]             = useState(false);
+  const [consumable, setConsumable] = useState(false);
+  const [quantity, setQuantity]     = useState(1);
+  const [loading, setLoading]       = useState(false);
 
   const handleSubmit = async e => {
     e.preventDefault();
+    if (!category) return alert('Category is required.');
+    if (!name.trim()) return alert('Name is required.');
 
-    // Basic required check
-    if (!category) {
-      return alert('Category is required.');
-    }
-    if (!name.trim()) {
-      return alert('Name is required.');
-    }
-
-    // Build payload
     const payload = { category, name: name.trim() };
-
-    if (brand.trim())       payload.brand       = brand.trim();
     if (itemType.trim())    payload.itemType    = itemType.trim();
+    if (brand.trim())       payload.brand       = brand.trim();
     if (description.trim()) payload.description = description.trim();
     if (weight)             payload.weight      = Number(weight);
     if (price)              payload.price       = Number(price);
     if (link.trim())        payload.link        = link.trim();
-    payload.worn       = worn;
+    payload.worn = worn;
     payload.consumable = consumable;
-    payload.quantity   = Number(quantity);
+    payload.quantity = Number(quantity);
 
+    setLoading(true);
     try {
       await api.post('/global/items', payload);
-      onCreated();  // refresh the sidebar items list
-      onClose();    // close the modal
+      onCreated();
+      onClose();
     } catch (err) {
       console.error('Error creating global item:', err);
       alert('Failed to create item.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-lg w-96 max-h-[90vh] overflow-auto"
+        className="bg-sand rounded-lg shadow-2xl max-w-xl w-full p-6"
       >
-        <h2 className="text-xl font-semibold mb-4">New Gear Item</h2>
-
-        {/* Category */}
-        <label className="block mb-3">
-          Category<span className="text-red-500">*</span>
-          <select
-            required
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-pine">New Gear Item</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="text-ember hover:text-ember/80"
           >
-            <option value="">Select category</option>
-            {categories.map(cat => (
-              <option key={cat._id} value={cat.title}>
-                {cat.title}
-              </option>
-            ))}
-          </select>
-        </label>
+            <FaTimes />
+          </button>
+        </div>
 
-        {/* Name */}
-        <label className="block mb-3">
-          Name<span className="text-red-500">*</span>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-            required
-          />
-        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Category<span className="text-red-500">*</span>
+            </label>
+            <select
+              required
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            >
+              <option value="">Select category</option>
+              {categories.map(cat => (
+                <option key={cat._id} value={cat.title}>{cat.title}</option>
+              ))}
+            </select>
+          </div>
 
-        {/* Brand */}
-        <label className="block mb-3">
-          Brand
-          <input
-            type="text"
-            value={brand}
-            onChange={e => setBrand(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
+          {/* Item Type */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Item Type</label>
+            <input
+              type="text"
+              placeholder="Shelter"
+              value={itemType}
+              onChange={e => setItemType(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
 
-        {/* Item Type */}
-        <label className="block mb-3">
-          Type
-          <input
-            type="text"
-            value={itemType}
-            onChange={e => setItemType(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Name<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
 
-        {/* Description */}
-        <label className="block mb-3">
-          Description
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-            rows={2}
-          />
-        </label>
+          {/* Brand */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Brand</label>
+            <input
+              type="text"
+              value={brand}
+              onChange={e => setBrand(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
 
-        {/* Weight */}
-        <label className="block mb-3">
-          Weight (g)
-          <input
-            type="number"
-            min="0"
-            value={weight}
-            onChange={e => setWeight(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
+          {/* Weight */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Weight (g)</label>
+            <input
+              type="number"
+              min="0"
+              value={weight}
+              onChange={e => setWeight(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
 
-        {/* Price */}
-        <label className="block mb-3">
-          Price (USD)
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={price}
-            onChange={e => setPrice(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Price (USD)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={e => setPrice(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
 
-        {/* Link */}
-        <label className="block mb-3">
-          Link
-          <input
-            type="url"
-            value={link}
-            onChange={e => setLink(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
+          {/* Description (span two columns) */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-pine mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+              rows={2}
+            />
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Link</label>
+            <input
+              type="url"
+              value={link}
+              onChange={e => setLink(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Quantity</label>
+            <input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={e => setQuantity(e.target.value)}
+              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+            />
+          </div>
+        </div>
 
         {/* Worn / Consumable */}
-        <div className="flex items-center space-x-4 mb-3">
-          <label className="inline-flex items-center">
+        <div className="flex items-center space-x-4 mt-4">
+          <label className="inline-flex items-center text-pine">
             <input
               type="checkbox"
               checked={worn}
@@ -169,7 +189,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             />
             Worn
           </label>
-          <label className="inline-flex items-center">
+          <label className="inline-flex items-center text-pine">
             <input
               type="checkbox"
               checked={consumable}
@@ -180,30 +200,20 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
           </label>
         </div>
 
-        {/* Quantity */}
-        <label className="block mb-3">
-          Quantity
-          <input
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={e => setQuantity(e.target.value)}
-            className="mt-1 block w-full border rounded p-2"
-          />
-        </label>
-
         {/* Actions */}
-        <div className="flex justify-end space-x-2 mt-4">
+        <div className="flex justify-end space-x-2 mt-6">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
+            disabled={loading}
+            className="px-4 py-2 bg-sand rounded hover:bg-sand/90 text-pine"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={loading}
+            className="px-4 py-2 bg-teal text-white rounded hover:bg-teal-700"
           >
             Save
           </button>

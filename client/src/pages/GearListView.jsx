@@ -184,7 +184,7 @@ export default function GearListView({
           rounded-lg
           p-3
           flex flex-col
-          h-full
+          h-96/100
           rounded-b-lg
           mb-4
         "

@@ -184,7 +184,7 @@ export default function Sidebar({
 
   return (
     <div className="h-full flex overflow-hidden">
-      <div className={`relative bg-pine text-sand transition-all duration-300 ${widthClass}`}>
+      <div className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}>
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(c => !c)}
@@ -197,10 +197,10 @@ export default function Sidebar({
           <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists */}
             <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
-              <h2 className="font-bold mb-2 text-sand">Gear Lists</h2>
+              <h2 className="font-bold mb-2 text-sunset">Gear Lists</h2>
               <div className="flex mb-3">
                 <input
-                  className="flex-1 rounded-lg p-2 text-pine"
+                  className="flex-1 rounded-lg p-2 bg-sand text-pine border-pine"
                   placeholder="New list"
                   value={newListTitle}
                   onChange={e => setNewListTitle(e.target.value)}
@@ -208,7 +208,7 @@ export default function Sidebar({
                 <button
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 px-4 bg-teal text-white rounded-lg shadow"
+                  className="ml-2 px-4 bg-sunset text-pine rounded-lg shadow hover:bg-sunset/80"
                 >
                   Create
                 </button>
@@ -219,15 +219,15 @@ export default function Sidebar({
                     {editingId === l._id ? (
                       <>
                         <input
-                          className="flex-1 rounded-lg p-1 text-pine"
+                          className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
                           value={editingTitle}
                           onChange={e => setEditingTitle(e.target.value)}
                         />
-                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sand">
-                          Save
+                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sunset">
+                          ✓
                         </button>
-                        <button onClick={cancelEditList} className="ml-1 text-sand">
-                          Cancel
+                        <button onClick={cancelEditList} className="ml-1 text-ember">
+                          ×
                         </button>
                       </>
                     ) : (
@@ -236,15 +236,15 @@ export default function Sidebar({
                           onClick={() => onSelectList(l._id)}
                           className={`flex-1 text-left p-2 rounded-lg ${
                             l._id === currentListId
-                              ? 'bg-teal text-white'
-                              : 'hover:bg-sand hover:text-pine'
+                              ? 'bg-teal text-sand'
+                              : 'hover:bg-sunset hover:text-pine'
                           }`}
                         >
                           {l.title}
                         </button>
                         <FaEdit
                           onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-sand"
+                          className="ml-2 cursor-pointer text-sunset"
                         />
                         <FaTrash
                           onClick={() => deleteList(l._id)}
@@ -259,7 +259,7 @@ export default function Sidebar({
 
             {/* Catalog / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
-              <div className="flex justify-between items-center mb-2 text-sand">
+              <div className="flex justify-between items-center mb-2 text-sunset">
                 <h2 className="font-bold">Catalog</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -271,7 +271,7 @@ export default function Sidebar({
               </div>
 
               <input
-                className="w-full rounded-lg p-2 text-pine border border-pine mb-3"
+                className="w-full rounded-lg p-2 bg-sand text-pine border border-pine mb-3"
                 placeholder="Search catalog"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -280,33 +280,42 @@ export default function Sidebar({
               <ul className="overflow-y-auto flex-1 space-y-2">
                 {items.length > 0 ? (
                   items.map(item => (
-                    <li
-                      key={item._id}
-                      className="flex justify-between items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sand">
-                          {item.itemType} – {item.name}
-                        </span>
-                        <FaEdit
-                          onClick={() => setEditingGlobalItem(item)}
-                          className="cursor-pointer text-sand hover:text-sand-700"
-                          title="Edit global template"
-                        />
-                        <FaTrash
-                          onClick={() => deleteGlobalItem(item._id)}
-                          className="cursor-pointer text-ember hover:text-ember/80"
-                          title="Delete global template"
-                        />
-                      </div>
-                      <button
-                        onClick={() => addToList(item)}
-                        disabled={!categories.length}
-                        className="p-1 bg-teal text-white rounded-lg disabled:opacity-50"
-                      >
-                        <FaPlus />
-                      </button>
-                    </li>
+<li
+  key={item._id}
+  className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+>
+  {/* left: truncated text */}
+  <span className="flex-1 truncate text-sand">
+    {item.itemType} – {item.name}
+  </span>
+
+  {/* right: action buttons */}
+  <div className="flex items-center space-x-2 ml-4">
+    <button
+      onClick={() => setEditingGlobalItem(item)}
+      title="Edit global template"
+      className="hover:text-sand/80 text-sand rounded-lg "
+    >
+      <FaEdit />
+    </button>
+    <button
+      onClick={() => deleteGlobalItem(item._id)}
+      title="Delete global template"
+      className="text-ember hover:text-ember/80"
+    >
+      <FaTrash />
+    </button>
+    <button
+      onClick={() => addToList(item)}
+      disabled={!categories.length}
+      title="Add item to list"
+      className="p-1  hover:text-sunset/80 text-sunset rounded-lg disabled:opacity-50"
+    >
+      <FaPlus />
+    </button>
+  </div>
+</li>
+
                   ))
                 ) : (
                   <li className="text-pine/70 p-2">No catalog items</li>

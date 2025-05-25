@@ -180,40 +180,42 @@ export default function GearListView({
           flex-shrink-0
           m-2
           w-4/5 md:w-64
-          bg-sand/20
+          bg-teal
           rounded-lg
           p-3
           flex flex-col
           h-full
+          rounded-b-lg
+          mb-4
         "
       >
         {/* header */}
-        <div className="flex items-center mb-2">
+        <div className="flex items-center mb-0 p-2 bg-teal rounded-lg rounded-b-none">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-pine"
+            className="mr-2 cursor-grab text-sunset"
             style={{ touchAction: 'none' }}       // ← disable scrolling when touching the handle
           />
           {editingCatId === category._id ? (
             <input
               value={local}
               onChange={e => setLocal(e.target.value)}
-              className="flex-1 border border-pine rounded p-1"
+              className="flex-1 border border-sunset bg-sand rounded p-1"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-pine">{category.title}</h3>
+            <h3 className="flex-1 font-semibold text-sand">{category.title}</h3>
           )}
           {editingCatId === category._id ? (
             <>
-              <button onClick={() => saveCat(category._id, local)} className="text-teal mr-2">✓</button>
+              <button onClick={() => saveCat(category._id, local)} className="text-sunset mr-2">✓</button>
               <button onClick={() => setEditingCatId(null)} className="text-ember">×</button>
             </>
           ) : (
             <>
               <FaEdit
                 onClick={() => { setEditingCatId(category._id); setLocal(category.title); }}
-                className="mr-2 cursor-pointer text-pine"
+                className="mr-2 cursor-pointer text-sunset"
               />
               <FaTrash
                 onClick={() => deleteCat(category._id)}
@@ -240,7 +242,7 @@ export default function GearListView({
         {/* add item */}
         <button
           onClick={() => setShowAddModalCat(category._id)}
-          className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20 flex-none"
+          className="h-12 w-full bg-sunset border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sunset/80 flex-none"
         >
           <FaPlus /><span className="text-xs">Add Item</span>
         </button>
@@ -290,19 +292,31 @@ export default function GearListView({
             {/* Add New Category */}
             <div className="snap-center flex-shrink-0 m-2 w-4/5 md:w-64 flex flex-col h-full">
               {addingNewCat ? (
-                <div className="bg-sand/10 rounded-lg p-3 flex-1 flex flex-col">
-                  <input
-                    autoFocus
-                    value={newCatName}
-                    onChange={e => setNewCatName(e.target.value)}
-                    placeholder="Category name"
-                    className="border border-pine rounded p-1 mb-2"
-                  />
-                  <div className="flex justify-end space-x-2 mt-auto">
-                    <button onClick={cancelAddCat} className="text-ember">×</button>
-                    <button onClick={confirmAddCat} className="text-teal">✓</button>
-                  </div>
-                </div>
+<div className="bg-sand/10 rounded-lg p-3 flex-1">
+  <div className="flex items-center space-x-2">
+    <input
+      autoFocus
+      value={newCatName}
+      onChange={e => setNewCatName(e.target.value)}
+      placeholder="Category name"
+      className="flex-1 border border-pine rounded p-1 bg-sand text-pine"
+    />
+    <button
+      onClick={cancelAddCat}
+      className="text-ember p-1 hover:text-ember/80"
+      aria-label="Cancel"
+    >
+      ×
+    </button>
+    <button
+      onClick={confirmAddCat}
+      className="text-teal p-1 hover:text-teal-700"
+      aria-label="Confirm"
+    >
+      ✓
+    </button>
+  </div>
+</div>
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}

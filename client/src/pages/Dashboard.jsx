@@ -26,7 +26,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-sand">
       {/* TopBar */}
-      <header className="flex items-center justify-between flex-none h-16 bg-pine px-6 shadow-lg">
+      <header className="flex items-center justify-between flex-none h-16 bg-teal px-6 shadow-lg">
         <div className="flex items-center space-x-4">
           <img src={logo} alt="PackPlanner logo" className="h-10 w-auto" />
           <h1 className="text-3xl font-serif text-sand">PackPlanner</h1>

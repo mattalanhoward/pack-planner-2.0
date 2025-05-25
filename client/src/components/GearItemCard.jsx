@@ -14,20 +14,20 @@ export default function GearItemCard({
   onDelete,
 }) {
   return (
-    <div className="bg-white p-3 rounded shadow flex flex-col justify-between">
+    <div className="bg-sand p-3 rounded shadow flex flex-col justify-between">
       {/* First row: Item Type */}
-      <div className="text-base font-semibold text-gray-800">
+      <div className="text-base font-semibold text-pine-800">
         {item.itemType || '—'}
       </div>
 
       {/* Second row: Brand, Name */}
-      <div className="text-sm font-medium text-gray-700 my-1">
+      <div className="text-sm font-medium text-pine-700 my-1">
         {item.brand && <span className="mr-1">{item.brand}</span>}
         {item.name}
       </div>
 
       {/* Third row: Weight + inline toggles, price, qty, delete */}
-      <div className="flex items-center justify-between text-sm text-gray-600 mt-3">
+      <div className="flex items-center justify-between text-sm text-pine-600 mt-3">
         {/* Weight */}
         <span>{item.weight != null ? `${item.weight}g` : ''}</span>
 
@@ -70,7 +70,7 @@ export default function GearItemCard({
           <select
             value={item.quantity}
             onChange={e => onQuantityChange(item._id, Number(e.target.value))}
-            className="border rounded p-1"
+            className="border bg-sand border-pine rounded p-1"
           >
             {[...Array(10)].map((_, i) => (
               <option key={i+1} value={i+1}>
@@ -82,7 +82,7 @@ export default function GearItemCard({
           {/* Delete icon */}
           <button
             onClick={() => onDelete(item._id)}
-            className="hover:text-gray-800"
+            className="hover:text-ember/80 text-ember"
             title="Delete item"
           >
             <FaTrash />

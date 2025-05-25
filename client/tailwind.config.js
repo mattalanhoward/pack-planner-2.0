@@ -5,11 +5,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        pine: '#264653',
-        teal: '#2A9D8F',
-        sand: '#E9C46A',
-        sunset: '#F4A261',
-        ember: '#E76F51',
+pine:   '#163A28',  // rgb(22, 58, 40)
+teal:   '#25554D',  // rgb(37, 85, 77)
+sand:   '#FCEFC9',  // rgb(252, 239, 201)
+sunset: '#E0B251',  // rgb(224, 178, 81)
+ember: '#E76F51',
       },
     },
   },

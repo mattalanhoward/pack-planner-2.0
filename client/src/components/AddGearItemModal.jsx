@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { FaTimes, FaSearch, FaSave } from 'react-icons/fa';
+import Swal from 'sweetalert2'
+import { toast } from 'react-hot-toast';
 
 export default function AddGearItemModal({
   listId,
@@ -30,7 +32,7 @@ export default function AddGearItemModal({
   }, [searchQuery]);
 
   const handleSave = async () => {
-    if (!selected) return alert('Please select an item');
+    if (!selected) return toast.error('Please select an item');
     setSaving(true);
     try {
       await api.post(
@@ -52,9 +54,10 @@ export default function AddGearItemModal({
       );
       onAdded();
       onClose();
+      toast.success('Item Added Successfully');
     } catch (err) {
       console.error('Error adding gear item:', err);
-      alert(err.response?.data?.message || 'Failed to add item');
+      toast.error(err.response?.data?.message || 'Failed to add item');
     } finally {
       setSaving(false);
     }

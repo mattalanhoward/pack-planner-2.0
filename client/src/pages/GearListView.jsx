@@ -25,6 +25,8 @@ import {
   FaTshirt,
 } from 'react-icons/fa';
 import AddGearItemModal from '../components/AddGearItemModal';
+import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 export default function GearListView({
   listId,
@@ -71,7 +73,7 @@ export default function GearListView({
     setItemsMap(m => ({ ...m, [catId]: data }));
   };
 
-  // — inline-edit handlers —
+  // — inline‐edit handlers for items —
   const toggleConsumable = async (catId, itemId) => {
     const item = itemsMap[catId].find(i => i._id === itemId);
     await api.patch(
@@ -98,14 +100,25 @@ export default function GearListView({
 
   // — delete an item —
   const deleteItem = async (catId, itemId) => {
-    if (!window.confirm('Delete this item?')) return;
-    await api.delete(
-      `/lists/${listId}/categories/${catId}/items/${itemId}`
-    );
-    fetchItems(catId);
+    const result = await Swal.fire({
+      title: 'Delete this item?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await api.delete(`/lists/${listId}/categories/${catId}/items/${itemId}`);
+      fetchItems(catId);
+      toast.success('Item deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete');
+    }
   };
 
-  // — add / cancel / delete / rename category —
+  // — add category —
   const confirmAddCat = async () => {
     const title = newCatName.trim();
     if (!title) return;
@@ -116,28 +129,58 @@ export default function GearListView({
     setCategories(c => [...c, data]);
     setNewCatName('');
     setAddingNewCat(false);
+    toast.success('Category Added! 🎉');
   };
   const cancelAddCat = () => setAddingNewCat(false);
+
+  // — delete category —
   const deleteCat = async id => {
-    if (!window.confirm('Delete this category?')) return;
-    await api.delete(`/lists/${listId}/categories/${id}`);
-    setCategories(c => c.filter(x => x._id !== id));
-    setItemsMap(m => {
-      const copy = { ...m };
-      delete copy[id];
-      return copy;
+    const result = await Swal.fire({
+      title: 'Delete this category?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
     });
-  };
-  const saveCat = async (id, title) => {
-    const { data } = await api.patch(
-      `/lists/${listId}/categories/${id}`,
-      { title }
-    );
-    setCategories(c => c.map(x => (x._id === id ? data : x)));
-    setEditingCatId(null);
+    if (!result.isConfirmed) return;
+    try {
+      await api.delete(`/lists/${listId}/categories/${id}`);
+      setCategories(c => c.filter(x => x._id !== id));
+      setItemsMap(m => {
+        const copy = { ...m };
+        delete copy[id];
+        return copy;
+      });
+      toast.success('Category deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete');
+    }
   };
 
-  // — DnD sensors & handler (shared) —
+  // — edit category name inline —
+  const editCat = async (id, title) => {
+    const newTitle = title.trim();
+    if (!newTitle) {
+      toast.error('Category name cannot be empty');
+      return;
+    }
+    try {
+      const { data } = await api.patch(
+        `/lists/${listId}/categories/${id}`,
+        { title: newTitle }
+      );
+      setCategories(cats =>
+        cats.map(c => (c._id === id ? data : c))
+      );
+      setEditingCatId(null);
+      toast.success('Category renamed');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to rename category');
+    }
+  };
+
+  // — DnD sensors & handler —
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
@@ -155,12 +198,13 @@ export default function GearListView({
     }
   };
 
-  // — Column mode: sortables —
+  // — Column mode —
   function SortableColumn({ category }) {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: category._id });
     const style = { transform: CSS.Transform.toString(transform), transition };
     const catId = category._id;
+    const [localTitle, setLocalTitle] = useState(category.title);
 
     return (
       <div
@@ -168,30 +212,57 @@ export default function GearListView({
         style={style}
         className="snap-center flex-shrink-0 m-2 w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
       >
-        {/* header */}
         <div className="flex items-center mb-2">
           <FaGripVertical {...attributes} {...listeners}
-            className="mr-2 cursor-grab text-pine"/>
-          <h3 className="flex-1 font-semibold text-pine">
-            {category.title}
-          </h3>
-          <FaEdit
-            onClick={() => setEditingCatId(category._id)}
-            className="mr-2 cursor-pointer text-teal"
-          />
-          <FaTrash
-            onClick={() => deleteCat(catId)}
-            className="cursor-pointer text-ember"
-          />
+            className="mr-2 cursor-grab text-pine" />
+
+          {editingCatId === catId ? (
+            <input
+              value={localTitle}
+              onChange={e => setLocalTitle(e.target.value)}
+              className="flex-1 border border-pine rounded p-1 bg-white"
+            />
+          ) : (
+            <h3 className="flex-1 font-semibold text-pine">
+              {category.title}
+            </h3>
+          )}
+
+          {editingCatId === catId ? (
+            <>
+              <button
+                onClick={() => editCat(catId, localTitle)}
+                className="text-teal mr-2"
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => setEditingCatId(null)}
+                className="text-ember"
+              >
+                ×
+              </button>
+            </>
+          ) : (
+            <>
+              <FaEdit
+                onClick={() => {
+                  setEditingCatId(catId);
+                  setLocalTitle(category.title);
+                }}
+                className="mr-2 cursor-pointer text-teal"
+              />
+              <FaTrash
+                onClick={() => deleteCat(catId)}
+                className="cursor-pointer text-ember"
+              />
+            </>
+          )}
         </div>
 
-        {/* items */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-2">
           {(itemsMap[catId] || []).map(item => (
-            <div
-              key={item._id}
-              className="bg-white p-3 rounded shadow flex flex-col"
-            >
+            <div key={item._id} className="bg-white p-3 rounded shadow flex flex-col">
               <div className="flex-1">
                 <div className="text-lg font-semibold text-gray-800">
                   {item.itemType || '—'}
@@ -224,9 +295,7 @@ export default function GearListView({
                     className="border rounded p-1"
                   >
                     {[...Array(10)].map((_, i) => (
-                      <option key={i+1} value={i+1}>
-                        {i+1}
-                      </option>
+                      <option key={i+1} value={i+1}>{i+1}</option>
                     ))}
                   </select>
                   <FaTrash
@@ -239,14 +308,12 @@ export default function GearListView({
           ))}
         </div>
 
-        {/* add item */}
         <button
           onClick={() => setShowAddModalCat(catId)}
           className="h-12 w-full border border-teal rounded flex items-center justify-center space-x-2 text-teal hover:bg-teal/10"
         >
           <FaPlus /><span className="text-xs">Add Item</span>
         </button>
-
         {showAddModalCat === catId && (
           <AddGearItemModal
             listId={listId}
@@ -259,12 +326,13 @@ export default function GearListView({
     );
   }
 
-  // — List mode: sortables & one-line desktop / two-line mobile cards —
+  // — List mode —
   function SortableSection({ category }) {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: category._id });
     const style = { transform: CSS.Transform.toString(transform), transition };
     const catId = category._id;
+    const [localTitle, setLocalTitle] = useState(category.title);
 
     return (
       <section
@@ -272,22 +340,55 @@ export default function GearListView({
         style={style}
         className="bg-sand/20 rounded-lg p-4 mb-6"
       >
-        {/* header */}
         <div className="flex items-center mb-3">
           <FaGripVertical {...attributes} {...listeners}
             className="mr-2 cursor-grab text-pine" />
-          <h3 className="flex-1 font-semibold text-pine">{category.title}</h3>
-          <FaEdit
-            onClick={() => setEditingCatId(catId)}
-            className="mr-2 cursor-pointer text-teal"
-          />
-          <FaTrash
-            onClick={() => deleteCat(catId)}
-            className="cursor-pointer text-ember"
-          />
+
+          {editingCatId === catId ? (
+            <input
+              value={localTitle}
+              onChange={e => setLocalTitle(e.target.value)}
+              className="flex-1 border border-pine rounded p-1 bg-white"
+            />
+          ) : (
+            <h3 className="flex-1 font-semibold text-pine">
+              {category.title}
+            </h3>
+          )}
+
+          {editingCatId === catId ? (
+            <>
+              <button
+                onClick={() => editCat(catId, localTitle)}
+                className="text-teal mr-2"
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => setEditingCatId(null)}
+                className="text-ember"
+              >
+                ×
+              </button>
+            </>
+          ) : (
+            <>
+              <FaEdit
+                onClick={() => {
+                  setEditingCatId(catId);
+                  setLocalTitle(category.title);
+                }}
+                className="mr-2 cursor-pointer text-teal"
+              />
+              <FaTrash
+                onClick={() => deleteCat(catId)}
+                className="cursor-pointer text-ember"
+              />
+            </>
+          )}
         </div>
 
-        {/* items */}
+        {/* ← **items** */}
         {(itemsMap[catId] || []).map(item => (
           <div
             key={item._id}
@@ -297,15 +398,12 @@ export default function GearListView({
               md:flex-row md:justify-between md:space-y-0 md:items-center
             "
           >
-            {/* left: type, brand, name, description */}
             <div className="flex-1 flex flex-wrap items-center space-x-2">
               <span className="font-semibold">{item.itemType}</span>
               <span>{item.brand}</span>
               <span>{item.name}</span>
               <span className="hidden md:inline">— {item.description}</span>
             </div>
-
-            {/* right: weight, toggles, price, qty, delete */}
             <div className="flex items-center space-x-3">
               <span>{item.weight != null ? `${item.weight}g` : ''}</span>
               <FaUtensils
@@ -322,10 +420,11 @@ export default function GearListView({
               />
               {item.price != null && (
                 item.link ? (
-                  <a href={item.link}
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="text-teal hover:underline"
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teal hover:underline"
                   >
                     ${item.price}
                   </a>
@@ -352,13 +451,13 @@ export default function GearListView({
           </div>
         ))}
 
+        {/* ← Add Item button */}
         <button
           onClick={() => setShowAddModalCat(catId)}
           className="mt-2 px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
         >
           <FaPlus className="mr-2" /> Add Item
         </button>
-
         {showAddModalCat === catId && (
           <AddGearItemModal
             listId={listId}
@@ -371,11 +470,9 @@ export default function GearListView({
     );
   }
 
-  // — main render —
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <h2 className="px-4 pt-4 text-2xl font-bold text-pine">{listName}</h2>
-
       {viewMode === 'list' ? (
         <DndContext
           sensors={sensors}
@@ -390,8 +487,7 @@ export default function GearListView({
               {categories.map(cat => (
                 <SortableSection key={cat._id} category={cat} />
               ))}
-
-              {/* bottom “Add New Category” */}
+              {/* Add New Category at bottom */}
               <div className="px-4 mt-4">
                 {addingNewCat ? (
                   <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
@@ -431,7 +527,6 @@ export default function GearListView({
               {categories.map(cat => (
                 <SortableColumn key={cat._id} category={cat} />
               ))}
-
               {/* Add New Category column */}
               <div className="snap-center flex-shrink-0 m-2 w-64 flex flex-col h-full">
                 {addingNewCat ? (

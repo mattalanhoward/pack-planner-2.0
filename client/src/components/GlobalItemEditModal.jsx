@@ -1,6 +1,9 @@
+// src/components/GlobalItemEditModal.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { FaTimes, FaCheck } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -52,12 +55,21 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
   const handleSave = async () => {
     const err = validate();
-    if (err)      return setError(err);
-    if (
-      !window.confirm(
-        'This change will apply to every instance of this item. Continue?'
-      )
-    ) return;
+    if (err) {
+      setError(err);
+      toast.error(err);
+      return;
+    }
+
+    const { isConfirmed } = await Swal.fire({
+      title: 'Apply changes to every instance?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, update all',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+    if (!isConfirmed) return;
 
     setSaving(true);
     setError('');
@@ -75,11 +87,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         consumable,
         quantity,
       });
+      toast.success('Global item updated');
       onSaved();
       onClose();
     } catch (e) {
       console.error('Error saving global item:', e);
-      setError('Failed to save. Please try again.');
+      const msg = e.response?.data?.message || 'Failed to save. Please try again.';
+      await Swal.fire({ icon: 'error', title: 'Save failed', text: msg });
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -188,20 +203,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-pine mb-1">Quantity</label>
-            <input
-              type="number"
-              name="quantity"
-              min="1"
-              value={quantity}
-              onChange={e => setQuantity(Number(e.target.value))}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4 mt-4">
+<div className="flex items-center space-x-4 mt-4">
           <label className="inline-flex items-center text-pine">
             <input
               type="checkbox"
@@ -221,6 +223,9 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Consumable
           </label>
         </div>
+        </div>
+
+        
 
         <div className="flex justify-end space-x-2 mt-6">
           <button

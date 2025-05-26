@@ -1,6 +1,9 @@
+// src/components/GlobalItemModal.jsx
 import React, { useState } from 'react';
 import api from '../services/api';
 import { FaTimes } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 export default function GlobalItemModal({ categories = [], onClose, onCreated }) {
   const [category, setCategory]     = useState('');
@@ -18,8 +21,14 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!category) return alert('Category is required.');
-    if (!name.trim()) return alert('Name is required.');
+    if (!category) {
+      toast.error('Category is required.');
+      return;
+    }
+    if (!name.trim()) {
+      toast.error('Name is required.');
+      return;
+    }
 
     const payload = { category, name: name.trim() };
     if (itemType.trim())    payload.itemType    = itemType.trim();
@@ -35,11 +44,18 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
     setLoading(true);
     try {
       await api.post('/global/items', payload);
+      toast.success('Global item created!');
       onCreated();
       onClose();
     } catch (err) {
       console.error('Error creating global item:', err);
-      alert('Failed to create item.');
+      const msg = err.response?.data?.message || 'Failed to create item.';
+      await Swal.fire({
+        icon: 'error',
+        title: 'Creation Failed',
+        text: msg,
+      });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

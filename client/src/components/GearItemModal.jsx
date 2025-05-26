@@ -1,6 +1,11 @@
+// IS THIS BEING USED? //
+
+// src/components/GearItemModal.jsx
 import React, { useState } from 'react';
 import api from '../services/api';
 import { FaTimes, FaSave } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 export default function GearItemModal({ listId, categoryId, item, onClose, onSaved }) {
   const [quantity, setQuantity] = useState(item.quantity || 0);
@@ -13,11 +18,17 @@ export default function GearItemModal({ listId, categoryId, item, onClose, onSav
         `/lists/${listId}/categories/${categoryId}/items/${item._id}`,
         { quantity }
       );
+      toast.success('Quantity updated');
       onSaved();
       onClose();
     } catch (err) {
       console.error('Error saving item:', err);
-      alert('Failed to save changes');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Save failed',
+        text: err.response?.data?.message || 'Failed to save changes',
+      });
+      toast.error('Could not save changes');
     } finally {
       setLoading(false);
     }

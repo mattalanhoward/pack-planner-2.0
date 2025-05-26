@@ -10,6 +10,8 @@ import {
 } from 'react-icons/fa';
 import GlobalItemModal from './GlobalItemModal';
 import GlobalItemEditModal from './GlobalItemEditModal';
+import Swal from 'sweetalert2';
+import { toast } from 'react-hot-toast';
 
 export default function Sidebar({
   currentListId,
@@ -85,48 +87,90 @@ export default function Sidebar({
     fetchGlobalItems();
   }, [searchQuery]);
 
-  // === Gear‐list CRUD ===
+   // === Gear‐list CRUD ===
 
+  // Create
   const createList = async () => {
     const title = newListTitle.trim();
-    if (!title) return;
+    if (!title) {
+      toast.error('List name cannot be empty.');
+      return;
+    }
     try {
       await api.post('/lists', { title });
       setNewListTitle('');
       await fetchLists();
+      toast.success('List created!');
     } catch (err) {
       console.error('Error creating list:', err);
-      const msg = err.response?.data?.message || 'Could not create list.';
-      alert(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Creation Failed',
+        text: err.response?.data?.message || 'Could not create list.',
+      });
     }
   };
 
-  const startEditList  = (id, title) => { setEditingId(id); setEditingTitle(title); };
-  const saveEditList   = async id => {
+  // Start inline edit
+  const startEditList = (id, title) => {
+    setEditingId(id);
+    setEditingTitle(title);
+  };
+
+  // Save inline edit
+  const saveEditList = async id => {
     const title = editingTitle.trim();
-    if (!title) return;
+    if (!title) {
+      toast.error('List name cannot be empty.');
+      return;
+    }
     try {
       await api.patch(`/lists/${id}`, { title });
       setEditingId(null);
       setEditingTitle('');
       await fetchLists();
       if (currentListId === id) onSelectList(id);
+      toast.success('List renamed!');
     } catch (err) {
       console.error('Error updating list:', err);
-      alert('Could not update list name.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: 'Could not update list name.',
+      });
     }
   };
-  const cancelEditList = () => { setEditingId(null); setEditingTitle(''); };
+  const cancelEditList = () => {
+    setEditingId(null);
+    setEditingTitle('');
+  };
 
+  // Delete
   const deleteList = async id => {
-    if (!window.confirm('Delete this gear list? This cannot be undone.')) return;
+    const list = lists.find(l => l._id === id);
+    const result = await Swal.fire({
+      title: `Delete ${list.title} Gear List?`,
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/lists/${id}`);
       await fetchLists();
       if (currentListId === id) onSelectList(null);
+      toast.success('List deleted');
     } catch (err) {
       console.error('Error deleting list:', err);
-      alert('Could not delete list.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Deletion Failed',
+        text: 'Could not delete list.',
+      });
     }
   };
 
@@ -165,16 +209,28 @@ export default function Sidebar({
     }
   };
 
+   // — delete an item —
+  
   const deleteGlobalItem = async id => {
-    if (!window.confirm('Delete this global template and all its instances?')) return;
+    const item = items.find(i => i._id === id);
+          const result = await Swal.fire({
+        title: `Delete ${item.brand} ${item.name} and all its instances?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete Item',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+      });
+      if (!result.isConfirmed) return;
     try {
       await api.delete(`/global/items/${id}`);
       fetchGlobalItems();
       onTemplateEdited();     // <— notify boards to refresh
+      toast.success('Item deleted');
+
     } catch (err) {
       console.error('Error deleting global item:', err);
-      const msg = err.response?.data?.message || 'Could not delete template.';
-      alert(msg);
+      toast.error(err.response?.data?.message || 'Failed to delete');
     }
   };
 

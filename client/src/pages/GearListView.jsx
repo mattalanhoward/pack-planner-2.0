@@ -12,28 +12,35 @@ import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FaGripVertical, FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
-
-import GearItemCard from '../components/GearItemCard';
+import {
+  FaGripVertical,
+  FaEdit,
+  FaTrash,
+  FaPlus,
+  FaUtensils,
+  FaTshirt,
+} from 'react-icons/fa';
 import AddGearItemModal from '../components/AddGearItemModal';
 
 export default function GearListView({
   listId,
   refreshToggle,
   templateToggle,
+  viewMode,     // "columns" or "list"
 }) {
   const [listName, setListName]     = useState('');
   const [categories, setCategories] = useState([]);
   const [itemsMap, setItemsMap]     = useState({});
-  const [editingCatId, setEditingCatId] = useState(null);
-  const [addingNewCat, setAddingNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
+  const [editingCatId, setEditingCatId]   = useState(null);
+  const [addingNewCat, setAddingNewCat]   = useState(false);
+  const [newCatName, setNewCatName]       = useState('');
   const [showAddModalCat, setShowAddModalCat] = useState(null);
 
-  // 1) Load list title
+  // — fetch list title —
   useEffect(() => {
     if (!listId) return;
     (async () => {
@@ -43,7 +50,7 @@ export default function GearListView({
     })();
   }, [listId]);
 
-  // 2) Load categories on id / toggles change
+  // — load categories —
   useEffect(() => {
     if (!listId) return;
     (async () => {
@@ -52,7 +59,7 @@ export default function GearListView({
     })();
   }, [listId, refreshToggle, templateToggle]);
 
-  // 3) Load items for each category
+  // — load items —
   useEffect(() => {
     categories.forEach(cat => fetchItems(cat._id));
   }, [categories, refreshToggle, templateToggle]);
@@ -64,8 +71,7 @@ export default function GearListView({
     setItemsMap(m => ({ ...m, [catId]: data }));
   };
 
-  // —— inline‐edit handlers —— //
-
+  // — inline-edit handlers —
   const toggleConsumable = async (catId, itemId) => {
     const item = itemsMap[catId].find(i => i._id === itemId);
     await api.patch(
@@ -74,7 +80,6 @@ export default function GearListView({
     );
     fetchItems(catId);
   };
-
   const toggleWorn = async (catId, itemId) => {
     const item = itemsMap[catId].find(i => i._id === itemId);
     await api.patch(
@@ -83,7 +88,6 @@ export default function GearListView({
     );
     fetchItems(catId);
   };
-
   const updateQuantity = async (catId, itemId, qty) => {
     await api.patch(
       `/lists/${listId}/categories/${catId}/items/${itemId}`,
@@ -92,9 +96,7 @@ export default function GearListView({
     fetchItems(catId);
   };
 
-  // —— end inline‐edit handlers —— //
-
-  // delete an item
+  // — delete an item —
   const deleteItem = async (catId, itemId) => {
     if (!window.confirm('Delete this item?')) return;
     await api.delete(
@@ -103,7 +105,7 @@ export default function GearListView({
     fetchItems(catId);
   };
 
-  // add new category
+  // — add / cancel / delete / rename category —
   const confirmAddCat = async () => {
     const title = newCatName.trim();
     if (!title) return;
@@ -115,12 +117,7 @@ export default function GearListView({
     setNewCatName('');
     setAddingNewCat(false);
   };
-  const cancelAddCat = () => {
-    setNewCatName('');
-    setAddingNewCat(false);
-  };
-
-  // delete / rename category
+  const cancelAddCat = () => setAddingNewCat(false);
   const deleteCat = async id => {
     if (!window.confirm('Delete this category?')) return;
     await api.delete(`/lists/${listId}/categories/${id}`);
@@ -140,14 +137,9 @@ export default function GearListView({
     setEditingCatId(null);
   };
 
-  // DnD setup
+  // — DnD sensors & handler (shared) —
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 20,    // need to drag 20px before a “drag” begins
-        delay: 150       // or press for 150ms
-      }
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
   const handleDragEnd = async ({ active, over }) => {
     if (over && active.id !== over.id) {
@@ -163,172 +155,310 @@ export default function GearListView({
     }
   };
 
-  // Sortable column
+  // — Column mode: sortables —
   function SortableColumn({ category }) {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: category._id });
     const style = { transform: CSS.Transform.toString(transform), transition };
-    const [local, setLocal] = useState(category.title);
     const catId = category._id;
 
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="
-          snap-center
-          flex-shrink-0
-          m-2
-          w-4/5 md:w-64
-          bg-teal
-          rounded-lg
-          p-3
-          flex flex-col
-          h-96/100
-          rounded-b-lg
-          mb-4
-        "
+        className="snap-center flex-shrink-0 m-2 w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
       >
         {/* header */}
-        <div className="flex items-center mb-0 p-2 bg-teal rounded-lg rounded-b-none">
-          <FaGripVertical
-            {...attributes}
-            {...listeners}
-            className="mr-2 cursor-grab text-sunset"
-            style={{ touchAction: 'none' }}       // ← disable scrolling when touching the handle
+        <div className="flex items-center mb-2">
+          <FaGripVertical {...attributes} {...listeners}
+            className="mr-2 cursor-grab text-pine"/>
+          <h3 className="flex-1 font-semibold text-pine">
+            {category.title}
+          </h3>
+          <FaEdit
+            onClick={() => setEditingCatId(category._id)}
+            className="mr-2 cursor-pointer text-teal"
           />
-          {editingCatId === category._id ? (
-            <input
-              value={local}
-              onChange={e => setLocal(e.target.value)}
-              className="flex-1 border border-sunset bg-sand rounded p-1"
-            />
-          ) : (
-            <h3 className="flex-1 font-semibold text-sand">{category.title}</h3>
-          )}
-          {editingCatId === category._id ? (
-            <>
-              <button onClick={() => saveCat(category._id, local)} className="text-sunset mr-2">✓</button>
-              <button onClick={() => setEditingCatId(null)} className="text-ember">×</button>
-            </>
-          ) : (
-            <>
-              <FaEdit
-                onClick={() => { setEditingCatId(category._id); setLocal(category.title); }}
-                className="mr-2 cursor-pointer text-sunset"
-              />
-              <FaTrash
-                onClick={() => deleteCat(category._id)}
-                className="cursor-pointer text-ember"
-              />
-            </>
-          )}
+          <FaTrash
+            onClick={() => deleteCat(catId)}
+            className="cursor-pointer text-ember"
+          />
         </div>
 
         {/* items */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-          {itemsMap[catId]?.map(item => (
-            <GearItemCard
+          {(itemsMap[catId] || []).map(item => (
+            <div
               key={item._id}
-              item={item}
-              onToggleConsumable={id => toggleConsumable(catId, id)}
-              onToggleWorn={id => toggleWorn(catId, id)}
-              onQuantityChange={(id, qty) => updateQuantity(catId, id, qty)}
-              onDelete={id => deleteItem(catId, id)}
-            />
+              className="bg-white p-3 rounded shadow flex flex-col"
+            >
+              <div className="flex-1">
+                <div className="text-lg font-semibold text-gray-800">
+                  {item.itemType || '—'}
+                </div>
+                <div className="text-sm text-gray-700 mt-1">
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-sm text-gray-600 mt-3">
+                <span>{item.weight != null ? `${item.weight}g` : ''}</span>
+                <div className="flex items-center space-x-3">
+                  <FaUtensils
+                    onClick={() => toggleConsumable(catId, item._id)}
+                    className={`cursor-pointer ${
+                      item.consumable ? 'text-green-600' : 'opacity-30'
+                    }`}
+                  />
+                  <FaTshirt
+                    onClick={() => toggleWorn(catId, item._id)}
+                    className={`cursor-pointer ${
+                      item.worn ? 'text-blue-600' : 'opacity-30'
+                    }`}
+                  />
+                  <select
+                    value={item.quantity}
+                    onChange={e =>
+                      updateQuantity(catId, item._id, Number(e.target.value))
+                    }
+                    className="border rounded p-1"
+                  >
+                    {[...Array(10)].map((_, i) => (
+                      <option key={i+1} value={i+1}>
+                        {i+1}
+                      </option>
+                    ))}
+                  </select>
+                  <FaTrash
+                    onClick={() => deleteItem(catId, item._id)}
+                    className="cursor-pointer text-red-500"
+                  />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
         {/* add item */}
         <button
-          onClick={() => setShowAddModalCat(category._id)}
-          className="h-12 w-full bg-sunset border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sunset/80 flex-none"
+          onClick={() => setShowAddModalCat(catId)}
+          className="h-12 w-full border border-teal rounded flex items-center justify-center space-x-2 text-teal hover:bg-teal/10"
         >
           <FaPlus /><span className="text-xs">Add Item</span>
         </button>
 
-        {showAddModalCat === category._id && (
+        {showAddModalCat === catId && (
           <AddGearItemModal
             listId={listId}
-            categoryId={category._id}
+            categoryId={catId}
             onClose={() => setShowAddModalCat(null)}
-            onAdded={() => fetchItems(category._id)}
+            onAdded={() => fetchItems(catId)}
           />
         )}
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col h-full p-4 overflow-hidden min-h-0">
-      <h2 className="text-2xl font-bold text-pine mb-4 flex-none">{listName}</h2>
+  // — List mode: sortables & one-line desktop / two-line mobile cards —
+  function SortableSection({ category }) {
+    const { attributes, listeners, setNodeRef, transform, transition } =
+      useSortable({ id: category._id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
+    const catId = category._id;
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+    return (
+      <section
+        ref={setNodeRef}
+        style={style}
+        className="bg-sand/20 rounded-lg p-4 mb-6"
       >
-        <SortableContext
-          items={categories.map(c => c._id)}
-          strategy={horizontalListSortingStrategy}
-        >
-          {/* ← scroll container now has touchAction pan-x and no vertical overflow */}
-          <div
-            className="
-              flex-1 flex flex-nowrap
-              snap-x snap-mandatory
-              overflow-x-auto overflow-y-hidden
-              px-4 overscroll-x-contain
-            "
-            style={{
-              touchAction: 'pan-x',               // horizontal only
-              WebkitOverflowScrolling: 'auto'     // disable momentum on iOS
-            }}
-          >
-            {categories.map(cat => (
-              <SortableColumn key={cat._id} category={cat} />
-            ))}
+        {/* header */}
+        <div className="flex items-center mb-3">
+          <FaGripVertical {...attributes} {...listeners}
+            className="mr-2 cursor-grab text-pine" />
+          <h3 className="flex-1 font-semibold text-pine">{category.title}</h3>
+          <FaEdit
+            onClick={() => setEditingCatId(catId)}
+            className="mr-2 cursor-pointer text-teal"
+          />
+          <FaTrash
+            onClick={() => deleteCat(catId)}
+            className="cursor-pointer text-ember"
+          />
+        </div>
 
-            {/* Add New Category */}
-            <div className="snap-center flex-shrink-0 m-2 w-4/5 md:w-64 flex flex-col h-full">
-              {addingNewCat ? (
-<div className="bg-sand/10 rounded-lg p-3 flex-1">
-  <div className="flex items-center space-x-2">
-    <input
-      autoFocus
-      value={newCatName}
-      onChange={e => setNewCatName(e.target.value)}
-      placeholder="Category name"
-      className="flex-1 border border-pine rounded p-1 bg-sand text-pine"
-    />
-    <button
-      onClick={cancelAddCat}
-      className="text-ember p-1 hover:text-ember/80"
-      aria-label="Cancel"
-    >
-      ×
-    </button>
-    <button
-      onClick={confirmAddCat}
-      className="text-teal p-1 hover:text-teal-700"
-      aria-label="Confirm"
-    >
-      ✓
-    </button>
-  </div>
-</div>
-              ) : (
-                <button
-                  onClick={() => setAddingNewCat(true)}
-                  className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20 flex-none"
-                >
-                  <FaPlus /><span className="text-xs">Add New Category</span>
-                </button>
+        {/* items */}
+        {(itemsMap[catId] || []).map(item => (
+          <div
+            key={item._id}
+            className="
+              bg-white rounded shadow p-4 mb-2
+              flex flex-col space-y-2
+              md:flex-row md:justify-between md:space-y-0 md:items-center
+            "
+          >
+            {/* left: type, brand, name, description */}
+            <div className="flex-1 flex flex-wrap items-center space-x-2">
+              <span className="font-semibold">{item.itemType}</span>
+              <span>{item.brand}</span>
+              <span>{item.name}</span>
+              <span className="hidden md:inline">— {item.description}</span>
+            </div>
+
+            {/* right: weight, toggles, price, qty, delete */}
+            <div className="flex items-center space-x-3">
+              <span>{item.weight != null ? `${item.weight}g` : ''}</span>
+              <FaUtensils
+                onClick={() => toggleConsumable(catId, item._id)}
+                className={`cursor-pointer ${
+                  item.consumable ? 'text-green-600' : 'opacity-30'
+                }`}
+              />
+              <FaTshirt
+                onClick={() => toggleWorn(catId, item._id)}
+                className={`cursor-pointer ${
+                  item.worn ? 'text-blue-600' : 'opacity-30'
+                }`}
+              />
+              {item.price != null && (
+                item.link ? (
+                  <a href={item.link}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="text-teal hover:underline"
+                  >
+                    ${item.price}
+                  </a>
+                ) : (
+                  <span>${item.price}</span>
+                )
               )}
+              <select
+                value={item.quantity}
+                onChange={e =>
+                  updateQuantity(catId, item._id, Number(e.target.value))
+                }
+                className="border rounded p-1"
+              >
+                {[...Array(10)].map((_, i) => (
+                  <option key={i+1} value={i+1}>{i+1}</option>
+                ))}
+              </select>
+              <FaTrash
+                onClick={() => deleteItem(catId, item._id)}
+                className="cursor-pointer text-ember"
+              />
             </div>
           </div>
-        </SortableContext>
-      </DndContext>
+        ))}
+
+        <button
+          onClick={() => setShowAddModalCat(catId)}
+          className="mt-2 px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
+        >
+          <FaPlus className="mr-2" /> Add Item
+        </button>
+
+        {showAddModalCat === catId && (
+          <AddGearItemModal
+            listId={listId}
+            categoryId={catId}
+            onClose={() => setShowAddModalCat(null)}
+            onAdded={() => fetchItems(catId)}
+          />
+        )}
+      </section>
+    );
+  }
+
+  // — main render —
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <h2 className="px-4 pt-4 text-2xl font-bold text-pine">{listName}</h2>
+
+      {viewMode === 'list' ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={categories.map(c => c._id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="flex-1 overflow-y-auto px-4 py-2">
+              {categories.map(cat => (
+                <SortableSection key={cat._id} category={cat} />
+              ))}
+
+              {/* bottom “Add New Category” */}
+              <div className="px-4 mt-4">
+                {addingNewCat ? (
+                  <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
+                    <input
+                      autoFocus
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      placeholder="Category name"
+                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                    />
+                    <button onClick={cancelAddCat} className="text-ember">×</button>
+                    <button onClick={confirmAddCat} className="text-teal">✓</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingNewCat(true)}
+                    className="px-4 py-2 border border-pine rounded hover:bg-sand/20 flex items-center"
+                  >
+                    <FaPlus className="mr-2" /> Add New Category
+                  </button>
+                )}
+              </div>
+            </div>
+          </SortableContext>
+        </DndContext>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={categories.map(c => c._id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className="flex-1 flex flex-nowrap overflow-x-auto px-4 py-2 snap-x snap-mandatory">
+              {categories.map(cat => (
+                <SortableColumn key={cat._id} category={cat} />
+              ))}
+
+              {/* Add New Category column */}
+              <div className="snap-center flex-shrink-0 m-2 w-64 flex flex-col h-full">
+                {addingNewCat ? (
+                  <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
+                    <input
+                      autoFocus
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      placeholder="Category name"
+                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                    />
+                    <button onClick={cancelAddCat} className="text-ember p-1">×</button>
+                    <button onClick={confirmAddCat} className="text-teal p-1">✓</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingNewCat(true)}
+                    className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                  >
+                    <FaPlus /><span className="text-xs">Add New Category</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }

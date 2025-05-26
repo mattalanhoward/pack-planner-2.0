@@ -1,25 +1,18 @@
-// src/pages/Dashboard.jsx
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import GearListView from './GearListView';
 import { useAuth } from '../contexts/AuthContext';
-import logo from '../assets/logo.png'; // ← put the generated logo here
+import logo from '../assets/logo.png'; // ← your generated logo
 
 export default function Dashboard() {
   const { isAuthenticated, logout } = useAuth();
   const [currentListId, setCurrentListId]   = useState(null);
   const [refreshToggle, setRefreshToggle]   = useState(false);
   const [templateToggle, setTemplateToggle] = useState(false);
+  const [viewMode, setViewMode]             = useState('columns'); // ← new state
 
-  // Called when a new item is added to a category
-  const handleItemAdded = () => {
-    setRefreshToggle(t => !t);
-  };
-
-  // Called when a global template is edited
-  const handleTemplateEdited = () => {
-    setTemplateToggle(t => !t);
-  };
+  const handleItemAdded = () => setRefreshToggle(t => !t);
+  const handleTemplateEdited = () => setTemplateToggle(t => !t);
 
   if (!isAuthenticated) return null;
 
@@ -31,12 +24,21 @@ export default function Dashboard() {
           <img src={logo} alt="PackPlanner logo" className="h-10 w-auto" />
           <h1 className="text-3xl font-serif text-sand">PackPlanner</h1>
         </div>
-        <button
-          onClick={logout}
-          className="px-4 py-1 border border-sand text-sand hover:bg-sand hover:text-pine rounded"
-        >
-          Logout
-        </button>
+        <div className="flex items-center space-x-4">
+          {/* ← view toggle button */}
+          <button
+            onClick={() => setViewMode(vm => (vm === 'columns' ? 'list' : 'columns'))}
+            className="px-3 py-1 border border-sand text-sand hover:bg-sand hover:text-pine rounded"
+          >
+            {viewMode === 'columns' ? 'List View' : 'Kanban View'}
+          </button>
+          <button
+            onClick={logout}
+            className="px-4 py-1 border border-sand text-sand hover:bg-sand hover:text-pine rounded"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -53,6 +55,7 @@ export default function Dashboard() {
               listId={currentListId}
               refreshToggle={refreshToggle}
               templateToggle={templateToggle}
+              viewMode={viewMode}           // ← pass it down
             />
           ) : (
             <div className="h-full flex items-center justify-center text-pine text-lg">

@@ -472,7 +472,7 @@ export default function GearListView({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <h2 className="px-4 pt-4 text-2xl font-bold text-pine">{listName}</h2>
+      <h2 className="pl-10 pt-4 text-2xl font-bold text-pine">{listName}</h2>
       {viewMode === 'list' ? (
         <DndContext
           sensors={sensors}

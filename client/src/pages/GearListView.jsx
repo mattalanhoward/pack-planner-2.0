@@ -210,7 +210,7 @@ export default function GearListView({
       <div
         ref={setNodeRef}
         style={style}
-        className="snap-center flex-shrink-0 m-2 w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
+        className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
       >
         <div className="flex items-center mb-2">
           <FaGripVertical {...attributes} {...listeners}
@@ -528,7 +528,7 @@ export default function GearListView({
                 <SortableColumn key={cat._id} category={cat} />
               ))}
               {/* Add New Category column */}
-              <div className="snap-center flex-shrink-0 m-2 w-64 flex flex-col h-full">
+              <div className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 flex flex-col h-full">
                 {addingNewCat ? (
                   <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
                     <input

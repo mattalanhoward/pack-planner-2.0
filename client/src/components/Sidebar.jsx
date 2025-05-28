@@ -236,15 +236,18 @@ export default function Sidebar({
 
   // === Presentation ===
 
-  const widthClass = collapsed ? 'w-10' : 'w-80';
+  const widthClass = collapsed ? 'w-5' : 'w-80';
 
   return (
-    <div className="h-full flex overflow-hidden">
-      <div className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}>
-        {/* Collapse toggle */}
+ <div className="h-full flex overflow-visible">
+      <div className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}>        
+        {/* Collapse toggle at border, half in/out when collapsed */}
         <button
           onClick={() => setCollapsed(c => !c)}
-          className="absolute top-4 right-4 bg-sand text-pine rounded-full p-1 shadow-lg"
+          className={
+            `absolute top-4 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
+            (collapsed ? 'right-0 translate-x-1/2' : 'right-4')
+          }
         >
           {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
         </button>

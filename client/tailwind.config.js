@@ -21,13 +21,21 @@
 export default {
   content: ['./index.html','./src/**/*.{js,jsx,ts,tsx}'], // This should be fine for a standard Vite React app
   theme: {
-    extend: {
+    // extend: {
+    //   colors: {
+    //     pine:   '#445E3B',  
+    //     teal:   '#445E3B',  
+    //     sand:   '#FFFFFF',  
+    //     sunset: '#BC8353',  
+    //     ember:   '#E76F51',
+    //   },
+        extend: {
       colors: {
-        pine:   '#445E3B',  
-        teal:   '#445E3B',  
-        sand:   '#FFFFFF',  
-        sunset: '#BC8353',  
-        ember:   '#E76F51',
+        pine:   '#283618',  
+        teal:   '#606c38',  
+        sand:   '#fefae0',  
+        sunset: '#dda15e',  
+        ember:   '#bc6c25',
       },
     },
   },

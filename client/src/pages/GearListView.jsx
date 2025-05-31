@@ -214,28 +214,56 @@ export default function GearListView({
   const handleDragEnd = async ({ active, over }) => {
     if (!over) return; // if dropped outside anywhere, do nothing
 
-    // 1) CATEGORY DRAG:
-    if (active.id.startsWith('cat-') && over.id.startsWith('cat-')) {
-      // extract the raw IDs out of our namespaced strings
-      const oldCatIndex = categories.findIndex(
-        (c) => `cat-${c._id}` === active.id
-      );
-      const newCatIndex = categories.findIndex(
-        (c) => `cat-${c._id}` === over.id
-      );
-      if (oldCatIndex !== -1 && newCatIndex !== -1 && oldCatIndex !== newCatIndex) {
-        const reorderedCats = arrayMove(categories, oldCatIndex, newCatIndex)
-          .map((c, idx) => ({ ...c, position: idx }));
-        setCategories(reorderedCats);
-        // Persist to server: only PATCH the one moved category to its new position
-        const movedCat = reorderedCats[newCatIndex];
-        await api.patch(
-          `/lists/${listId}/categories/${movedCat._id}/position`,
-          { position: newCatIndex }
-        );
-      }
+// ─── CATEGORY REORDER BRANCH ───
+  if (active.id.startsWith('cat-') && over.id.startsWith('cat-')) {
+    // 1) Extract old & new indices from the namespaced IDs ("cat-<catId>")
+    const oldIndex = categories.findIndex(c => `cat-${c._id}` === active.id);
+    const newIndex = categories.findIndex(c => `cat-${c._id}` === over.id);
+
+    // If either index is -1 or they’re equal, do nothing
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
       return;
     }
+
+    // 2) Compute a brand new, in-memory array of categories, each with a new `position` field
+    //    `arrayMove` shifts the element at oldIndex → newIndex; then we re‐assign positions [0..]
+    const reordered = arrayMove(categories, oldIndex, newIndex)
+      .map((catObj, idx) => ({
+        ...catObj,
+        position: idx
+      }));
+
+    // 3) Update local state immediately so the UI re‐renders in the new order
+    setCategories(reordered);
+
+    // 4) Persist *all* changed positions to the server in a loop
+    //    We need to compare `reordered[i]._id` vs. the original categories array to see who actually moved.
+    //    The simplest way: for each `reordered[i]`, look up its old index and old position,
+    //    and if `oldPosition !== newIndex`, send a PATCH for it.
+
+    // Build a small lookup from categoryId → oldPosition
+    const oldPositions = {};
+    categories.forEach((catObj, idx) => {
+      oldPositions[catObj._id] = catObj.position;
+    });
+
+    // Loop through every category in `reordered`
+    for (let i = 0; i < reordered.length; i++) {
+      const catObj = reordered[i];
+      const oldPos = oldPositions[catObj._id];
+      const newPos = catObj.position; // which is i
+
+      // If the position actually changed in memory, send a PATCH
+      if (oldPos !== newPos) {
+        await api.patch(
+          `/lists/${listId}/categories/${catObj._id}/position`,
+          { position: newPos }
+        );
+      }
+    }
+
+    return;
+  }
 
     // 2) ITEM DRAG:
     if (active.id.startsWith('item-') && over.id.startsWith('item-')) {

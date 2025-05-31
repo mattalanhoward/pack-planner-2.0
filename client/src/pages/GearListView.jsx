@@ -5,17 +5,23 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
+  closestCorners
 } from '@dnd-kit/core';
+
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
   useSortable,
+  sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
+
 import { CSS } from '@dnd-kit/utilities';
+
 import {
   FaGripVertical,
   FaEdit,
@@ -182,8 +188,10 @@ export default function GearListView({
 
   // — DnD sensors & handler —
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
   const handleDragEnd = async ({ active, over }) => {
     if (over && active.id !== over.id) {
       const oldI = categories.findIndex(c => c._id === active.id);
@@ -476,7 +484,7 @@ export default function GearListView({
       {viewMode === 'list' ? (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
@@ -514,11 +522,13 @@ export default function GearListView({
           </SortableContext>
         </DndContext>
       ) : (
+        // — Column mode —
         <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragEnd={handleDragEnd}
         >
+          <h2>Column Mode</h2>  
           <SortableContext
             items={categories.map(c => c._id)}
             strategy={horizontalListSortingStrategy}

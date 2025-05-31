@@ -10,6 +10,8 @@ import {
 } from 'react-icons/fa';
 import GlobalItemModal from './GlobalItemModal';
 import GlobalItemEditModal from './GlobalItemEditModal';
+import Swal from 'sweetalert2';
+import { toast } from 'react-hot-toast';
 
 export default function Sidebar({
   currentListId,
@@ -85,48 +87,90 @@ export default function Sidebar({
     fetchGlobalItems();
   }, [searchQuery]);
 
-  // === Gear‐list CRUD ===
+   // === Gear‐list CRUD ===
 
+  // Create
   const createList = async () => {
     const title = newListTitle.trim();
-    if (!title) return;
+    if (!title) {
+      toast.error('List name cannot be empty.');
+      return;
+    }
     try {
       await api.post('/lists', { title });
       setNewListTitle('');
       await fetchLists();
+      toast.success('List created!');
     } catch (err) {
       console.error('Error creating list:', err);
-      const msg = err.response?.data?.message || 'Could not create list.';
-      alert(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Creation Failed',
+        text: err.response?.data?.message || 'Could not create list.',
+      });
     }
   };
 
-  const startEditList  = (id, title) => { setEditingId(id); setEditingTitle(title); };
-  const saveEditList   = async id => {
+  // Start inline edit
+  const startEditList = (id, title) => {
+    setEditingId(id);
+    setEditingTitle(title);
+  };
+
+  // Save inline edit
+  const saveEditList = async id => {
     const title = editingTitle.trim();
-    if (!title) return;
+    if (!title) {
+      toast.error('List name cannot be empty.');
+      return;
+    }
     try {
       await api.patch(`/lists/${id}`, { title });
       setEditingId(null);
       setEditingTitle('');
       await fetchLists();
       if (currentListId === id) onSelectList(id);
+      toast.success('List renamed!');
     } catch (err) {
       console.error('Error updating list:', err);
-      alert('Could not update list name.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: 'Could not update list name.',
+      });
     }
   };
-  const cancelEditList = () => { setEditingId(null); setEditingTitle(''); };
+  const cancelEditList = () => {
+    setEditingId(null);
+    setEditingTitle('');
+  };
 
+  // Delete
   const deleteList = async id => {
-    if (!window.confirm('Delete this gear list? This cannot be undone.')) return;
+    const list = lists.find(l => l._id === id);
+    const result = await Swal.fire({
+      title: `Delete ${list.title} Gear List?`,
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+
     try {
       await api.delete(`/lists/${id}`);
       await fetchLists();
       if (currentListId === id) onSelectList(null);
+      toast.success('List deleted');
     } catch (err) {
       console.error('Error deleting list:', err);
-      alert('Could not delete list.');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Deletion Failed',
+        text: 'Could not delete list.',
+      });
     }
   };
 
@@ -165,30 +209,45 @@ export default function Sidebar({
     }
   };
 
+   // — delete an item —
+  
   const deleteGlobalItem = async id => {
-    if (!window.confirm('Delete this global template and all its instances?')) return;
+    const item = items.find(i => i._id === id);
+          const result = await Swal.fire({
+        title: `Delete ${item.brand} ${item.name} and all its instances?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete Item',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+      });
+      if (!result.isConfirmed) return;
     try {
       await api.delete(`/global/items/${id}`);
       fetchGlobalItems();
       onTemplateEdited();     // <— notify boards to refresh
+      toast.success('Item deleted');
+
     } catch (err) {
       console.error('Error deleting global item:', err);
-      const msg = err.response?.data?.message || 'Could not delete template.';
-      alert(msg);
+      toast.error(err.response?.data?.message || 'Failed to delete');
     }
   };
 
   // === Presentation ===
 
-  const widthClass = collapsed ? 'w-10' : 'w-80';
+  const widthClass = collapsed ? 'w-5' : 'w-80';
 
   return (
-    <div className="h-full flex overflow-hidden">
-      <div className={`relative bg-pine text-sand transition-all duration-300 ${widthClass}`}>
-        {/* Collapse toggle */}
+ <div className="h-full flex overflow-visible">
+      <div className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}>        
+        {/* Collapse toggle at border, half in/out when collapsed */}
         <button
           onClick={() => setCollapsed(c => !c)}
-          className="absolute top-4 right-4 bg-sand text-pine rounded-full p-1 shadow-lg"
+          className={
+            `absolute top-4 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
+            (collapsed ? 'right-0 translate-x-1/2' : 'right-4')
+          }
         >
           {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
         </button>
@@ -197,10 +256,10 @@ export default function Sidebar({
           <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists */}
             <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
-              <h2 className="font-bold mb-2 text-sand">Gear Lists</h2>
+              <h2 className="font-bold mb-2 text-sunset">Gear Lists</h2>
               <div className="flex mb-3">
                 <input
-                  className="flex-1 rounded-lg p-2 text-pine"
+                  className="flex-1 rounded-lg p-2 bg-sand text-pine border-pine"
                   placeholder="New list"
                   value={newListTitle}
                   onChange={e => setNewListTitle(e.target.value)}
@@ -208,7 +267,7 @@ export default function Sidebar({
                 <button
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 px-4 bg-teal text-white rounded-lg shadow"
+                  className="ml-2 px-4 bg-sunset text-pine rounded-lg shadow hover:bg-sunset/80"
                 >
                   Create
                 </button>
@@ -219,15 +278,15 @@ export default function Sidebar({
                     {editingId === l._id ? (
                       <>
                         <input
-                          className="flex-1 rounded-lg p-1 text-pine"
+                          className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
                           value={editingTitle}
                           onChange={e => setEditingTitle(e.target.value)}
                         />
-                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sand">
-                          Save
+                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sunset">
+                          ✓
                         </button>
-                        <button onClick={cancelEditList} className="ml-1 text-sand">
-                          Cancel
+                        <button onClick={cancelEditList} className="ml-1 text-ember">
+                          ×
                         </button>
                       </>
                     ) : (
@@ -236,15 +295,15 @@ export default function Sidebar({
                           onClick={() => onSelectList(l._id)}
                           className={`flex-1 text-left p-2 rounded-lg ${
                             l._id === currentListId
-                              ? 'bg-teal text-white'
-                              : 'hover:bg-sand hover:text-pine'
+                              ? 'bg-teal text-sand'
+                              : 'hover:bg-sunset hover:text-pine'
                           }`}
                         >
                           {l.title}
                         </button>
                         <FaEdit
                           onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-pine"
+                          className="ml-2 cursor-pointer text-sunset"
                         />
                         <FaTrash
                           onClick={() => deleteList(l._id)}
@@ -259,7 +318,7 @@ export default function Sidebar({
 
             {/* Catalog / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
-              <div className="flex justify-between items-center mb-2 text-sand">
+              <div className="flex justify-between items-center mb-2 text-sunset">
                 <h2 className="font-bold">Catalog</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -271,7 +330,7 @@ export default function Sidebar({
               </div>
 
               <input
-                className="w-full rounded-lg p-2 text-pine border border-pine mb-3"
+                className="w-full rounded-lg p-2 bg-sand text-pine border border-pine mb-3"
                 placeholder="Search catalog"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -280,33 +339,42 @@ export default function Sidebar({
               <ul className="overflow-y-auto flex-1 space-y-2">
                 {items.length > 0 ? (
                   items.map(item => (
-                    <li
-                      key={item._id}
-                      className="flex justify-between items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-pine">
-                          {item.itemType} – {item.name}
-                        </span>
-                        <FaEdit
-                          onClick={() => setEditingGlobalItem(item)}
-                          className="cursor-pointer text-teal hover:text-teal-700"
-                          title="Edit global template"
-                        />
-                        <FaTrash
-                          onClick={() => deleteGlobalItem(item._id)}
-                          className="cursor-pointer text-ember hover:text-ember/80"
-                          title="Delete global template"
-                        />
-                      </div>
-                      <button
-                        onClick={() => addToList(item)}
-                        disabled={!categories.length}
-                        className="p-1 bg-teal text-white rounded-lg disabled:opacity-50"
-                      >
-                        <FaPlus />
-                      </button>
-                    </li>
+<li
+  key={item._id}
+  className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+>
+  {/* left: truncated text */}
+  <span className="flex-1 truncate text-sand">
+    {item.itemType} – {item.name}
+  </span>
+
+  {/* right: action buttons */}
+  <div className="flex items-center space-x-2 ml-4">
+    <button
+      onClick={() => setEditingGlobalItem(item)}
+      title="Edit global template"
+      className="hover:text-sand/80 text-sand rounded-lg "
+    >
+      <FaEdit />
+    </button>
+    <button
+      onClick={() => deleteGlobalItem(item._id)}
+      title="Delete global template"
+      className="text-ember hover:text-ember/80"
+    >
+      <FaTrash />
+    </button>
+    {/* <button
+      onClick={() => addToList(item)}
+      disabled={!categories.length}
+      title="Add item to list"
+      className="p-1  hover:text-sunset/80 text-sunset rounded-lg disabled:opacity-50"
+    >
+      <FaPlus />
+    </button> */}
+  </div>
+</li>
+
                   ))
                 ) : (
                   <li className="text-pine/70 p-2">No catalog items</li>

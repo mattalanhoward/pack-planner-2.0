@@ -89,43 +89,77 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PATCH /api/lists/:listId/categories/:catId/items/:itemId
-// ── Update allowed fields (consumable, worn, quantity, position, etc.)
+// ─── PATCH /api/lists/:listId/categories/:catId/items/:itemId ───
 router.patch('/:itemId', async (req, res) => {
+  console.log('PATCH /items/:itemId  →  req.params =', req.params);
+console.log('PATCH /items/:itemId  →  req.body  =', req.body);
   try {
     const { listId, catId, itemId } = req.params;
     const updates = {};
-    // only allow these to be updated inline
+
+    // 1) Copy over any of the inline fields (consumable, worn, quantity, position)
     for (const field of ['consumable', 'worn', 'quantity', 'position']) {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
     }
+
+    // 2) **ALLOW** updating category when provided
+    if (req.body.category) {
+      updates.category = req.body.category;
+    }
+
+    // If nothing valid was provided, return early
     if (!Object.keys(updates).length) {
       return res.status(400).json({ message: 'No valid fields to update.' });
     }
 
-    // verify ownership
+    // 3) Verify the list belongs to this user
     const list = await GearList.findOne({ _id: listId, owner: req.userId });
-    if (!list) return res.status(404).json({ message: 'Gear list not found.' });
+    if (!list) {
+      return res.status(404).json({ message: 'Gear list not found.' });
+    }
 
-    // verify category
-    const cat = await Category.findOne({ _id: catId, gearList: listId });
-    if (!cat) return res.status(404).json({ message: 'Category not found.' });
+    // 4) Verify the *old* category (so our filter matches it)
+    const oldCat = await Category.findOne({ _id: catId, gearList: listId });
+    if (!oldCat) {
+      return res.status(404).json({ message: 'Category not found.' });
+    }
 
-    // perform update
+    // 5) If the request wants to move this item to a new category, validate that new category
+    if (updates.category) {
+      const newCat = await Category.findOne({
+        _id: updates.category,
+        gearList: listId
+      });
+      if (!newCat) {
+        return res.status(400).json({ message: 'Target category not found.' });
+      }
+    }
+
+    // 6) Finally perform the update. Note: we still filter by `category: catId` (the old category).
     const updated = await GearItem.findOneAndUpdate(
-      { _id: itemId, gearList: listId, category: catId },
+      {
+        _id: itemId,
+        gearList: listId,
+        category: catId
+      },
       updates,
       { new: true }
     );
+
     if (!updated) {
       return res.status(404).json({ message: 'Item not found.' });
     }
+
+    // Return the fully updated item (now with category set to newCatId if moved)
     res.json(updated);
   } catch (err) {
     console.error('Error PATCH item:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // DELETE /api/lists/:listId/categories/:catId/items/:itemId
 // ── Remove a single item

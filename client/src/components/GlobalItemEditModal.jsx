@@ -4,6 +4,7 @@ import api from '../services/api';
 import { FaTimes, FaCheck } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import CurrencyInput from '../components/CurrencyInput';
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -117,15 +118,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         {error && <div className="text-ember mb-2">{error}</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-pine mb-1">Category</label>
-            <input
-              name="category"
-              value={form.category}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-pine mb-1">Item Type</label>
@@ -170,13 +162,18 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Price (USD)</label>
-            <input
-              type="number"
-              name="price"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               value={form.price}
+              onChange={value => setForm({ ...form, price: value })}
+              label="Price (Euro)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Link</label>
+            <input
+              name="link"
+              value={form.link}
               onChange={handleChange}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
@@ -190,16 +187,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               onChange={handleChange}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
               rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-pine mb-1">Link</label>
-            <input
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
 

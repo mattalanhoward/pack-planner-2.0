@@ -4,6 +4,7 @@ import api from '../services/api';
 import { FaTimes } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import CurrencyInput from '../components/CurrencyInput';
 
 export default function GlobalItemModal({ categories = [], onClose, onCreated }) {
   const [category, setCategory]     = useState('');
@@ -21,10 +22,6 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (!category) {
-      toast.error('Category is required.');
-      return;
-    }
     if (!name.trim()) {
       toast.error('Name is required.');
       return;
@@ -80,7 +77,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Category */}
+          {/* Category
           <div>
             <label className="block text-sm font-medium text-pine mb-1">
               Category<span className="text-red-500">*</span>
@@ -96,14 +93,15 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
                 <option key={cat._id} value={cat.title}>{cat.title}</option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Item Type */}
           <div>
             <label className="block text-sm font-medium text-pine mb-1">Item Type</label>
             <input
               type="text"
-              placeholder="Shelter"
+              placeholder="Tent"
+              required="required"
               value={itemType}
               onChange={e => setItemType(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
@@ -117,7 +115,9 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             </label>
             <input
               type="text"
+              placeholder="Tarptent"
               value={name}
+              required="required"
               onChange={e => setName(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
@@ -128,7 +128,9 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             <label className="block text-sm font-medium text-pine mb-1">Brand</label>
             <input
               type="text"
+              placeholder="Rainbow"
               value={brand}
+              required="required"
               onChange={e => setBrand(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
@@ -148,13 +150,20 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
 
           {/* Price */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Price (USD)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               value={price}
-              onChange={e => setPrice(e.target.value)}
+              onChange={value => setForm({ ...form, price: value })}
+              label="Price (Euro)"
+            />
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="block text-sm font-medium text-pine mb-1">Link</label>
+            <input
+              type="url"
+              value={link}
+              onChange={e => setLink(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
@@ -170,18 +179,8 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             />
           </div>
 
-          {/* Link */}
-          <div>
-            <label className="block text-sm font-medium text-pine mb-1">Link</label>
-            <input
-              type="url"
-              value={link}
-              onChange={e => setLink(e.target.value)}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-            />
-          </div>
 
-          {/* Quantity */}
+          {/* Quantity
           <div>
             <label className="block text-sm font-medium text-pine mb-1">Quantity</label>
             <input
@@ -191,8 +190,8 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
               onChange={e => setQuantity(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
-          </div>
-        </div>
+          </div>*/}
+        </div> 
 
         {/* Worn / Consumable */}
         <div className="flex items-center space-x-4 mt-4">

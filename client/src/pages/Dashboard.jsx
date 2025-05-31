@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import GearListView from './GearListView';
 import { useAuth } from '../contexts/AuthContext';
-import logo from '../assets/logo.png'; // ← your generated logo
+import TopBar from '../components/TopBar';
 
 export default function Dashboard() {
   const { isAuthenticated, logout } = useAuth();
@@ -19,27 +19,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-sand">
       {/* TopBar */}
-      <header className="flex items-center justify-between flex-none h-16 bg-teal px-6 shadow-lg">
-        <div className="flex items-center space-x-4">
-          <img src={logo} alt="PackPlanner logo" className="h-10 w-auto" />
-          <h1 className="text-3xl font-serif text-sand">PackPlanner</h1>
-        </div>
-        <div className="flex items-center space-x-4">
-          {/* ← view toggle button */}
-          <button
-            onClick={() => setViewMode(vm => (vm === 'columns' ? 'list' : 'columns'))}
-            className="px-3 py-1 border border-sand text-sand hover:bg-sand hover:text-pine rounded"
-          >
-            {viewMode === 'columns' ? 'List View' : 'Kanban View'}
-          </button>
-          <button
-            onClick={logout}
-            className="px-4 py-1 border border-sand text-sand hover:bg-sand hover:text-pine rounded"
-          >
-            Logout
-          </button>
-        </div>
-      </header>
+      <TopBar title="PackPlanner" viewMode={viewMode} setViewMode={setViewMode}/>
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

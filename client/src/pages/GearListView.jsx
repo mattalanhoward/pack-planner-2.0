@@ -37,6 +37,8 @@ import Swal from 'sweetalert2';
 
 import SortableItem from '../components/SortableItem';
 import PreviewCard from '../components/PreviewCard';
+import PreviewColumn from '../components/PreviewColumn'; // (or wherever you placed that inline component)
+
 
 export default function GearListView({
   listId,
@@ -52,6 +54,7 @@ export default function GearListView({
   const [newCatName, setNewCatName]       = useState('');
   const [showAddModalCat, setShowAddModalCat] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(null);
 
   // — fetch list title —
   useEffect(() => {
@@ -215,8 +218,11 @@ export default function GearListView({
   // So: if active.id startsWith('cat-') ⇒ reorder categories; else if startsWith('item-') ⇒ reorder items
 
   const handleDragEnd = async ({ active, over }) => {
-    if (!over) return; // if dropped outside anywhere, do nothing
-
+    if (!over) {
+      setActiveItem(null);
+      setActiveCategory(null);
+      return; // if dropped outside anywhere, do nothing
+    }
 // ─── CATEGORY REORDER BRANCH ───
   if (active.id.startsWith('cat-') && over.id.startsWith('cat-')) {
     // 1) Extract old & new indices from the namespaced IDs ("cat-<catId>")
@@ -225,6 +231,8 @@ export default function GearListView({
 
     // If either index is -1 or they’re equal, do nothing
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+      setActiveItem(null);
+      setActiveCategory(null);
       return;
     }
 
@@ -264,7 +272,8 @@ export default function GearListView({
         );
       }
     }
-
+    setActiveCategory(null);
+    setActiveItem(null);
     return;
   }
 
@@ -366,6 +375,8 @@ export default function GearListView({
           }
         }
       }
+      setActiveCategory(null);
+      setActiveItem(null);
       return;
     }
   
@@ -423,22 +434,53 @@ export default function GearListView({
           );
         }
       }
+      setActiveCategory(null);
+      setActiveItem(null);
       return;
     }
-  };
+    // Fallback: if we reach here, it means the drag was not handled
+    setActiveItem(null);
+    setActiveCategory(null);
+  }
 
-    // ─── When the user picks up a draggable, store it in `activeItem` ───
+
   const handleDragStart = ({ active }) => {
-    if (active.id.startsWith('item-')) {
-      // Format of active.id is "item-<catId>-<itemId>"
-      const [, catId, itemId] = active.id.split('-');
-      const itemArray = itemsMap[catId] || [];
-      const found = itemArray.find(i => i._id === itemId);
-      if (found) {
-        setActiveItem({ catId, item: found });
-      }
+  // 1) Item‐drag preview
+  if (active.id.startsWith('item-')) {
+    const [, catId, itemId] = active.id.split('-');
+    const itemArray = itemsMap[catId] || [];
+    const found = itemArray.find(i => i._id === itemId);
+    if (found) {
+      setActiveItem({ catId, item: found });
     }
-  };
+
+  // 2) Category‐drag preview
+  } else if (active.id.startsWith('cat-')) {
+    const catId = active.id.replace(/^cat-/, '');
+    const foundCat = categories.find(c => c._id === catId);
+    if (foundCat) {
+      setActiveCategory(foundCat);
+    }
+  }
+};
+// // If starting to drag an item:
+//     if (active.id.startsWith('item-')) {
+//       const [, catId, itemId] = active.id.split('-');
+//       const itemArray = itemsMap[catId] || [];
+//       const found = itemArray.find(i => i._id === itemId);
+//       if (found) {
+//         setActiveItem({ catId, item: found });
+//       }
+
+//     // If starting to drag a category (column):
+//     } else if (active.id.startsWith('cat-')) {
+//       // Format is "cat-<catId>"
+//       const catId = active.id.replace(/^cat-/, '');
+//       const foundCat = categories.find(c => c._id === catId);
+//       if (foundCat) {
+//         setActiveCategory(foundCat);
+//       }
+//     }
 
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -1028,7 +1070,7 @@ function SortableColumn({
             items={categories.map(c => `cat-${c._id}`)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex-1 flex flex-nowrap overflow-x-auto px-4 py-2 snap-x snap-mandatory">
+            <div className="flex-1 flex flex-nowrap overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
               {categories.map(cat => (
                 <SortableColumn
                   key={cat._id}
@@ -1074,10 +1116,17 @@ function SortableColumn({
             </div>
           </SortableContext>
         )}
-        +        {/* ───── DragOverlay for the active item ───── */}
+
+        {/* ───── DragOverlay for the active item ───── */}
         <DragOverlay>
           {activeItem ? (
             <PreviewCard item={activeItem.item} />
+          ) : activeCategory ? (
+            <PreviewColumn
+              category={activeCategory}
+              // pass the array of items currently in that category
+              items={itemsMap[activeCategory._id] || []}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>

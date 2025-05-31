@@ -364,14 +364,14 @@ export default function Sidebar({
     >
       <FaTrash />
     </button>
-    <button
+    {/* <button
       onClick={() => addToList(item)}
       disabled={!categories.length}
       title="Add item to list"
       className="p-1  hover:text-sunset/80 text-sunset rounded-lg disabled:opacity-50"
     >
       <FaPlus />
-    </button>
+    </button> */}
   </div>
 </li>
 

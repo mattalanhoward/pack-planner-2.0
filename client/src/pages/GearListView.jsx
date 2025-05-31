@@ -8,7 +8,8 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-  closestCorners
+  closestCorners,
+  DragOverlay
 } from '@dnd-kit/core';
 
 import {
@@ -35,6 +36,7 @@ import { toast } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
 import SortableItem from '../components/SortableItem';
+import PreviewCard from '../components/PreviewCard';
 
 export default function GearListView({
   listId,
@@ -49,6 +51,7 @@ export default function GearListView({
   const [addingNewCat, setAddingNewCat]   = useState(false);
   const [newCatName, setNewCatName]       = useState('');
   const [showAddModalCat, setShowAddModalCat] = useState(null);
+  const [activeItem, setActiveItem] = useState(null);
 
   // — fetch list title —
   useEffect(() => {
@@ -424,6 +427,18 @@ export default function GearListView({
     }
   };
 
+    // ─── When the user picks up a draggable, store it in `activeItem` ───
+  const handleDragStart = ({ active }) => {
+    if (active.id.startsWith('item-')) {
+      // Format of active.id is "item-<catId>-<itemId>"
+      const [, catId, itemId] = active.id.split('-');
+      const itemArray = itemsMap[catId] || [];
+      const found = itemArray.find(i => i._id === itemId);
+      if (found) {
+        setActiveItem({ catId, item: found });
+      }
+    }
+  };
 
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -950,6 +965,7 @@ function SortableColumn({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
       {viewMode === 'list' ? (
@@ -1058,6 +1074,12 @@ function SortableColumn({
             </div>
           </SortableContext>
         )}
+        +        {/* ───── DragOverlay for the active item ───── */}
+        <DragOverlay>
+          {activeItem ? (
+            <PreviewCard item={activeItem.item} />
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );

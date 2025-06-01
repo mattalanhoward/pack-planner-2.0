@@ -234,6 +234,17 @@ export default function Sidebar({
     }
   };
 
+const sortedItems = [...items].sort((a, b) => {
+  // compare “itemType – name” alphabetically
+  const keyA = `${a.itemType} – ${a.name}`.toLowerCase();
+  const keyB = `${b.itemType} – ${b.name}`.toLowerCase();
+  return keyA.localeCompare(keyB);
+});
+
+const sortedLists = React.useMemo(
+  () => [...lists].sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase())),
+  [lists]
+);
   // === Presentation ===
 
   const widthClass = collapsed ? 'w-5' : 'w-80';
@@ -273,47 +284,53 @@ export default function Sidebar({
                 </button>
               </div>
               <ul className="overflow-y-auto flex-1 space-y-1">
-                {lists.map(l => (
-                  <li key={l._id} className="flex items-center">
-                    {editingId === l._id ? (
-                      <>
-                        <input
-                          className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
-                          value={editingTitle}
-                          onChange={e => setEditingTitle(e.target.value)}
-                        />
-                        <button onClick={() => saveEditList(l._id)} className="ml-2 text-sunset">
-                          ✓
-                        </button>
-                        <button onClick={cancelEditList} className="ml-1 text-ember">
-                          ×
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => onSelectList(l._id)}
-                          className={`flex-1 text-left p-2 rounded-lg ${
-                            l._id === currentListId
-                              ? 'bg-teal text-sand'
-                              : 'hover:bg-sunset hover:text-pine'
-                          }`}
-                        >
-                          {l.title}
-                        </button>
-                        <FaEdit
-                          onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-sunset"
-                        />
-                        <FaTrash
-                          onClick={() => deleteList(l._id)}
-                          className="ml-2 cursor-pointer text-ember"
-                        />
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
+  {sortedLists.map(l => (
+    <li key={l._id} className="flex items-center">
+      {editingId === l._id ? (
+        <>
+          <input
+            className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
+            value={editingTitle}
+            onChange={e => setEditingTitle(e.target.value)}
+          />
+          <button
+            onClick={() => saveEditList(l._id)}
+            className="ml-2 text-sunset"
+          >
+            ✓
+          </button>
+          <button
+            onClick={cancelEditList}
+            className="ml-1 text-ember"
+          >
+            ×
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={() => onSelectList(l._id)}
+            className={`flex-1 text-left p-2 rounded-lg ${
+              l._id === currentListId
+                ? 'bg-teal text-sand'
+                : 'hover:bg-sunset hover:text-pine'
+            }`}
+          >
+            {l.title}
+          </button>
+          <FaEdit
+            onClick={() => startEditList(l._id, l.title)}
+            className="ml-2 cursor-pointer text-sunset"
+          />
+          <FaTrash
+            onClick={() => deleteList(l._id)}
+            className="ml-2 cursor-pointer text-ember"
+          />
+        </>
+      )}
+    </li>
+  ))}
+</ul>
             </section>
 
             {/* Catalog / Global Items */}
@@ -337,8 +354,9 @@ export default function Sidebar({
               />
 
               <ul className="overflow-y-auto flex-1 space-y-2">
+              
                 {items.length > 0 ? (
-                  items.map(item => (
+                 sortedItems.map(item => (
 <li
   key={item._id}
   className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"

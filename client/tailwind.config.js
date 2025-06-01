@@ -29,13 +29,22 @@ export default {
     //     sunset: '#BC8353',  
     //     ember:   '#E76F51',
     //   },
-        extend: {
+      //   extend: {
+      // colors: {
+      //   pine:   '#283618',  
+      //   teal:   '#606c38',  
+      //   sand:   '#fefae0',  
+      //   sunset: '#dda15e',  
+      //   ember:   '#bc6c25',
+      // },
+      //     
+      extend: {
       colors: {
-        pine:   '#283618',  
-        teal:   '#606c38',  
-        sand:   '#fefae0',  
-        sunset: '#dda15e',  
-        ember:   '#bc6c25',
+        pine:   '#163A28',  
+        teal:   '#25554D',  
+        sand:   '#FCEFC9',  
+        sunset: '#E0B251',  
+        ember:   '#E76F51',
       },
     },
   },

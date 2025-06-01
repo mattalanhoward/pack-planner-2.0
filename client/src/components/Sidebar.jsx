@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 import {
   FaChevronLeft,
@@ -245,6 +245,25 @@ const sortedLists = React.useMemo(
   () => [...lists].sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase())),
   [lists]
 );
+
+const filteredAndSortedItems = useMemo(() => {
+    // First, filter by searchQuery (case‐insensitive substring on itemType or name)
+    const lower = searchQuery.trim().toLowerCase();
+    const filtered = lower === ''
+      ? items
+      : items.filter(item => {
+          const haystack = `${item.itemType} ${item.name}`.toLowerCase();
+          return haystack.includes(lower);
+        });
+
+    // Then sort alphabetically by “itemType – name”
+    return [...filtered].sort((a, b) => {
+      const keyA = `${a.itemType} – ${a.name}`.toLowerCase();
+      const keyB = `${b.itemType} – ${b.name}`.toLowerCase();
+      return keyA.localeCompare(keyB);
+    });
+  }, [items, searchQuery]);
+
   // === Presentation ===
 
   const widthClass = collapsed ? 'w-5' : 'w-80';
@@ -355,12 +374,12 @@ const sortedLists = React.useMemo(
 
               <ul className="overflow-y-auto flex-1 space-y-2">
               
-                {items.length > 0 ? (
-                 sortedItems.map(item => (
-<li
-  key={item._id}
-  className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
->
+    {filteredAndSortedItems.length > 0 ? (
+      filteredAndSortedItems.map(item => (
+        <li
+          key={item._id}
+          className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+        >
   {/* left: truncated text */}
   <span className="flex-1 truncate text-sand">
     {item.itemType} – {item.name}

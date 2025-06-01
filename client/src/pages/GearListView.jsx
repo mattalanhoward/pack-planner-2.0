@@ -463,24 +463,6 @@ export default function GearListView({
     }
   }
 };
-// // If starting to drag an item:
-//     if (active.id.startsWith('item-')) {
-//       const [, catId, itemId] = active.id.split('-');
-//       const itemArray = itemsMap[catId] || [];
-//       const found = itemArray.find(i => i._id === itemId);
-//       if (found) {
-//         setActiveItem({ catId, item: found });
-//       }
-
-//     // If starting to drag a category (column):
-//     } else if (active.id.startsWith('cat-')) {
-//       // Format is "cat-<catId>"
-//       const catId = active.id.replace(/^cat-/, '');
-//       const foundCat = categories.find(c => c._id === catId);
-//       if (foundCat) {
-//         setActiveCategory(foundCat);
-//       }
-//     }
 
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -509,6 +491,13 @@ function SortableSection({
 }) {
   const catId = category._id;
   const [localTitle, setLocalTitle] = useState(category.title);
+const totalWeight = (items || []).reduce(
+  (sum, i) => {
+    if (i.worn) return sum;
+    return sum + ((i.weight || 0) * (i.quantity || 1));
+  },
+  0
+);
 
   // useSortable for the category header itself:
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -532,9 +521,11 @@ function SortableSection({
             className="flex-1 border border-pine rounded p-1 bg-white"
           />
         ) : (
-          <h3 className="flex-1 font-semibold text-pine">
-            {category.title}
-          </h3>
+          
+<h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
+  <span>{category.title}</span>
+  <span className="text-sm text-pine/70">{totalWeight} g</span>
+</h3>
         )}
 
         {editingCatId === catId ? (
@@ -627,6 +618,13 @@ function SortableColumn({
 }) {
   const catId = category._id;
   const [localTitle, setLocalTitle] = useState(category.title);
+const totalWeight = (items || []).reduce(
+  (sum, i) => {
+    if (i.worn) return sum;
+    return sum + ((i.weight || 0) * (i.quantity || 1));
+  },
+  0
+);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: `cat-${catId}` });
@@ -649,9 +647,10 @@ function SortableColumn({
             className="flex-1 border border-pine rounded p-1 bg-white"
           />
         ) : (
-          <h3 className="flex-1 font-semibold text-pine">
-            {category.title}
-          </h3>
+          <h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
+  <span>{category.title}</span>
+  <span className="text-sm text-pine/70">{totalWeight} g</span>
+</h3>
         )}
 
         {editingCatId === catId ? (
@@ -724,281 +723,6 @@ function SortableColumn({
     </div>
   );
 }
-
-
-
-
-  // // — Column mode —
-  // function SortableColumn({ category }) {
-  //   const { attributes, listeners, setNodeRef, transform, transition } =
-  //     useSortable({ id: category._id });
-  //   const style = { transform: CSS.Transform.toString(transform), transition };
-  //   const catId = category._id;
-  //   const [localTitle, setLocalTitle] = useState(category.title);
-
-  //   return (
-  //     <div
-  //       ref={setNodeRef}
-  //       style={style}
-  //       className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
-  //     >
-  //       <div className="flex items-center mb-2">
-  //         <FaGripVertical {...attributes} {...listeners}
-  //           className="mr-2 cursor-grab text-pine" />
-
-  //         {editingCatId === catId ? (
-  //           <input
-  //             value={localTitle}
-  //             onChange={e => setLocalTitle(e.target.value)}
-  //             className="flex-1 border border-pine rounded p-1 bg-white"
-  //           />
-  //         ) : (
-  //           <h3 className="flex-1 font-semibold text-pine">
-  //             {category.title}
-  //           </h3>
-  //         )}
-
-  //         {editingCatId === catId ? (
-  //           <>
-  //             <button
-  //               onClick={() => editCat(catId, localTitle)}
-  //               className="text-teal mr-2"
-  //             >
-  //               ✓
-  //             </button>
-  //             <button
-  //               onClick={() => setEditingCatId(null)}
-  //               className="text-ember"
-  //             >
-  //               ×
-  //             </button>
-  //           </>
-  //         ) : (
-  //           <>
-  //             <FaEdit
-  //               onClick={() => {
-  //                 setEditingCatId(catId);
-  //                 setLocalTitle(category.title);
-  //               }}
-  //               className="mr-2 cursor-pointer text-teal"
-  //             />
-  //             <FaTrash
-  //               onClick={() => deleteCat(catId)}
-  //               className="cursor-pointer text-ember"
-  //             />
-  //           </>
-  //         )}
-  //       </div>
-
-  //       <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-  //         {(itemsMap[catId] || []).map(item => (
-  //           <div key={item._id} className="bg-white p-3 rounded shadow flex flex-col">
-  //             <div className="flex-1">
-  //               <div className="text-lg font-semibold text-gray-800">
-  //                 {item.itemType || '—'}
-  //               </div>
-  //               <div className="text-sm text-gray-700 mt-1">
-  //                 {item.brand && <span className="mr-1">{item.brand}</span>}
-  //                 {item.name}
-  //               </div>
-  //             </div>
-  //             <div className="flex items-center justify-between text-sm text-gray-600 mt-3">
-  //               <span>{item.weight != null ? `${item.weight}g` : ''}</span>
-  //               <div className="flex items-center space-x-3">
-  //                 <FaUtensils
-  //                   onClick={() => toggleConsumable(catId, item._id)}
-  //                   className={`cursor-pointer ${
-  //                     item.consumable ? 'text-green-600' : 'opacity-30'
-  //                   }`}
-  //                 />
-  //                 <FaTshirt
-  //                   onClick={() => toggleWorn(catId, item._id)}
-  //                   className={`cursor-pointer ${
-  //                     item.worn ? 'text-blue-600' : 'opacity-30'
-  //                   }`}
-  //                 />
-  //                 <select
-  //                   value={item.quantity}
-  //                   onChange={e =>
-  //                     updateQuantity(catId, item._id, Number(e.target.value))
-  //                   }
-  //                   className="border rounded p-1"
-  //                 >
-  //                   {[...Array(10)].map((_, i) => (
-  //                     <option key={i+1} value={i+1}>{i+1}</option>
-  //                   ))}
-  //                 </select>
-  //                 <FaTrash
-  //                   onClick={() => deleteItem(catId, item._id)}
-  //                   className="cursor-pointer text-red-500"
-  //                 />
-  //               </div>
-  //             </div>
-  //           </div>
-  //         ))}
-  //       </div>
-
-  //       <button
-  //         onClick={() => setShowAddModalCat(catId)}
-  //         className="h-12 w-full border border-teal rounded flex items-center justify-center space-x-2 text-teal hover:bg-teal/10"
-  //       >
-  //         <FaPlus /><span className="text-xs">Add Item</span>
-  //       </button>
-  //       {showAddModalCat === catId && (
-  //         <AddGearItemModal
-  //           listId={listId}
-  //           categoryId={catId}
-  //           onClose={() => setShowAddModalCat(null)}
-  //           onAdded={() => fetchItems(catId)}
-  //         />
-  //       )}
-  //     </div>
-  //   );
-  // }
-
-  // // — List mode —
-  // function SortableSection({ category }) {
-  //   const { attributes, listeners, setNodeRef, transform, transition } =
-  //     useSortable({ id: category._id });
-  //   const style = { transform: CSS.Transform.toString(transform), transition };
-  //   const catId = category._id;
-  //   const [localTitle, setLocalTitle] = useState(category.title);
-
-  //   return (
-  //     <section
-  //       ref={setNodeRef}
-  //       style={style}
-  //       className="bg-sand/20 rounded-lg p-4 mb-6"
-  //     >
-  //       <div className="flex items-center mb-3">
-  //         <FaGripVertical {...attributes} {...listeners}
-  //           className="mr-2 cursor-grab text-pine" />
-
-  //         {editingCatId === catId ? (
-  //           <input
-  //             value={localTitle}
-  //             onChange={e => setLocalTitle(e.target.value)}
-  //             className="flex-1 border border-pine rounded p-1 bg-white"
-  //           />
-  //         ) : (
-  //           <h3 className="flex-1 font-semibold text-pine">
-  //             {category.title}
-  //           </h3>
-  //         )}
-
-  //         {editingCatId === catId ? (
-  //           <>
-  //             <button
-  //               onClick={() => editCat(catId, localTitle)}
-  //               className="text-teal mr-2"
-  //             >
-  //               ✓
-  //             </button>
-  //             <button
-  //               onClick={() => setEditingCatId(null)}
-  //               className="text-ember"
-  //             >
-  //               ×
-  //             </button>
-  //           </>
-  //         ) : (
-  //           <>
-  //             <FaEdit
-  //               onClick={() => {
-  //                 setEditingCatId(catId);
-  //                 setLocalTitle(category.title);
-  //               }}
-  //               className="mr-2 cursor-pointer text-teal"
-  //             />
-  //             <FaTrash
-  //               onClick={() => deleteCat(catId)}
-  //               className="cursor-pointer text-ember"
-  //             />
-  //           </>
-  //         )}
-  //       </div>
-
-  //       {/* ← **items** */}
-  //       {(itemsMap[catId] || []).map(item => (
-  //         <div
-  //           key={item._id}
-  //           className="
-  //             bg-white rounded shadow p-4 mb-2
-  //             flex flex-col space-y-2
-  //             md:flex-row md:justify-between md:space-y-0 md:items-center
-  //           "
-  //         >
-  //           <div className="flex-1 flex flex-wrap items-center space-x-2">
-  //             <span className="font-semibold">{item.itemType}</span>
-  //             <span>{item.brand}</span>
-  //             <span>{item.name}</span>
-  //             <span className="hidden md:inline">— {item.description}</span>
-  //           </div>
-  //           <div className="flex items-center space-x-3">
-  //             <span>{item.weight != null ? `${item.weight}g` : ''}</span>
-  //             <FaUtensils
-  //               onClick={() => toggleConsumable(catId, item._id)}
-  //               className={`cursor-pointer ${
-  //                 item.consumable ? 'text-green-600' : 'opacity-30'
-  //               }`}
-  //             />
-  //             <FaTshirt
-  //               onClick={() => toggleWorn(catId, item._id)}
-  //               className={`cursor-pointer ${
-  //                 item.worn ? 'text-blue-600' : 'opacity-30'
-  //               }`}
-  //             />
-  //             {item.price != null && (
-  //               item.link ? (
-  //                 <a
-  //                   href={item.link}
-  //                   target="_blank"
-  //                   rel="noopener noreferrer"
-  //                   className="text-teal hover:underline"
-  //                 >
-  //                   ${item.price}
-  //                 </a>
-  //               ) : (
-  //                 <span>${item.price}</span>
-  //               )
-  //             )}
-  //             <select
-  //               value={item.quantity}
-  //               onChange={e =>
-  //                 updateQuantity(catId, item._id, Number(e.target.value))
-  //               }
-  //               className="border rounded p-1"
-  //             >
-  //               {[...Array(10)].map((_, i) => (
-  //                 <option key={i+1} value={i+1}>{i+1}</option>
-  //               ))}
-  //             </select>
-  //             <FaTrash
-  //               onClick={() => deleteItem(catId, item._id)}
-  //               className="cursor-pointer text-ember"
-  //             />
-  //           </div>
-  //         </div>
-  //       ))}
-
-  //       {/* ← Add Item button */}
-  //       <button
-  //         onClick={() => setShowAddModalCat(catId)}
-  //         className="mt-2 px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
-  //       >
-  //         <FaPlus className="mr-2" /> Add Item
-  //       </button>
-  //       {showAddModalCat === catId && (
-  //         <AddGearItemModal
-  //           listId={listId}
-  //           categoryId={catId}
-  //           onClose={() => setShowAddModalCat(null)}
-  //           onAdded={() => fetchItems(catId)}
-  //         />
-  //       )}
-  //     </section>
-  //   );
-  // }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

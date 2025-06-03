@@ -15,7 +15,7 @@ const gearItemSchema = new mongoose.Schema({
   category: {
     type: mongoose.Types.ObjectId,
     ref:  'Category',
-    required: true
+    required: false
   },
   brand:      { type: String },
   itemType:   { type: String },

@@ -23,8 +23,8 @@ res.status(500).json({ message: err.message });  }
 router.post('/', async (req, res) => {
   try {
     const { category, name } = req.body;
-    if (!category || !name) {
-      return res.status(400).json({ message: 'Category and name are required.' });
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required.' });
     }
     const newItem = await GlobalItem.create({
       owner: req.userId,

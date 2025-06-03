@@ -1,7 +1,7 @@
 {
   "name": "packplanner2.0-backend",
   "version": "1.0.0",
-  "description": "Backend for PackPlanner2.0 – a simple gear list Kanban app",
+  "description": "Backend for PackPlanner",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

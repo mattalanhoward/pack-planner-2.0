@@ -18,7 +18,7 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: process.env.CLIENT_URL,
     credentials: true
   })
 );
@@ -35,7 +35,7 @@ app.use('/api/global/items', globalItemsRoutes);
 // Make sure you read the URI exactly from process.env:
 const mongoURI = process.env.MONGO_URI;
 if (!mongoURI) {
-  console.error("❌ No MONGODB_URI defined in environment!");
+  console.error("❌ No MONGO_URI defined in environment!");
   process.exit(1);
 }
 

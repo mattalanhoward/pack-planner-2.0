@@ -31,11 +31,26 @@ app.use('/api/lists/:listId/categories', categoriesRoutes);
 app.use('/api/lists/:listId/categories/:catId/items', gearItemRoutes);
 app.use('/api/global/items', globalItemsRoutes);
 
-
+// Make sure you read the URI exactly from process.env:
+const mongoURI = process.env.MONGODB_URI;
+if (!mongoURI) {
+  console.error("❌ No MONGODB_URI defined in environment!");
+  process.exit(1);
+}
 
 mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ Mongo connection error:', err));
+  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log("✅ Mongo connected");
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+      console.log(`🎉 Back-end listening on port ${port}`);
+    });
+  })
+  .catch(err => {
+    console.error("Mongo connection error:", err);
+    process.exit(1);
+  });
+
 
 module.exports = app;

@@ -12,15 +12,16 @@ const gearItemRoutes = require('./routes/gearItems');
 const globalItemsRoutes = require('./routes/globalItems');
 
 
-// ... any other routes
-
 const app = express();
 
-// Enable CORS for your frontend origin
-app.use(cors({
-  origin: 'http://localhost:5173',   // allow only your Vite dev server
-  credentials: true                  // if you ever use cookies
-}));
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+
+app.use(
+  cors({
+    origin: CLIENT_URL,
+    credentials: true
+  })
+);
 
 app.use(express.json());
 

@@ -331,7 +331,7 @@ const filteredAndSortedItems = useMemo(() => {
             onClick={() => onSelectList(l._id)}
             className={`flex-1 text-left p-2 rounded-lg ${
               l._id === currentListId
-                ? 'bg-teal text-sand'
+                ? 'bg-sunset text-sand'
                 : 'hover:bg-sunset hover:text-pine'
             }`}
           >

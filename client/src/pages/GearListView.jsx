@@ -491,11 +491,11 @@ function SortableSection({
 }) {
   const catId = category._id;
   const [localTitle, setLocalTitle] = useState(category.title);
-const totalWeight = (items || []).reduce(
-  (sum, i) => {
-    if (i.worn) return sum;
+  const totalWeight = (items || []).reduce(
+    (sum, i) => {
+      if (i.worn) return sum;
     return sum + ((i.weight || 0) * (i.quantity || 1));
-  },
+    },
   0
 );
 
@@ -575,6 +575,7 @@ const totalWeight = (items || []).reduce(
               onToggleWorn={onToggleWorn}
               onQuantityChange={onQuantityChange}
               onDelete={onDeleteItem}
+              isListMode={viewMode === 'list'}
             />
           ))}
         </div>
@@ -614,7 +615,7 @@ function SortableColumn({
   showAddModalCat,
   setShowAddModalCat,
   fetchItems,
-  listId
+  listId,
 }) {
   const catId = category._id;
   const [localTitle, setLocalTitle] = useState(category.title);
@@ -634,7 +635,7 @@ const totalWeight = (items || []).reduce(
     <div
       ref={setNodeRef}
       style={style}
-      className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg p-3 flex flex-col h-full"
+      className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg pt-3 pb-3 pl-0 pr-0 sm:p-3 flex flex-col h-full"
     >
       <div className="flex items-center mb-2">
         <FaGripVertical {...attributes} {...listeners}
@@ -700,6 +701,7 @@ const totalWeight = (items || []).reduce(
               onToggleWorn={onToggleWorn}
               onQuantityChange={onQuantityChange}
               onDelete={onDeleteItem}
+              isListMode={false}
             />
           ))}
         </div>

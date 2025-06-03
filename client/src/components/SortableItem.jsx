@@ -8,7 +8,8 @@ import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from 'react-icons/fa';
  * Props:
  *   - item: the gearItem object from itemsMap[catId]
  *   - catId: the category _id this item currently lives in
- *   - onToggleConsumable, onToggleWorn, onQuantityChange, onDelete: callbacks (exactly as before)
+ *   - onToggleConsumable, onToggleWorn, onQuantityChange, onDelete: callbacks
+ *   - isListMode: boolean (true when viewMode === 'list'; false otherwise)
  */
 export default function SortableItem({
   item,
@@ -16,37 +17,40 @@ export default function SortableItem({
   onToggleConsumable,
   onToggleWorn,
   onQuantityChange,
-  onDelete
+  onDelete,
+  isListMode,            // ← new prop
 }) {
-  // We namespace the id as `item-<catId>-<itemId>`.
-  // This id must be unique across all categories/items.
+  // Unique sortable ID
   const itemKey = `item-${catId}-${item._id}`;
 
-  // Pass data: { catId, itemId } so we can tell where this item came from.
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition
+    transition,
   } = useSortable({
     id: itemKey,
-    data: { catId, itemId: item._id }
+    data: { catId, itemId: item._id },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white p-3 rounded shadow flex flex-col mb-2"
+      className={`
+        bg-white p-3 rounded shadow mb-2
+        flex flex-col
+        ${isListMode ? 'md:flex-row md:items-center md:justify-between' : ''}
+      `}
     >
-      {/* Row 1: Grip icon + itemType */}
-      <div className="flex items-center mb-1">
+      {/** ───── Row 1: Grip icon + itemType ───── */}
+      <div className={`flex items-center mb-1 ${isListMode ? 'md:mb-0 md:mr-4' : ''}`}>
         <FaGripVertical
           {...attributes}
           {...listeners}
@@ -58,16 +62,39 @@ export default function SortableItem({
         </div>
       </div>
 
-      {/* Row 2: Brand + Name */}
-      <div className="text-sm text-gray-700">
-        {item.brand && <span className="mr-1">{item.brand}</span>}
-        {item.name}
-      </div>
+{/* ───── Row 2: Brand + Name ───── */}
+{item.link ? (
+  <a
+    href={item.link}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={`text-sm text-gray-700 hover:underline ${
+      isListMode ? 'md:mr-4 md:flex-1' : 'my-1'
+    }`}
+  >
+    {item.brand && <span className="mr-1">{item.brand}</span>}
+    {item.name}
+  </a>
+) : (
+  <div className={`text-sm text-gray-700 ${
+    isListMode ? 'md:mr-4 md:flex-1' : 'my-1'
+  }`}>
+    {item.brand && <span className="mr-1">{item.brand}</span>}
+    {item.name}
+  </div>
+)}
 
-      {/* Row 3: Weight + toggles + price + qty + delete */}
-      <div className="flex items-center justify-between text-sm text-gray-600 mt-3">
+      {/** ───── Row 3: Weight + toggles + price + qty + delete ───── */}
+      <div
+        className={`
+          flex items-center justify-between text-sm text-gray-600 mt-3
+          ${isListMode ? 'md:mt-0 md:ml-auto' : ''}
+        `}
+      >
         {/* Weight */}
-        <span>{item.weight != null ? `${item.weight}g` : ''}</span>
+        <span className={`${isListMode ? 'md:mr-4' : ''}`}>
+          {item.weight != null ? `${item.weight}g` : ''}
+        </span>
 
         <div className="flex items-center space-x-3">
           {/* Consumable toggle */}

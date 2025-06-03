@@ -1,6 +1,18 @@
-/* client/src/index.css */
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import './App.css'; /* Make sure App.css is in src, otherwise adjust path */
+@import './App.css';
+
+/* ────────────────────────────────────────────────────────  
+   Now override Tailwind’s “a { color: inherit; }” so that
+   your links can actually receive their own color classes.
+   You can set a global default here if you like. 
+──────────────────────────────────────────────────────── */
+a {
+  /* “initial” means “use browser default link color” (usually blue) —
+     but you can set whatever default you prefer. */
+  color: #25554D;
+  text-decoration: none; /* or “none” if you don’t want underlines by default */
+}

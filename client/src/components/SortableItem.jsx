@@ -18,9 +18,9 @@ export default function SortableItem({
   onToggleWorn,
   onQuantityChange,
   onDelete,
-  isListMode,            // ← new prop
+  isListMode, // ← new prop
 }) {
-  // Unique sortable ID
+  // Unique sortable ID (must match what GearListView uses)
   const itemKey = `item-${catId}-${item._id}`;
 
   const {
@@ -50,7 +50,11 @@ export default function SortableItem({
       `}
     >
       {/** ───── Row 1: Grip icon + itemType ───── */}
-      <div className={`flex items-center mb-1 ${isListMode ? 'md:mb-0 md:mr-4' : ''}`}>
+      <div
+        className={`flex items-center mb-1 ${
+          isListMode ? 'md:mb-0 md:mr-4' : ''
+        }`}
+      >
         <FaGripVertical
           {...attributes}
           {...listeners}
@@ -62,37 +66,36 @@ export default function SortableItem({
         </div>
       </div>
 
-{/* ───── Row 2: Brand + Name ───── */}
-{item.link ? (
-  <a
-    href={item.link}
-    target="_blank"
-    rel="noopener noreferrer"
-    className={`text-sm text-gray-700 hover:underline ${
-      isListMode ? 'md:mr-4 md:flex-1' : 'my-1'
-    }`}
-  >
-    {item.brand && <span className="mr-1">{item.brand}</span>}
-    {item.name}
-  </a>
-) : (
-  <div className={`text-sm text-gray-700 ${
-    isListMode ? 'md:mr-4 md:flex-1' : 'my-1'
-  }`}>
-    {item.brand && <span className="mr-1">{item.brand}</span>}
-    {item.name}
-  </div>
-)}
+      {/** ───── Row 2: Brand + Name (with optional link) ───── */}
+      <div className={`text-sm mb-1 ${isListMode ? 'md:flex-1' : ''}`}>
+        {item.link ? (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="!text-teal-600 hover:!text-teal-800 hover:underline transition-colors duration-200"
+            title={`View ${item.brand || item.name}`}
+          >
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </a>
+        ) : (
+          <span className="text-gray-700">
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </span>
+        )}
+      </div>
 
       {/** ───── Row 3: Weight + toggles + price + qty + delete ───── */}
       <div
         className={`
-          flex items-center justify-between text-sm text-gray-600 mt-3
+          flex items-center justify-between text-sm mt-3
           ${isListMode ? 'md:mt-0 md:ml-auto' : ''}
         `}
       >
         {/* Weight */}
-        <span className={`${isListMode ? 'md:mr-4' : ''}`}>
+        <span className={`${isListMode ? 'md:mr-4 text-gray-600' : 'text-gray-600'}`}>
           {item.weight != null ? `${item.weight}g` : ''}
         </span>
 
@@ -115,25 +118,26 @@ export default function SortableItem({
             title="Toggle worn"
           />
 
-          {/* Price (link or plain) */}
+          {/* Price (with buy-link styling) */}
           {item.price != null &&
             (item.link ? (
               <a
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-teal hover:underline"
+                className="text-teal-600 hover:text-teal-800 hover:underline transition-colors duration-200"
+                title={`Buy for $${item.price}`}
               >
                 ${item.price}
               </a>
             ) : (
-              <span>${item.price}</span>
+              <span className="text-gray-600">${item.price}</span>
             ))}
 
           {/* Quantity selector */}
           <select
             value={item.quantity}
-            onChange={e =>
+            onChange={(e) =>
               onQuantityChange(catId, item._id, Number(e.target.value))
             }
             className="border rounded p-1"

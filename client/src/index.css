@@ -16,13 +16,3 @@ a {
   color: #25554d;
   text-decoration: none; /* or “none” if you don’t want underlines by default */
 }
-
-/* ── Custom utilities go below ── */
-@layer utilities {
-  .h-d-screen {
-    /* First, try the modern 100dvh unit */
-    height: 100dvh;
-    /* Fallback: use the --vh variable (or regular 1vh) if --vh isn’t defined */
-    height: calc(var(--vh, 1vh) * 100);
-  }
-}

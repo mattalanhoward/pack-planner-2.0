@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
-import GearListView from './GearListView';
-import { useAuth } from '../contexts/AuthContext';
-import TopBar from '../components/TopBar';
+import React, { useState } from "react";
+import Sidebar from "../components/Sidebar";
+import GearListView from "./GearListView";
+import { useAuth } from "../contexts/AuthContext";
+import TopBar from "../components/TopBar";
 
 export default function Dashboard() {
   const { isAuthenticated, logout } = useAuth();
-  const [currentListId, setCurrentListId]   = useState(null);
-  const [refreshToggle, setRefreshToggle]   = useState(false);
+  const [currentListId, setCurrentListId] = useState(null);
+  const [refreshToggle, setRefreshToggle] = useState(false);
   const [templateToggle, setTemplateToggle] = useState(false);
-  const [viewMode, setViewMode]             = useState('columns'); // ← new state
+  const [viewMode, setViewMode] = useState("columns"); // ← new state
 
-  const handleItemAdded = () => setRefreshToggle(t => !t);
-  const handleTemplateEdited = () => setTemplateToggle(t => !t);
+  const handleItemAdded = () => setRefreshToggle((t) => !t);
+  const handleTemplateEdited = () => setTemplateToggle((t) => !t);
 
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-sand">
+    <div className="flex flex-col h-d-screen overflow-hidden bg-sand">
       {/* TopBar */}
-      <TopBar title="PackPlanner" viewMode={viewMode} setViewMode={setViewMode}/>
+      <TopBar
+        title="PackPlanner"
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -35,7 +39,7 @@ export default function Dashboard() {
               listId={currentListId}
               refreshToggle={refreshToggle}
               templateToggle={templateToggle}
-              viewMode={viewMode}           // ← pass it down
+              viewMode={viewMode} // ← pass it down
             />
           ) : (
             <div className="h-full flex items-center justify-center text-pine text-lg">

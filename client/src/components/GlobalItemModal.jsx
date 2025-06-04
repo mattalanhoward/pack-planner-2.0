@@ -1,55 +1,59 @@
 // src/components/GlobalItemModal.jsx
-import React, { useState } from 'react';
-import api from '../services/api';
-import { FaTimes } from 'react-icons/fa';
-import { toast } from 'react-hot-toast';
-import Swal from 'sweetalert2';
-import CurrencyInput from '../components/CurrencyInput';
+import React, { useState } from "react";
+import api from "../services/api";
+import { FaTimes } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+import Swal from "sweetalert2";
+import CurrencyInput from "../components/CurrencyInput";
 
-export default function GlobalItemModal({ categories = [], onClose, onCreated }) {
-  const [category, setCategory]     = useState('');
-  const [itemType, setItemType]     = useState('');
-  const [name, setName]             = useState('');
-  const [brand, setBrand]           = useState('');
-  const [description, setDescription] = useState('');
-  const [weight, setWeight]         = useState('');
-  const [price, setPrice]           = useState('');
-  const [link, setLink]             = useState('');
-  const [worn, setWorn]             = useState(false);
+export default function GlobalItemModal({
+  categories = [],
+  onClose,
+  onCreated,
+}) {
+  const [category, setCategory] = useState("");
+  const [itemType, setItemType] = useState("");
+  const [name, setName] = useState("");
+  const [brand, setBrand] = useState("");
+  const [description, setDescription] = useState("");
+  const [weight, setWeight] = useState("");
+  const [price, setPrice] = useState("");
+  const [link, setLink] = useState("");
+  const [worn, setWorn] = useState(false);
   const [consumable, setConsumable] = useState(false);
-  const [quantity, setQuantity]     = useState(1);
-  const [loading, setLoading]       = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error('Name is required.');
+      toast.error("Name is required.");
       return;
     }
 
     const payload = { category, name: name.trim() };
-    if (itemType.trim())    payload.itemType    = itemType.trim();
-    if (brand.trim())       payload.brand       = brand.trim();
+    if (itemType.trim()) payload.itemType = itemType.trim();
+    if (brand.trim()) payload.brand = brand.trim();
     if (description.trim()) payload.description = description.trim();
-    if (weight)             payload.weight      = Number(weight);
-    if (price)              payload.price       = Number(price);
-    if (link.trim())        payload.link        = link.trim();
+    if (weight) payload.weight = Number(weight);
+    if (price) payload.price = Number(price);
+    if (link.trim()) payload.link = link.trim();
     payload.worn = worn;
     payload.consumable = consumable;
     payload.quantity = Number(quantity);
 
     setLoading(true);
     try {
-      await api.post('/global/items', payload);
-      toast.success('Global item created!');
+      await api.post("/global/items", payload);
+      toast.success("Global item created!");
       onCreated();
       onClose();
     } catch (err) {
-      console.error('Error creating global item:', err);
-      const msg = err.response?.data?.message || 'Failed to create item.';
+      console.error("Error creating global item:", err);
+      const msg = err.response?.data?.message || "Failed to create item.";
       await Swal.fire({
-        icon: 'error',
-        title: 'Creation Failed',
+        icon: "error",
+        title: "Creation Failed",
         text: msg,
       });
       toast.error(msg);
@@ -59,7 +63,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
   };
 
   return (
-    <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
+    <div className="h-d-screen fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSubmit}
         className="bg-sand rounded-lg shadow-2xl max-w-xl w-full p-6"
@@ -97,13 +101,15 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
 
           {/* Item Type */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Item Type</label>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Item Type
+            </label>
             <input
               type="text"
               placeholder="Tent"
               required="required"
               value={itemType}
-              onChange={e => setItemType(e.target.value)}
+              onChange={(e) => setItemType(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
@@ -118,32 +124,36 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
               placeholder="Tarptent"
               value={name}
               required="required"
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
 
           {/* Brand */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Brand</label>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Brand
+            </label>
             <input
               type="text"
               placeholder="Rainbow"
               value={brand}
               required="required"
-              onChange={e => setBrand(e.target.value)}
+              onChange={(e) => setBrand(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
 
           {/* Weight */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Weight (g)</label>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Weight (g)
+            </label>
             <input
               type="number"
               min="0"
               value={weight}
-              onChange={e => setWeight(e.target.value)}
+              onChange={(e) => setWeight(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
@@ -152,33 +162,36 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
           <div>
             <CurrencyInput
               value={price}
-              onChange={value => setForm({ ...form, price: value })}
+              onChange={(value) => setForm({ ...form, price: value })}
               label="Price (Euro)"
             />
           </div>
 
           {/* Link */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">Link</label>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Link
+            </label>
             <input
               type="url"
               value={link}
-              onChange={e => setLink(e.target.value)}
+              onChange={(e) => setLink(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>
 
           {/* Description (span two columns) */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-pine mb-1">Description</label>
+            <label className="block text-sm font-medium text-pine mb-1">
+              Description
+            </label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
               rows={2}
             />
           </div>
-
 
           {/* Quantity
           <div>
@@ -191,7 +204,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
               className="mt-1 block w-full border border-pine rounded p-2 text-pine"
             />
           </div>*/}
-        </div> 
+        </div>
 
         {/* Worn / Consumable */}
         <div className="flex items-center space-x-4 mt-4">
@@ -199,7 +212,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             <input
               type="checkbox"
               checked={worn}
-              onChange={e => setWorn(e.target.checked)}
+              onChange={(e) => setWorn(e.target.checked)}
               className="mr-2"
             />
             Worn
@@ -208,7 +221,7 @@ export default function GlobalItemModal({ categories = [], onClose, onCreated })
             <input
               type="checkbox"
               checked={consumable}
-              onChange={e => setConsumable(e.target.checked)}
+              onChange={(e) => setConsumable(e.target.checked)}
               className="mr-2"
             />
             Consumable

@@ -18,6 +18,17 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-d-screen overflow-hidden bg-sand">
+      <div
+        className={`
+        flex flex-col
+        bg-sand
+        ${
+          viewMode === "columns"
+            ? "h-d-screen overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+            : "min-h-screen overflow-auto"
+        }
+      `}
+      ></div>
       {/* TopBar */}
       <TopBar
         title="PackPlanner"

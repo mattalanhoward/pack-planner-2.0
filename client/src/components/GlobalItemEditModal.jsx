@@ -103,8 +103,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed h-d-screen inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-sand rounded-lg shadow-2xl max-w-lg w-full p-6">
+    <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-sand rounded-lg shadow-2xl max-w-lg w-full p-6 h-d-screen">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-pine">Edit Global Item</h2>
           <button

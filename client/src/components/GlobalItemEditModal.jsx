@@ -5,6 +5,7 @@ import { FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
+import LinkInput from "../components/LinkInput";
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -20,6 +21,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [worn, setWorn] = useState(false);
   const [consumable, setConsumable] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [link, setLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -170,14 +172,12 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
           {/* Link */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
-              Link
-            </label>
-            <input
-              name="link"
-              value={form.link}
-              onChange={handleChange}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+            <LinkInput
+              value={link}
+              onChange={setLink}
+              label="Link"
+              placeholder="tarptent.com"
+              required={false}
             />
           </div>
 

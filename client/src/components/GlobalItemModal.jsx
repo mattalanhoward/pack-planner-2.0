@@ -5,6 +5,7 @@ import { FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
+import LinkInput from "../components/LinkInput";
 
 export default function GlobalItemModal({
   categories = [],
@@ -131,17 +132,12 @@ export default function GlobalItemModal({
 
           {/* Link */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
-              Link
-            </label>
-            <input
-              type="url"
-              placeholder="https://tarptent.com"
-              pattern="https?://.+"
-              title="Must start with http:// or https://"
+            <LinkInput
               value={link}
-              onChange={(e) => setLink(e.target.value)}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              onChange={setLink}
+              label="Link"
+              placeholder="tarptent.com"
+              required={false}
             />
           </div>
 

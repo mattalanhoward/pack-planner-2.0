@@ -162,8 +162,7 @@ export default function GlobalItemModal({
               </label>
               <CurrencyInput
                 value={price}
-                onChange={(value) => setForm({ ...form, price: value })}
-                className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+                onChange={(value) => setPrice(value)}
               />
             </div>
           </div>

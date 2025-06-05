@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { formatEuro, parseEuro } from '../utils/formatCurrency';
+import React, { useState } from "react";
+import { formatEuro, parseEuro } from "../utils/formatCurrency";
 
 export default function CurrencyInput({ value, onChange, label }) {
   // We’ll keep two pieces of state:
@@ -13,7 +13,7 @@ export default function CurrencyInput({ value, onChange, label }) {
   }, [value]);
 
   // Called on every keystroke:
-  const handleChange = e => {
+  const handleChange = (e) => {
     // Always store *exactly* what the user typed, so the cursor doesn’t jump.
     setDisplay(e.target.value);
   };
@@ -32,7 +32,7 @@ export default function CurrencyInput({ value, onChange, label }) {
   // We want to strip away currency formatting so they can type a raw number:
   const handleFocus = () => {
     // Show only the raw numeric (no thousand separators or “€” suffix).
-    if (value !== '' && value != null) {
+    if (value !== "" && value != null) {
       setDisplay(value.toString());
     }
   };
@@ -50,7 +50,7 @@ export default function CurrencyInput({ value, onChange, label }) {
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+        className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
         placeholder="0,00 €"
       />
     </div>

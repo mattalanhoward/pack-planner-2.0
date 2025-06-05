@@ -136,6 +136,9 @@ export default function GlobalItemModal({
             </label>
             <input
               type="url"
+              placeholder="https://tarptent.com"
+              pattern="https?://.+"
+              title="Must start with http:// or https://"
               value={link}
               onChange={(e) => setLink(e.target.value)}
               className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"

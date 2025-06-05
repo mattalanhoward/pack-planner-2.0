@@ -1,7 +1,7 @@
 // src/components/GlobalItemEditModal.jsx
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
-import { FaTimes, FaCheck } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
@@ -54,7 +54,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     return "";
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    e.preventDefault(); // Because now this is a form submit
     const err = validate();
     if (err) {
       setError(err);
@@ -104,144 +105,165 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-sand rounded-lg shadow-2xl max-w-lg w-full p-6 h-d-screen">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-pine">Edit Global Item</h2>
+      <form
+        onSubmit={handleSave}
+        className="bg-sand rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-2 sm:mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-pine">
+            Edit Global Item
+          </h2>
           <button
+            type="button"
             onClick={onClose}
             disabled={saving}
-            className="text-ember hover:text-ember/80"
+            className="text-ember hover:text-ember/80 text-xl sm:text-2xl"
           >
             <FaTimes />
           </button>
         </div>
 
+        {/* Optional error message */}
         {error && <div className="text-ember mb-2">{error}</div>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Grid of fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+          {/* Item Type */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
               Item Type
             </label>
             <input
               name="itemType"
               value={form.itemType}
               onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
             />
           </div>
 
+          {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">
-              Name
+            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+              Name<span className="text-red-500">*</span>
             </label>
             <input
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
             />
           </div>
 
+          {/* Brand */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
               Brand
             </label>
             <input
               name="brand"
               value={form.brand}
               onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
             />
           </div>
 
+          {/* Link */}
           <div>
-            <label className="block text-sm font-medium text-pine mb-1">
-              Weight (g)
-            </label>
-            <input
-              type="number"
-              name="weight"
-              min="0"
-              value={form.weight}
-              onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-            />
-          </div>
-
-          <div>
-            <CurrencyInput
-              value={form.price}
-              onChange={(value) => setForm({ ...form, price: value })}
-              label="Price (Euro)"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-pine mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
               Link
             </label>
             <input
               name="link"
               value={form.link}
               onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
+              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-pine mb-1">
+          {/* Weight + Price (always side-by-side) */}
+          <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
+            <div className="flex-1">
+              <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+                Weight (g)
+              </label>
+              <input
+                type="number"
+                name="weight"
+                min="0"
+                value={form.weight}
+                onChange={handleChange}
+                className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+                Price (€)
+              </label>
+              <CurrencyInput
+                value={form.price}
+                onChange={(value) => setForm({ ...form, price: value })}
+                className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Description (full width) */}
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
               Description
             </label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="mt-1 block w-full border border-pine rounded p-2 text-pine"
-              rows={2}
+              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              rows={1}
             />
-          </div>
-
-          <div className="flex items-center space-x-4 mt-4">
-            <label className="inline-flex items-center text-pine">
-              <input
-                type="checkbox"
-                checked={worn}
-                onChange={(e) => setWorn(e.target.checked)}
-                className="mr-2"
-              />
-              Worn
-            </label>
-            <label className="inline-flex items-center text-pine">
-              <input
-                type="checkbox"
-                checked={consumable}
-                onChange={(e) => setConsumable(e.target.checked)}
-                className="mr-2"
-              />
-              Consumable
-            </label>
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2 mt-6">
+        {/* Worn / Consumable */}
+        <div className="flex items-center space-x-4 mt-2">
+          <label className="inline-flex items-center text-xs sm:text-sm text-pine">
+            <input
+              type="checkbox"
+              checked={worn}
+              onChange={(e) => setWorn(e.target.checked)}
+              className="mr-1 sm:mr-2"
+            />
+            Worn
+          </label>
+          <label className="inline-flex items-center text-xs sm:text-sm text-pine">
+            <input
+              type="checkbox"
+              checked={consumable}
+              onChange={(e) => setConsumable(e.target.checked)}
+              className="mr-1 sm:mr-2"
+            />
+            Consumable
+          </label>
+        </div>
+
+        {/* Cancel / Save buttons */}
+        <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
           <button
+            type="button"
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 bg-sand rounded hover:bg-sand/90 text-pine"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-sand rounded hover:bg-sand/90 text-pine text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
-            onClick={handleSave}
+            type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-teal text-white rounded hover:bg-teal-700 text-sm sm:text-base"
           >
-            <FaCheck className="mr-2" />
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

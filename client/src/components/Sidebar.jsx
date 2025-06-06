@@ -1,56 +1,64 @@
 // src/components/Sidebar.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import api from '../services/api';
+import React, { useState, useEffect, useMemo } from "react";
+import api from "../services/api";
 import {
   FaChevronLeft,
   FaChevronRight,
   FaPlus,
   FaEdit,
   FaTrash,
-} from 'react-icons/fa';
-import GlobalItemModal from './GlobalItemModal';
-import GlobalItemEditModal from './GlobalItemEditModal';
-import Swal from 'sweetalert2';
-import { toast } from 'react-hot-toast';
+} from "react-icons/fa";
+import GlobalItemModal from "./GlobalItemModal";
+import GlobalItemEditModal from "./GlobalItemEditModal";
+import { toast } from "react-hot-toast";
+import ConfirmDialog from "./ConfirmDialog"; // <-- our reusable ConfirmDialog
 
 export default function Sidebar({
   currentListId,
   onSelectList,
   onItemAdded,
-  onTemplateEdited,      // <— new prop
+  onTemplateEdited, // <— new prop
 }) {
-  const [collapsed, setCollapsed]         = useState(false);
-  const [lists, setLists]                 = useState([]);
-  const [newListTitle, setNewListTitle]   = useState('');
-  const [editingId, setEditingId]         = useState(null);
-  const [editingTitle, setEditingTitle]   = useState('');
-  const [categories, setCategories]       = useState([]);
-  const [items, setItems]                 = useState([]);
-  const [searchQuery, setSearchQuery]     = useState('');
-  const [showCreateModal, setShowCreateModal]     = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [lists, setLists] = useState([]);
+  const [newListTitle, setNewListTitle] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingGlobalItem, setEditingGlobalItem] = useState(null);
+
+  // ─── Confirmation‐dialog state for “delete list” ───
+  const [confirmListOpen, setConfirmListOpen] = useState(false);
+  const [pendingDeleteListId, setPendingDeleteListId] = useState(null);
+
+  // ─── Confirmation‐dialog state for “delete global item” ───
+  const [confirmGlobalOpen, setConfirmGlobalOpen] = useState(false);
+  const [pendingDeleteGlobalId, setPendingDeleteGlobalId] = useState(null);
 
   // 1) Fetch all gear lists
   const fetchLists = async () => {
     try {
-      const { data } = await api.get('/lists');
+      const { data } = await api.get("/lists");
       setLists(data);
     } catch (err) {
-      console.error('Error fetching lists:', err);
-      alert('Failed to load your gear lists.');
+      console.error("Error fetching lists:", err);
+      alert("Failed to load your gear lists.");
     }
   };
 
   // 2) Fetch all global items (master catalog)
   const fetchGlobalItems = async () => {
     try {
-      const { data } = await api.get('/global/items', {
-        params: { search: searchQuery }
+      const { data } = await api.get("/global/items", {
+        params: { search: searchQuery },
       });
       setItems(data);
     } catch (err) {
-      console.error('Error fetching global items:', err);
-      alert('Failed to load catalog items.');
+      console.error("Error fetching global items:", err);
+      alert("Failed to load catalog items.");
     }
   };
 
@@ -59,7 +67,7 @@ export default function Sidebar({
     fetchLists();
   }, []);
 
-  // 4) Auto-select first list if none
+  // 4) Auto‐select first list if none
   useEffect(() => {
     if (!currentListId && lists.length > 0) {
       onSelectList(lists[0]._id);
@@ -77,7 +85,7 @@ export default function Sidebar({
         const { data } = await api.get(`/lists/${currentListId}/categories`);
         setCategories(data);
       } catch (err) {
-        console.error('Error fetching categories:', err);
+        console.error("Error fetching categories:", err);
       }
     })();
   }, [currentListId]);
@@ -87,27 +95,23 @@ export default function Sidebar({
     fetchGlobalItems();
   }, [searchQuery]);
 
-   // === Gear‐list CRUD ===
+  // === Gear‐list CRUD ===
 
   // Create
   const createList = async () => {
     const title = newListTitle.trim();
     if (!title) {
-      toast.error('List name cannot be empty.');
+      toast.error("List name cannot be empty.");
       return;
     }
     try {
-      await api.post('/lists', { title });
-      setNewListTitle('');
+      await api.post("/lists", { title });
+      setNewListTitle("");
       await fetchLists();
-      toast.success('List created!');
+      toast.success("List created!");
     } catch (err) {
-      console.error('Error creating list:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Creation Failed',
-        text: err.response?.data?.message || 'Could not create list.',
-      });
+      console.error("Error creating list:", err);
+      toast.error(err.response?.data?.message || "Could not create list.");
     }
   };
 
@@ -118,83 +122,77 @@ export default function Sidebar({
   };
 
   // Save inline edit
-  const saveEditList = async id => {
+  const saveEditList = async (id) => {
     const title = editingTitle.trim();
     if (!title) {
-      toast.error('List name cannot be empty.');
+      toast.error("List name cannot be empty.");
       return;
     }
     try {
       await api.patch(`/lists/${id}`, { title });
       setEditingId(null);
-      setEditingTitle('');
+      setEditingTitle("");
       await fetchLists();
       if (currentListId === id) onSelectList(id);
-      toast.success('List renamed!');
+      toast.success("List renamed!");
     } catch (err) {
-      console.error('Error updating list:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Update Failed',
-        text: 'Could not update list name.',
-      });
+      console.error("Error updating list:", err);
+      toast.error(err.response?.data?.message || "Could not update list name.");
     }
   };
   const cancelEditList = () => {
     setEditingId(null);
-    setEditingTitle('');
+    setEditingTitle("");
   };
 
-  // Delete
-  const deleteList = async id => {
-    const list = lists.find(l => l._id === id);
-    const result = await Swal.fire({
-      title: `Delete ${list.title} Gear List?`,
-      text: 'This cannot be undone.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Delete',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true,
-    });
-    if (!result.isConfirmed) return;
+  // ─── “Delete list” via ConfirmDialog ───
+  const handleDeleteListClick = (id) => {
+    setPendingDeleteListId(id);
+    setConfirmListOpen(true);
+  };
 
+  const actuallyDeleteList = async () => {
+    const id = pendingDeleteListId;
     try {
       await api.delete(`/lists/${id}`);
       await fetchLists();
       if (currentListId === id) onSelectList(null);
-      toast.success('List deleted');
+      toast.success("List deleted");
     } catch (err) {
-      console.error('Error deleting list:', err);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Deletion Failed',
-        text: 'Could not delete list.',
-      });
+      console.error("Error deleting list:", err);
+      toast.error(err.response?.data?.message || "Could not delete list.");
+    } finally {
+      setConfirmListOpen(false);
+      setPendingDeleteListId(null);
     }
+  };
+
+  const cancelDeleteList = () => {
+    setConfirmListOpen(false);
+    setPendingDeleteListId(null);
   };
 
   // === Global‐item (catalog) actions ===
 
-  const addToList = async item => {
+  const addToList = async (item) => {
     if (!currentListId || categories.length === 0) {
-      return alert('Pick or create a list with at least one category first.');
+      return alert("Pick or create a list with at least one category first.");
     }
     const cat = categories[0]; // default to first category
 
     const payload = {
-      globalItem:  item._id,
-      brand:       item.brand,
-      itemType:    item.itemType,
-      name:        item.name,
+      globalItem: item._id,
+      brand: item.brand,
+      itemType: item.itemType,
+      name: item.name,
       description: item.description,
-      weight:      item.weight,
-      price:       item.price,
-      link:        item.link,
-      worn:        item.worn,
-      consumable:  item.consumable,
-      quantity:    item.quantity,
-      position:    0
+      weight: item.weight,
+      price: item.price,
+      link: item.link,
+      worn: item.worn,
+      consumable: item.consumable,
+      quantity: item.quantity,
+      position: 0,
     };
 
     try {
@@ -204,59 +202,59 @@ export default function Sidebar({
       );
       onItemAdded();
     } catch (err) {
-      console.error('Error adding catalog item to list:', err);
-      alert('Failed to add item into your list.');
+      console.error("Error adding catalog item to list:", err);
+      alert("Failed to add item into your list.");
     }
   };
 
-   // — delete an item —
-  
-  const deleteGlobalItem = async id => {
-    const item = items.find(i => i._id === id);
-          const result = await Swal.fire({
-        title: `Delete ${item.brand} ${item.name} and all its instances?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Delete Item',
-        cancelButtonText: 'Cancel',
-        reverseButtons: true,
-      });
-      if (!result.isConfirmed) return;
+  // ─── “Delete global item” via ConfirmDialog ───
+  const handleDeleteGlobalClick = (id) => {
+    setPendingDeleteGlobalId(id);
+    setConfirmGlobalOpen(true);
+  };
+
+  const actuallyDeleteGlobalItem = async () => {
+    const id = pendingDeleteGlobalId;
+    const item = items.find((i) => i._id === id);
     try {
       await api.delete(`/global/items/${id}`);
       fetchGlobalItems();
-      onTemplateEdited();     // <— notify boards to refresh
-      toast.success('Item deleted');
-
+      onTemplateEdited(); // <— notify Dashboard
+      toast.success(
+        item ? `Deleted ${item.brand} ${item.name}` : "Item deleted"
+      );
     } catch (err) {
-      console.error('Error deleting global item:', err);
-      toast.error(err.response?.data?.message || 'Failed to delete');
+      console.error("Error deleting global item:", err);
+      toast.error(err.response?.data?.message || "Failed to delete");
+    } finally {
+      setConfirmGlobalOpen(false);
+      setPendingDeleteGlobalId(null);
     }
   };
 
-const sortedItems = [...items].sort((a, b) => {
-  // compare “itemType – name” alphabetically
-  const keyA = `${a.itemType} – ${a.name}`.toLowerCase();
-  const keyB = `${b.itemType} – ${b.name}`.toLowerCase();
-  return keyA.localeCompare(keyB);
-});
+  const cancelDeleteGlobal = () => {
+    setConfirmGlobalOpen(false);
+    setPendingDeleteGlobalId(null);
+  };
 
-const sortedLists = React.useMemo(
-  () => [...lists].sort((a, b) => a.title.toLowerCase().localeCompare(b.title.toLowerCase())),
-  [lists]
-);
+  // Sorted/filtered UI helpers
+  const sortedLists = useMemo(
+    () =>
+      [...lists].sort((a, b) =>
+        a.title.toLowerCase().localeCompare(b.title.toLowerCase())
+      ),
+    [lists]
+  );
 
-const filteredAndSortedItems = useMemo(() => {
-    // First, filter by searchQuery (case‐insensitive substring on itemType or name)
+  const filteredAndSortedItems = useMemo(() => {
     const lower = searchQuery.trim().toLowerCase();
-    const filtered = lower === ''
-      ? items
-      : items.filter(item => {
-          const haystack = `${item.itemType} ${item.name}`.toLowerCase();
-          return haystack.includes(lower);
-        });
-
-    // Then sort alphabetically by “itemType – name”
+    const filtered =
+      lower === ""
+        ? items
+        : items.filter((item) => {
+            const haystack = `${item.itemType} ${item.name}`.toLowerCase();
+            return haystack.includes(lower);
+          });
     return [...filtered].sort((a, b) => {
       const keyA = `${a.itemType} – ${a.name}`.toLowerCase();
       const keyB = `${b.itemType} – ${b.name}`.toLowerCase();
@@ -266,17 +264,19 @@ const filteredAndSortedItems = useMemo(() => {
 
   // === Presentation ===
 
-  const widthClass = collapsed ? 'w-5' : 'w-80';
+  const widthClass = collapsed ? "w-5" : "w-80";
 
   return (
- <div className="h-full flex overflow-visible">
-      <div className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}>        
+    <div className="h-full flex overflow-visible">
+      <div
+        className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}
+      >
         {/* Collapse toggle at border, half in/out when collapsed */}
         <button
-          onClick={() => setCollapsed(c => !c)}
+          onClick={() => setCollapsed((c) => !c)}
           className={
             `absolute top-4 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
-            (collapsed ? 'right-0 translate-x-1/2' : 'right-4')
+            (collapsed ? "right-0 translate-x-1/2" : "right-4")
           }
         >
           {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
@@ -287,12 +287,13 @@ const filteredAndSortedItems = useMemo(() => {
             {/* Gear Lists */}
             <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
               <h2 className="font-bold mb-2 text-sunset">Gear Lists</h2>
+
               <div className="flex mb-3">
                 <input
                   className="flex-1 rounded-lg p-2 bg-sand text-pine border-pine"
                   placeholder="New list"
                   value={newListTitle}
-                  onChange={e => setNewListTitle(e.target.value)}
+                  onChange={(e) => setNewListTitle(e.target.value)}
                 />
                 <button
                   onClick={createList}
@@ -302,54 +303,55 @@ const filteredAndSortedItems = useMemo(() => {
                   Create
                 </button>
               </div>
+
               <ul className="overflow-y-auto flex-1 space-y-1">
-  {sortedLists.map(l => (
-    <li key={l._id} className="flex items-center">
-      {editingId === l._id ? (
-        <>
-          <input
-            className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
-            value={editingTitle}
-            onChange={e => setEditingTitle(e.target.value)}
-          />
-          <button
-            onClick={() => saveEditList(l._id)}
-            className="ml-2 text-sunset"
-          >
-            ✓
-          </button>
-          <button
-            onClick={cancelEditList}
-            className="ml-1 text-ember"
-          >
-            ×
-          </button>
-        </>
-      ) : (
-        <>
-          <button
-            onClick={() => onSelectList(l._id)}
-            className={`flex-1 text-left p-2 rounded-lg ${
-              l._id === currentListId
-                ? 'bg-sunset text-sand'
-                : 'hover:bg-sunset hover:text-pine'
-            }`}
-          >
-            {l.title}
-          </button>
-          <FaEdit
-            onClick={() => startEditList(l._id, l.title)}
-            className="ml-2 cursor-pointer text-sunset"
-          />
-          <FaTrash
-            onClick={() => deleteList(l._id)}
-            className="ml-2 cursor-pointer text-ember"
-          />
-        </>
-      )}
-    </li>
-  ))}
-</ul>
+                {sortedLists.map((l) => (
+                  <li key={l._id} className="flex items-center">
+                    {editingId === l._id ? (
+                      <>
+                        <input
+                          className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                        />
+                        <button
+                          onClick={() => saveEditList(l._id)}
+                          className="ml-2 text-sunset"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={cancelEditList}
+                          className="ml-1 text-ember"
+                        >
+                          ×
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => onSelectList(l._id)}
+                          className={`flex-1 text-left p-2 rounded-lg ${
+                            l._id === currentListId
+                              ? "bg-sunset text-sand"
+                              : "hover:bg-sunset hover:text-pine"
+                          }`}
+                        >
+                          {l.title}
+                        </button>
+                        <FaEdit
+                          onClick={() => startEditList(l._id, l.title)}
+                          className="ml-2 cursor-pointer text-sunset"
+                        />
+                        <FaTrash
+                          onClick={() => handleDeleteListClick(l._id)}
+                          className="ml-2 cursor-pointer text-ember"
+                        />
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </section>
 
             {/* Catalog / Global Items */}
@@ -369,49 +371,49 @@ const filteredAndSortedItems = useMemo(() => {
                 className="w-full rounded-lg p-2 bg-sand text-pine border border-pine mb-3"
                 placeholder="Search catalog"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
 
               <ul className="overflow-y-auto flex-1 space-y-2">
-              
-    {filteredAndSortedItems.length > 0 ? (
-      filteredAndSortedItems.map(item => (
-        <li
-          key={item._id}
-          className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
-        >
-  {/* left: truncated text */}
-  <span className="flex-1 truncate text-sand">
-    {item.itemType} – {item.name}
-  </span>
+                {filteredAndSortedItems.length > 0 ? (
+                  filteredAndSortedItems.map((item) => (
+                    <li
+                      key={item._id}
+                      className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+                    >
+                      {/* left: truncated text */}
+                      <span className="flex-1 truncate text-sand">
+                        {item.itemType} – {item.name}
+                      </span>
 
-  {/* right: action buttons */}
-  <div className="flex items-center space-x-2 ml-4">
-    <button
-      onClick={() => setEditingGlobalItem(item)}
-      title="Edit global template"
-      className="hover:text-sand/80 text-sand rounded-lg "
-    >
-      <FaEdit />
-    </button>
-    <button
-      onClick={() => deleteGlobalItem(item._id)}
-      title="Delete global template"
-      className="text-ember hover:text-ember/80"
-    >
-      <FaTrash />
-    </button>
-    {/* <button
-      onClick={() => addToList(item)}
-      disabled={!categories.length}
-      title="Add item to list"
-      className="p-1  hover:text-sunset/80 text-sunset rounded-lg disabled:opacity-50"
-    >
-      <FaPlus />
-    </button> */}
-  </div>
-</li>
-
+                      {/* right: action buttons */}
+                      <div className="flex items-center space-x-2 ml-4">
+                        <button
+                          onClick={() => setEditingGlobalItem(item)}
+                          title="Edit global template"
+                          className="hover:text-sand/80 text-sand rounded-lg"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteGlobalClick(item._id)}
+                          title="Delete global template"
+                          className="text-ember hover:text-ember/80"
+                        >
+                          <FaTrash />
+                        </button>
+                        {/* If you also want “Add to List,” un-comment this:
+                        <button
+                          onClick={() => addToList(item)}
+                          disabled={!categories.length}
+                          title="Add item to list"
+                          className="p-1 hover:text-sunset/80 text-sunset rounded-lg disabled:opacity-50"
+                        >
+                          <FaPlus />
+                        </button>
+                        */}
+                      </div>
+                    </li>
                   ))
                 ) : (
                   <li className="text-pine/70 p-2">No catalog items</li>
@@ -421,8 +423,15 @@ const filteredAndSortedItems = useMemo(() => {
               {showCreateModal && (
                 <GlobalItemModal
                   categories={categories}
-                  onClose={() => { setShowCreateModal(false); fetchGlobalItems(); }}
-                  onCreated={() => { setShowCreateModal(false); fetchGlobalItems(); onTemplateEdited(); }}
+                  onClose={() => {
+                    setShowCreateModal(false);
+                    fetchGlobalItems();
+                  }}
+                  onCreated={() => {
+                    setShowCreateModal(false);
+                    fetchGlobalItems();
+                    onTemplateEdited();
+                  }}
                 />
               )}
 
@@ -433,7 +442,7 @@ const filteredAndSortedItems = useMemo(() => {
                   onSaved={() => {
                     fetchGlobalItems();
                     setEditingGlobalItem(null);
-                    onTemplateEdited();   // <— notify Dashboard
+                    onTemplateEdited();
                   }}
                 />
               )}
@@ -441,6 +450,42 @@ const filteredAndSortedItems = useMemo(() => {
           </div>
         )}
       </div>
+
+      {/* ─── ConfirmDialog for “Delete List” ─── */}
+      <ConfirmDialog
+        isOpen={confirmListOpen}
+        title={
+          pendingDeleteListId
+            ? `Delete “${
+                lists.find((l) => l._id === pendingDeleteListId)?.title || ""
+              }” Gear List?`
+            : "Delete this list?"
+        }
+        message="This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteList}
+        onCancel={cancelDeleteList}
+      />
+
+      {/* ─── ConfirmDialog for “Delete Global Item” ─── */}
+      <ConfirmDialog
+        isOpen={confirmGlobalOpen}
+        title={
+          pendingDeleteGlobalId
+            ? `Delete ${
+                items.find((i) => i._id === pendingDeleteGlobalId)?.brand || ""
+              } ${
+                items.find((i) => i._id === pendingDeleteGlobalId)?.name || ""
+              } and all its instances?`
+            : "Delete this catalog item?"
+        }
+        message="This will remove the item from your master catalog."
+        confirmText="Delete Item"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteGlobalItem}
+        onCancel={cancelDeleteGlobal}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import GearListView from "./GearListView";
-import { useAuth } from "../contexts/AuthContext";
+import useAuth from "../hooks/useAuth";
 import TopBar from "../components/TopBar";
 
 export default function Dashboard() {

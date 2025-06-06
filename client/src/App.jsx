@@ -1,9 +1,10 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import GearListView from './pages/GearListView';
-import useAuth from './hooks/useAuth';
+//src/App.jsx
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import GearListView from "./pages/GearListView";
+import useAuth from "./hooks/useAuth";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();

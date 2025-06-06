@@ -156,15 +156,22 @@ export default function GearListView({
   const confirmAddCat = async () => {
     const title = newCatName.trim();
     if (!title) return;
-    const { data } = await api.post(`/lists/${listId}/categories`, {
-      title,
-      position: categories.length,
-    });
-    setCategories((c) => [...c, data]);
-    setNewCatName("");
-    setAddingNewCat(false);
-    toast.success("Category Added! 🎉");
+
+    try {
+      const { data } = await api.post(`/lists/${listId}/categories`, {
+        title,
+        position: categories.length,
+      });
+      setCategories((c) => [...c, data]);
+      setNewCatName("");
+      setAddingNewCat(false);
+      toast.success("Category Added! 🎉");
+    } catch (err) {
+      // show the error message from the thrown Error
+      toast.error(err.message || "Failed to add category");
+    }
   };
+
   const cancelAddCat = () => setAddingNewCat(false);
 
   const handleDeleteCatClick = (catId) => {

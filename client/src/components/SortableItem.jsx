@@ -106,6 +106,7 @@ export default function SortableItem({
               item.consumable ? "text-green-600" : "opacity-30"
             }`}
             title="Toggle consumable"
+            aria-label="Toggle Consumable"
           />
 
           {/* Worn toggle */}
@@ -115,6 +116,7 @@ export default function SortableItem({
               item.worn ? "text-blue-600" : "opacity-30"
             }`}
             title="Toggle worn"
+            aria-label="Toggle Worn"
           />
 
           {/* Price (with buy-link styling) */}
@@ -148,11 +150,12 @@ export default function SortableItem({
             ))}
           </select>
 
-          {/* Delete icon */}
           <button
+            type="button"
             onClick={() => onDelete(catId, item._id)}
             className="hover:text-red-700 text-red-500"
             title="Delete item"
+            aria-label="Delete item"
           >
             <FaTrash />
           </button>

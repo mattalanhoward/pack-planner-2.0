@@ -3,7 +3,8 @@
 /**
  * NOTE: GearListView (as currently written) only supports "list" and "columns" modes—
  * it does not render any “Search catalog” input. These tests therefore focus only on
- * the list mode behavior (loading existing categories/items + toggling consumable, toggling worn, updating quantity).
+ * the list mode behavior (loading existing categories/items + toggling consumable, toggling worn,
+ * updating quantity, and deleting an item).
  */
 
 // 1) MOCK `api` before importing the component
@@ -15,13 +16,13 @@ jest.mock("../services/api", () => ({
   defaults: { headers: { common: {} } },
 }));
 
-// 2) MOCK `react-hot-toast` and `sweetalert2`
+// 2) MOCK `react-hot-toast`
 jest.mock("react-hot-toast", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
-jest.mock("sweetalert2", () => ({
-  fire: jest.fn(() => Promise.resolve({ isConfirmed: true })),
-}));
+
+// 3) We no longer mock sweetalert2 here — it's been removed from GearListView.
+//    Instead we rely on our `<ConfirmDialog>` and will click its buttons in tests.
 
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
@@ -47,7 +48,8 @@ describe("GearListView component (list mode only)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock GETs as before
+
+    // Mock GET endpoints:
     api.get.mockImplementation((url) => {
       if (url === `/lists`) {
         return Promise.resolve({ data: [{ _id: listId, title: "MyList" }] });
@@ -68,7 +70,7 @@ describe("GearListView component (list mode only)", () => {
         listId={listId}
         refreshToggle={false}
         templateToggle={false}
-        viewMode="list" // list mode
+        viewMode="list"
       />
     );
 
@@ -129,7 +131,6 @@ describe("GearListView component (list mode only)", () => {
   });
 
   test("shows toast.error when toggle worn fails", async () => {
-    // Arrange: make the PATCH throw a “Network error”
     api.patch.mockRejectedValueOnce(new Error("Network error"));
 
     render(
@@ -147,8 +148,7 @@ describe("GearListView component (list mode only)", () => {
     });
 
     // Click the toggle‐worn icon (title="Toggle worn")
-    const wornIcon = screen.getByTitle("Toggle worn");
-    fireEvent.click(wornIcon);
+    fireEvent.click(screen.getByTitle("Toggle worn"));
 
     // Because the PATCH rejects, we expect toast.error("Network error")
     await waitFor(() => {
@@ -157,7 +157,6 @@ describe("GearListView component (list mode only)", () => {
   });
 
   test("shows toast.error when update quantity fails", async () => {
-    // Arrange: make the PATCH throw a different error
     api.patch.mockRejectedValueOnce(new Error("Oops"));
 
     render(
@@ -174,13 +173,80 @@ describe("GearListView component (list mode only)", () => {
       expect(screen.getByText("Tent")).toBeInTheDocument();
     });
 
-    // The quantity input is a <select> (role="combobox")—change its value from "1" to "2"
-    const qtySelect = screen.getByRole("combobox");
-    fireEvent.change(qtySelect, { target: { value: "2" } });
+    // Change the <select> (quantity selector) from “1” to “2”
+    fireEvent.change(screen.getByDisplayValue("1"), {
+      target: { value: "2" },
+    });
 
     // Because the PATCH rejects, we expect toast.error("Oops")
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Oops");
+    });
+  });
+
+  test("deletes an item successfully", async () => {
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={false}
+        templateToggle={false}
+        viewMode="list"
+      />
+    );
+
+    // Wait for the item “Tent” to appear
+    await waitFor(() => {
+      expect(screen.getByText("Tent")).toBeInTheDocument();
+    });
+
+    // Click the “Delete item” button (title="Delete item")
+    fireEvent.click(screen.getByTitle("Delete item"));
+
+    // Now our <ConfirmDialog> should render a “Yes, delete” button:
+    const confirmBtn = await screen.findByText("Yes, delete");
+    fireEvent.click(confirmBtn);
+
+    // Expect api.delete(`/lists/L1/categories/C1/items/I1`) to have been called
+    await waitFor(() => {
+      expect(api.delete).toHaveBeenCalledWith(
+        `/lists/${listId}/categories/${category._id}/items/${existingItem._id}`
+      );
+    });
+
+    // And we should see toast.success("Item deleted")
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Item deleted");
+    });
+  });
+
+  test("shows toast.error when delete item fails", async () => {
+    // Make the DELETE throw an error
+    api.delete.mockRejectedValueOnce(new Error("Server error"));
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={false}
+        templateToggle={false}
+        viewMode="list"
+      />
+    );
+
+    // Wait for the item “Tent” to appear
+    await waitFor(() => {
+      expect(screen.getByText("Tent")).toBeInTheDocument();
+    });
+
+    // Click the “Delete item” button
+    fireEvent.click(screen.getByTitle("Delete item"));
+
+    // Click “Yes, delete” in our ConfirmDialog:
+    const confirmBtn = await screen.findByText("Yes, delete");
+    fireEvent.click(confirmBtn);
+
+    // Because api.delete rejects, we expect toast.error("Failed to delete")
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Failed to delete");
     });
   });
 });

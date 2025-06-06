@@ -23,18 +23,10 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
-import {
-  FaGripVertical,
-  FaEdit,
-  FaTrash,
-  FaPlus,
-  FaUtensils,
-  FaTshirt,
-} from "react-icons/fa";
+import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { toast } from "react-hot-toast";
-import Swal from "sweetalert2";
-
+import ConfirmDialog from "../components/ConfirmDialog";
 import SortableItem from "../components/SortableItem";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn"; // (or wherever you placed that inline component)
@@ -54,6 +46,14 @@ export default function GearListView({
   const [showAddModalCat, setShowAddModalCat] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
+  // State to control the “delete item” confirmation dialog:
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState({
+    catId: null,
+    itemId: null,
+  });
+  const [confirmCatOpen, setConfirmCatOpen] = useState(false);
+  const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
 
   // — fetch list title —
   useEffect(() => {
@@ -126,24 +126,30 @@ export default function GearListView({
     }
   };
 
-  // — delete an item —
-  const deleteItem = async (catId, itemId) => {
-    const result = await Swal.fire({
-      title: "Delete this item?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-    });
-    if (!result.isConfirmed) return;
+  const handleDeleteClick = (catId, itemId) => {
+    // Open the dialog, storing which catId/itemId is about to be deleted
+    setPendingDelete({ catId, itemId });
+    setConfirmOpen(true);
+  };
+
+  const actuallyDeleteItem = async () => {
+    const { catId, itemId } = pendingDelete;
     try {
       await api.delete(`/lists/${listId}/categories/${catId}/items/${itemId}`);
       fetchItems(catId);
       toast.success("Item deleted");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
+    } finally {
+      // Close the confirmation dialog (regardless of success/failure)
+      setConfirmOpen(false);
+      setPendingDelete({ catId: null, itemId: null });
     }
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDelete({ catId: null, itemId: null });
   };
 
   // — add category —
@@ -161,29 +167,34 @@ export default function GearListView({
   };
   const cancelAddCat = () => setAddingNewCat(false);
 
-  // — delete category —
-  const deleteCat = async (id) => {
-    const result = await Swal.fire({
-      title: "Delete this category?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-    });
-    if (!result.isConfirmed) return;
+  const handleDeleteCatClick = (catId) => {
+    setPendingDeleteCatId(catId);
+    setConfirmCatOpen(true);
+  };
+
+  const actuallyDeleteCat = async () => {
+    const catId = pendingDeleteCatId;
     try {
-      await api.delete(`/lists/${listId}/categories/${id}`);
-      setCategories((c) => c.filter((x) => x._id !== id));
+      await api.delete(`/lists/${listId}/categories/${catId}`);
+      // Remove from local state:
+      setCategories((c) => c.filter((x) => x._id !== catId));
       setItemsMap((m) => {
         const copy = { ...m };
-        delete copy[id];
+        delete copy[catId];
         return copy;
       });
       toast.success("Category deleted");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
+    } finally {
+      setConfirmCatOpen(false);
+      setPendingDeleteCatId(null);
     }
+  };
+
+  const cancelDeleteCat = () => {
+    setConfirmCatOpen(false);
+    setPendingDeleteCatId(null);
   };
 
   // — edit category name inline —
@@ -494,11 +505,9 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onDeleteCat,
     onToggleConsumable,
     onToggleWorn,
     onQuantityChange,
-    onDeleteItem,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -560,6 +569,7 @@ export default function GearListView({
           ) : (
             <>
               <FaEdit
+                title="Edit category"
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
@@ -567,7 +577,8 @@ export default function GearListView({
                 className="mr-2 cursor-pointer text-teal"
               />
               <FaTrash
-                onClick={() => onDeleteCat(catId)}
+                title="Delete category"
+                onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
               />
             </>
@@ -588,7 +599,7 @@ export default function GearListView({
                 onToggleConsumable={onToggleConsumable}
                 onToggleWorn={onToggleWorn}
                 onQuantityChange={onQuantityChange}
-                onDelete={onDeleteItem}
+                onDelete={handleDeleteClick}
                 isListMode={viewMode === "list"}
               />
             ))}
@@ -621,11 +632,9 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onDeleteCat,
     onToggleConsumable,
     onToggleWorn,
     onQuantityChange,
-    onDeleteItem,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -686,6 +695,7 @@ export default function GearListView({
           ) : (
             <>
               <FaEdit
+                title="Edit category"
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
@@ -693,7 +703,8 @@ export default function GearListView({
                 className="mr-2 cursor-pointer text-teal"
               />
               <FaTrash
-                onClick={() => onDeleteCat(catId)}
+                title="Delete category"
+                onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
               />
             </>
@@ -714,7 +725,7 @@ export default function GearListView({
                 onToggleConsumable={onToggleConsumable}
                 onToggleWorn={onToggleWorn}
                 onQuantityChange={onQuantityChange}
-                onDelete={onDeleteItem}
+                onDelete={handleDeleteClick}
                 isListMode={false}
               />
             ))}
@@ -743,6 +754,7 @@ export default function GearListView({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* The confirmation dialog: */}
       <h2 className="pl-10 pt-4 text-2xl font-bold text-pine">{listName}</h2>
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
@@ -767,11 +779,11 @@ export default function GearListView({
                   editingCatId={editingCatId}
                   setEditingCatId={setEditingCatId}
                   onEditCat={editCat}
-                  onDeleteCat={deleteCat}
+                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
                   onToggleConsumable={toggleConsumable}
                   onToggleWorn={toggleWorn}
                   onQuantityChange={updateQuantity}
-                  onDeleteItem={deleteItem}
+                  onDeleteItem={handleDeleteClick}
                   showAddModalCat={showAddModalCat}
                   setShowAddModalCat={setShowAddModalCat}
                   fetchItems={fetchItems}
@@ -824,11 +836,11 @@ export default function GearListView({
                   editingCatId={editingCatId}
                   setEditingCatId={setEditingCatId}
                   onEditCat={editCat}
-                  onDeleteCat={deleteCat}
+                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
                   onToggleConsumable={toggleConsumable}
                   onToggleWorn={toggleWorn}
                   onQuantityChange={updateQuantity}
-                  onDeleteItem={deleteItem}
+                  onDeleteItem={handleDeleteClick}
                   showAddModalCat={showAddModalCat}
                   setShowAddModalCat={setShowAddModalCat}
                   fetchItems={fetchItems}
@@ -879,6 +891,24 @@ export default function GearListView({
             />
           ) : null}
         </DragOverlay>
+        <ConfirmDialog
+          isOpen={confirmOpen}
+          title="Delete this item?"
+          message="This action cannot be undone."
+          confirmText="Yes, delete"
+          cancelText="Cancel"
+          onConfirm={actuallyDeleteItem}
+          onCancel={cancelDelete}
+        />
+        <ConfirmDialog
+          isOpen={confirmCatOpen}
+          title="Delete this category?"
+          message="Deleting a category will remove all its items. Proceed?"
+          confirmText="Yes, delete"
+          cancelText="Cancel"
+          onConfirm={actuallyDeleteCat}
+          onCancel={cancelDeleteCat}
+        />
       </DndContext>
     </div>
   );

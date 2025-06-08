@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import { FaTimes } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
 import LinkInput from "../components/LinkInput";
+import ConfirmDialog from "./ConfirmDialog";
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -24,6 +24,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [link, setLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!item) return;
@@ -56,25 +57,21 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     return "";
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault(); // Because now this is a form submit
+  // 1) Validate & open confirmation
+  const handleSave = (e) => {
+    e.preventDefault();
     const err = validate();
     if (err) {
       setError(err);
       toast.error(err);
       return;
     }
+    setConfirmOpen(true);
+  };
 
-    const { isConfirmed } = await Swal.fire({
-      title: "Apply changes to every instance?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, update all",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-    });
-    if (!isConfirmed) return;
-
+  // 2) After user clicks “Yes, update all”
+  const handleConfirm = async () => {
+    setConfirmOpen(false);
     setSaving(true);
     setError("");
     try {
@@ -98,11 +95,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
       console.error("Error saving global item:", e);
       const msg =
         e.response?.data?.message || "Failed to save. Please try again.";
-      await Swal.fire({ icon: "error", title: "Save failed", text: msg });
       toast.error(msg);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmOpen(false);
   };
 
   return (
@@ -125,10 +125,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             <FaTimes />
           </button>
         </div>
-
         {/* Optional error message */}
         {error && <div className="text-ember mb-2">{error}</div>}
-
         {/* Grid of fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {/* Item Type */}
@@ -222,7 +220,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
           </div>
         </div>
-
         {/* Worn / Consumable */}
         <div className="flex items-center space-x-4 mt-2">
           <label className="inline-flex items-center text-xs sm:text-sm text-pine">
@@ -244,7 +241,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Consumable
           </label>
         </div>
-
         {/* Cancel / Save buttons */}
         <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
           <button
@@ -263,6 +259,16 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             {saving ? "Saving..." : "Save"}
           </button>
         </div>
+        + {/* ConfirmDialog copied from GearListView pattern */}
+        <ConfirmDialog
+          isOpen={confirmOpen}
+          title="Apply changes to every instance?"
+          message="This will update *all* items of this type."
+          confirmText="Yes, update all"
+          cancelText="Cancel"
+          onConfirm={handleConfirm}
+          onCancel={handleCancelConfirm}
+        />
       </form>
     </div>
   );

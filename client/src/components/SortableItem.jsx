@@ -39,7 +39,7 @@ export default function SortableItem({
       ref={setNodeRef}
       style={style}
       className={`
-        bg-white p-3 rounded shadow mb-2
+        bg-sand p-3 rounded shadow mb-2
         flex flex-col
         ${isListMode ? "md:flex-row md:items-center md:justify-between" : ""}
       `}
@@ -141,7 +141,7 @@ export default function SortableItem({
             onChange={(e) =>
               onQuantityChange(catId, item._id, Number(e.target.value))
             }
-            className="border rounded p-1"
+            className="border rounded p-1 bg-sand"
           >
             {[...Array(10)].map((_, i) => (
               <option key={i + 1} value={i + 1}>

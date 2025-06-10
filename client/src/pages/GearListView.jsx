@@ -9,8 +9,14 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  pointerWithin,
   DragOverlay,
 } from "@dnd-kit/core";
+
+import {
+  restrictToHorizontalAxis,
+  restrictToVerticalAxis,
+} from "@dnd-kit/modifiers";
 
 import {
   SortableContext,
@@ -482,6 +488,11 @@ export default function GearListView({
     }
   };
 
+  const axisModifiers =
+    viewMode === "columns"
+      ? [restrictToHorizontalAxis]
+      : [restrictToVerticalAxis];
+
   // ───────────── SORTABLESECTION (LIST MODE) ─────────────
   function SortableSection({
     category,
@@ -513,13 +524,13 @@ export default function GearListView({
       <section
         ref={setNodeRef}
         style={style}
-        className="bg-sand/20 rounded-lg p-4 mb-6"
+        className="bg-teal/60 rounded-lg p-4 mb-6"
       >
         <div className="flex items-center mb-3">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-pine"
+            className="mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
@@ -529,9 +540,9 @@ export default function GearListView({
               className="flex-1 border border-pine rounded p-1 bg-white"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
+            <h3 className="flex-1 font-semibold text-sunset flex items-baseline justify-between pr-4">
               <span>{category.title}</span>
-              <span className="text-sm text-pine/70">{totalWeight} g</span>
+              <span className="text-sm text-sunset/70">{totalWeight} g</span>
             </h3>
           )}
 
@@ -539,7 +550,7 @@ export default function GearListView({
             <>
               <button
                 onClick={() => onEditCat(catId, localTitle)}
-                className="text-teal mr-2"
+                className="text-sunset mr-2"
               >
                 ✓
               </button>
@@ -558,7 +569,7 @@ export default function GearListView({
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="mr-2 cursor-pointer text-teal"
+                className="mr-2 cursor-pointer text-sunset"
               />
               <FaTrash
                 title="Delete category"
@@ -593,7 +604,7 @@ export default function GearListView({
 
         <button
           onClick={() => setShowAddModalCat(catId)}
-          className="mt-2 px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
+          className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
         >
           <FaPlus className="mr-2" /> Add Item
         </button>
@@ -639,13 +650,13 @@ export default function GearListView({
       <div
         ref={setNodeRef}
         style={style}
-        className="mt-0 mb-0 snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg pt-3 pb-3 pl-0 pr-0 sm:p-3 flex flex-col h-full"
+        className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-teal/60 rounded-lg p-3 flex flex-col self-start max-h-full"
       >
         <div className="flex items-center mb-2">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-pine"
+            className="mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
@@ -655,9 +666,9 @@ export default function GearListView({
               className="flex-1 border border-pine rounded p-1 bg-white"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
+            <h3 className="flex-1 font-semibold text-sunset flex items-baseline justify-between pr-4">
               <span>{category.title}</span>
-              <span className="text-sm text-pine/70">{totalWeight} g</span>
+              <span className="text-sm text-sunset/70">{totalWeight} g</span>
             </h3>
           )}
 
@@ -665,7 +676,7 @@ export default function GearListView({
             <>
               <button
                 onClick={() => onEditCat(catId, localTitle)}
-                className="text-teal mr-2"
+                className="text-sunset mr-2"
               >
                 ✓
               </button>
@@ -719,7 +730,7 @@ export default function GearListView({
 
         <button
           onClick={() => setShowAddModalCat(catId)}
-          className="h-12 w-full border border-teal rounded flex items-center justify-center space-x-2 text-teal hover:bg-teal/10"
+          className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
         >
           <FaPlus />
           <span className="text-xs">Add Item</span>
@@ -750,7 +761,8 @@ export default function GearListView({
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={pointerWithin}
+        modifiers={axisModifiers}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
@@ -818,7 +830,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex-1 flex flex-nowrap overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
+            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
               {categories.map((cat) => (
                 <SortableColumn
                   key={cat._id}
@@ -859,7 +871,7 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                    className="h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
                   >
                     <FaPlus />
                     <span className="text-xs">New Category</span>

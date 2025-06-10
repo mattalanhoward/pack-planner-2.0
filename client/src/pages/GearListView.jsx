@@ -488,10 +488,40 @@ export default function GearListView({
     }
   };
 
-  const axisModifiers =
-    viewMode === "columns"
-      ? [restrictToHorizontalAxis]
-      : [restrictToVerticalAxis];
+  const axisModifier = (args) => {
+    const { active, transform } = args;
+
+    // 1) If there's no active draggable, or if it's an item, just return the raw transform:
+    if (!active || !active.id || active.id.startsWith("item-")) {
+      return transform;
+    }
+
+    // 2) If we're in column mode and dragging a category, lock X:
+    if (viewMode === "columns" && active.id.startsWith("cat-")) {
+      return restrictToHorizontalAxis(args);
+    }
+
+    // 3) If we're in list mode and dragging a category, lock Y:
+    if (viewMode === "list" && active.id.startsWith("cat-")) {
+      return restrictToVerticalAxis(args);
+    }
+
+    // 4) Otherwise, no change:
+    return transform;
+  };
+
+  // 1) Custom collision detector
+  const collisionDetectionStrategy = (args) => {
+    const { active } = args;
+
+    // if it's a gear item, use closest-corners
+    if (active && active.id?.startsWith("item-")) {
+      return closestCorners(args);
+    }
+
+    // otherwise (categories) use pointerWithin (or whatever you prefer)
+    return pointerWithin(args);
+  };
 
   // ───────────── SORTABLESECTION (LIST MODE) ─────────────
   function SortableSection({
@@ -534,43 +564,37 @@ export default function GearListView({
           />
 
           {editingCatId === catId ? (
+            // Inline <input> that saves on blur or Enter
             <input
+              autoFocus
               value={localTitle}
               onChange={(e) => setLocalTitle(e.target.value)}
-              className="flex-1 border border-pine rounded p-1 bg-white"
+              onBlur={() => {
+                setEditingCatId(null);
+                onEditCat(catId, localTitle);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur(); // triggers onBlur
+                }
+              }}
+              className="flex-1 border border-pine rounded p-1 bg-sand"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-sunset flex items-baseline justify-between pr-4">
-              <span>{category.title}</span>
-              <span className="text-sm text-sunset/70">{totalWeight} g</span>
-            </h3>
-          )}
-
-          {editingCatId === catId ? (
             <>
-              <button
-                onClick={() => onEditCat(catId, localTitle)}
-                className="text-sunset mr-2"
-              >
-                ✓
-              </button>
-              <button
-                onClick={() => setEditingCatId(null)}
-                className="text-ember"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <>
-              <FaEdit
-                title="Edit category"
+              {/* Click the title to edit */}
+              <h3
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="mr-2 cursor-pointer text-sunset"
-              />
+                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+              >
+                <span>{category.title}</span>
+              </h3>
+              <span className="pr-3 text-sunset">{totalWeight} g</span>
+
+              {/* Only show delete icon now */}
               <FaTrash
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
@@ -660,43 +684,37 @@ export default function GearListView({
           />
 
           {editingCatId === catId ? (
+            // Inline <input> that saves on blur or Enter
             <input
+              autoFocus
               value={localTitle}
               onChange={(e) => setLocalTitle(e.target.value)}
-              className="flex-1 border border-pine rounded p-1 bg-white"
+              onBlur={() => {
+                setEditingCatId(null);
+                onEditCat(catId, localTitle);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur(); // triggers onBlur
+                }
+              }}
+              className="flex-1 border border-pine rounded p-1 bg-sand"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-sunset flex items-baseline justify-between pr-4">
-              <span>{category.title}</span>
-              <span className="text-sm text-sunset/70">{totalWeight} g</span>
-            </h3>
-          )}
-
-          {editingCatId === catId ? (
             <>
-              <button
-                onClick={() => onEditCat(catId, localTitle)}
-                className="text-sunset mr-2"
-              >
-                ✓
-              </button>
-              <button
-                onClick={() => setEditingCatId(null)}
-                className="text-ember"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <>
-              <FaEdit
-                title="Edit category"
+              {/* Click the title to edit */}
+              <h3
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="mr-2 cursor-pointer text-teal"
-              />
+                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+              >
+                <span>{category.title}</span>
+              </h3>
+              <span className="pr-3 text-sunset">{totalWeight} g</span>
+
+              {/* Only show delete icon now */}
               <FaTrash
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
@@ -761,8 +779,8 @@ export default function GearListView({
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={pointerWithin}
-        modifiers={axisModifiers}
+        collisionDetection={collisionDetectionStrategy}
+        modifiers={[axisModifier]}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

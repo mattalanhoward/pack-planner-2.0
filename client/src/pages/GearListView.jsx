@@ -22,6 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
+import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 
 import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
@@ -228,23 +229,6 @@ export default function GearListView({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-
-  // const handleDragEnd = async ({ active, over }) => {
-  //   if (over && active.id !== over.id) {
-  //     const oldI = categories.findIndex(c => c._id === active.id);
-  //     const newI = categories.findIndex(c => c._id === over.id);
-  //     const reordered = arrayMove(categories, oldI, newI)
-  //       .map((c, idx) => ({ ...c, position: idx }));
-  //     setCategories(reordered);
-  //     await api.patch(
-  //       `/lists/${listId}/categories/${active.id}/position`,
-  //       { position: newI }
-  //     );
-  //   }
-  // };
-  // We will need to know, on dragEnd, whether we're sorting a category or an item.
-  // To do that, we will namespace all category IDs as `cat-<catId>`, and item IDs as `item-<catId>-<itemId>`
-  // So: if active.id startsWith('cat-') ⇒ reorder categories; else if startsWith('item-') ⇒ reorder items
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over) {
@@ -498,13 +482,6 @@ export default function GearListView({
     }
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // We factored out the common JSX for a single category’s “section” (List mode)
-  // so that it now accepts an `items` prop (the array of gear items) and simply
-  // uses SortableContext + SortableItem inside. Everything else (inline edits,
-  // toggles, deletes, “Add Item” button) remains exactly the same.
-  // Same goes for SortableColumn below.
-
   // ───────────── SORTABLESECTION (LIST MODE) ─────────────
   function SortableSection({
     category,
@@ -662,7 +639,7 @@ export default function GearListView({
       <div
         ref={setNodeRef}
         style={style}
-        className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg pt-3 pb-3 pl-0 pr-0 sm:p-3 flex flex-col h-full"
+        className="mt-0 mb-0 snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg pt-3 pb-3 pl-0 pr-0 sm:p-3 flex flex-col h-full"
       >
         <div className="flex items-center mb-2">
           <FaGripVertical
@@ -723,7 +700,7 @@ export default function GearListView({
           items={items.map((i) => `item-${catId}-${i._id}`)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex-1 overflow-y-auto space-y-2 mb-2">
+          <div className="overflow-y-auto space-y-2 mb-2">
             {items.map((item) => (
               <SortableItem
                 key={item._id}
@@ -759,9 +736,16 @@ export default function GearListView({
     );
   }
 
+  const bgstyle = {
+    // transform: CSS.Transform.toString(transform),
+    // transition,
+    backgroundImage: `url(${grandcanyonbg})`, // ← add this
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* The confirmation dialog: */}
+    <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
       <h2 className="pl-10 pt-4 text-2xl font-bold text-pine">{listName}</h2>
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
@@ -855,7 +839,7 @@ export default function GearListView({
                 />
               ))}
               {/* Add New Category column (unchanged) */}
-              <div className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 flex flex-col h-full">
+              <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
                 {addingNewCat ? (
                   <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
                     <input
@@ -878,7 +862,7 @@ export default function GearListView({
                     className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
                   >
                     <FaPlus />
-                    <span className="text-xs">Add New Category</span>
+                    <span className="text-xs">New Category</span>
                   </button>
                 )}
               </div>

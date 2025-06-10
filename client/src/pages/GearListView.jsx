@@ -9,8 +9,14 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  pointerWithin,
   DragOverlay,
 } from "@dnd-kit/core";
+
+import {
+  restrictToHorizontalAxis,
+  restrictToVerticalAxis,
+} from "@dnd-kit/modifiers";
 
 import {
   SortableContext,
@@ -22,6 +28,8 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
+import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
+import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 
 import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
@@ -228,23 +236,6 @@ export default function GearListView({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-
-  // const handleDragEnd = async ({ active, over }) => {
-  //   if (over && active.id !== over.id) {
-  //     const oldI = categories.findIndex(c => c._id === active.id);
-  //     const newI = categories.findIndex(c => c._id === over.id);
-  //     const reordered = arrayMove(categories, oldI, newI)
-  //       .map((c, idx) => ({ ...c, position: idx }));
-  //     setCategories(reordered);
-  //     await api.patch(
-  //       `/lists/${listId}/categories/${active.id}/position`,
-  //       { position: newI }
-  //     );
-  //   }
-  // };
-  // We will need to know, on dragEnd, whether we're sorting a category or an item.
-  // To do that, we will namespace all category IDs as `cat-<catId>`, and item IDs as `item-<catId>-<itemId>`
-  // So: if active.id startsWith('cat-') ⇒ reorder categories; else if startsWith('item-') ⇒ reorder items
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over) {
@@ -498,12 +489,40 @@ export default function GearListView({
     }
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // We factored out the common JSX for a single category’s “section” (List mode)
-  // so that it now accepts an `items` prop (the array of gear items) and simply
-  // uses SortableContext + SortableItem inside. Everything else (inline edits,
-  // toggles, deletes, “Add Item” button) remains exactly the same.
-  // Same goes for SortableColumn below.
+  const axisModifier = (args) => {
+    const { active, transform } = args;
+
+    // 1) If there's no active draggable, or if it's an item, just return the raw transform:
+    if (!active || !active.id || active.id.startsWith("item-")) {
+      return transform;
+    }
+
+    // 2) If we're in column mode and dragging a category, lock X:
+    if (viewMode === "columns" && active.id.startsWith("cat-")) {
+      return restrictToHorizontalAxis(args);
+    }
+
+    // 3) If we're in list mode and dragging a category, lock Y:
+    if (viewMode === "list" && active.id.startsWith("cat-")) {
+      return restrictToVerticalAxis(args);
+    }
+
+    // 4) Otherwise, no change:
+    return transform;
+  };
+
+  // 1) Custom collision detector
+  const collisionDetectionStrategy = (args) => {
+    const { active } = args;
+
+    // if it's a gear item, use closest-corners
+    if (active && active.id?.startsWith("item-")) {
+      return closestCorners(args);
+    }
+
+    // otherwise (categories) use pointerWithin (or whatever you prefer)
+    return pointerWithin(args);
+  };
 
   // ───────────── SORTABLESECTION (LIST MODE) ─────────────
   function SortableSection({
@@ -536,53 +555,47 @@ export default function GearListView({
       <section
         ref={setNodeRef}
         style={style}
-        className="bg-sand/20 rounded-lg p-4 mb-6"
+        className="bg-teal/60 rounded-lg p-4 mb-6"
       >
         <div className="flex items-center mb-3">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-pine"
+            className="mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
+            // Inline <input> that saves on blur or Enter
             <input
+              autoFocus
               value={localTitle}
               onChange={(e) => setLocalTitle(e.target.value)}
-              className="flex-1 border border-pine rounded p-1 bg-white"
+              onBlur={() => {
+                setEditingCatId(null);
+                onEditCat(catId, localTitle);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur(); // triggers onBlur
+                }
+              }}
+              className="flex-1 border border-pine rounded p-1 bg-sand"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
-              <span>{category.title}</span>
-              <span className="text-sm text-pine/70">{totalWeight} g</span>
-            </h3>
-          )}
-
-          {editingCatId === catId ? (
             <>
-              <button
-                onClick={() => onEditCat(catId, localTitle)}
-                className="text-teal mr-2"
-              >
-                ✓
-              </button>
-              <button
-                onClick={() => setEditingCatId(null)}
-                className="text-ember"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <>
-              <FaEdit
-                title="Edit category"
+              {/* Click the title to edit */}
+              <h3
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="mr-2 cursor-pointer text-teal"
-              />
+                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+              >
+                <span>{category.title}</span>
+              </h3>
+              <span className="pr-3 text-sunset">{totalWeight} g</span>
+
+              {/* Only show delete icon now */}
               <FaTrash
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
@@ -616,7 +629,7 @@ export default function GearListView({
 
         <button
           onClick={() => setShowAddModalCat(catId)}
-          className="mt-2 px-4 py-2 bg-teal text-white rounded hover:bg-teal-700 flex items-center"
+          className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
         >
           <FaPlus className="mr-2" /> Add Item
         </button>
@@ -662,53 +675,47 @@ export default function GearListView({
       <div
         ref={setNodeRef}
         style={style}
-        className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 bg-sand/20 rounded-lg pt-3 pb-3 pl-0 pr-0 sm:p-3 flex flex-col h-full"
+        className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-teal/60 rounded-lg p-3 flex flex-col self-start max-h-full"
       >
         <div className="flex items-center mb-2">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-pine"
+            className="mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
+            // Inline <input> that saves on blur or Enter
             <input
+              autoFocus
               value={localTitle}
               onChange={(e) => setLocalTitle(e.target.value)}
-              className="flex-1 border border-pine rounded p-1 bg-white"
+              onBlur={() => {
+                setEditingCatId(null);
+                onEditCat(catId, localTitle);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.currentTarget.blur(); // triggers onBlur
+                }
+              }}
+              className="flex-1 border border-pine rounded p-1 bg-sand"
             />
           ) : (
-            <h3 className="flex-1 font-semibold text-pine flex items-baseline justify-between pr-4">
-              <span>{category.title}</span>
-              <span className="text-sm text-pine/70">{totalWeight} g</span>
-            </h3>
-          )}
-
-          {editingCatId === catId ? (
             <>
-              <button
-                onClick={() => onEditCat(catId, localTitle)}
-                className="text-teal mr-2"
-              >
-                ✓
-              </button>
-              <button
-                onClick={() => setEditingCatId(null)}
-                className="text-ember"
-              >
-                ×
-              </button>
-            </>
-          ) : (
-            <>
-              <FaEdit
-                title="Edit category"
+              {/* Click the title to edit */}
+              <h3
                 onClick={() => {
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="mr-2 cursor-pointer text-teal"
-              />
+                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+              >
+                <span>{category.title}</span>
+              </h3>
+              <span className="pr-3 text-sunset">{totalWeight} g</span>
+
+              {/* Only show delete icon now */}
               <FaTrash
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
@@ -723,7 +730,7 @@ export default function GearListView({
           items={items.map((i) => `item-${catId}-${i._id}`)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex-1 overflow-y-auto space-y-2 mb-2">
+          <div className="overflow-y-auto space-y-2 mb-2">
             {items.map((item) => (
               <SortableItem
                 key={item._id}
@@ -742,7 +749,7 @@ export default function GearListView({
 
         <button
           onClick={() => setShowAddModalCat(catId)}
-          className="h-12 w-full border border-teal rounded flex items-center justify-center space-x-2 text-teal hover:bg-teal/10"
+          className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
         >
           <FaPlus />
           <span className="text-xs">Add Item</span>
@@ -759,14 +766,22 @@ export default function GearListView({
     );
   }
 
+  const bgstyle = {
+    // transform: CSS.Transform.toString(transform),
+    // transition,
+    backgroundImage: `url(${sierraNevadaBg})`, // ← add this
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* The confirmation dialog: */}
-      <h2 className="pl-10 pt-4 text-2xl font-bold text-pine">{listName}</h2>
+    <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
+      <h2 className="pl-10 pt-4 text-2xl font-bold text-sunset">{listName}</h2>
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetectionStrategy}
+        modifiers={[axisModifier]}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
@@ -834,7 +849,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex-1 flex flex-nowrap overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
+            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
               {categories.map((cat) => (
                 <SortableColumn
                   key={cat._id}
@@ -855,7 +870,7 @@ export default function GearListView({
                 />
               ))}
               {/* Add New Category column (unchanged) */}
-              <div className="snap-center flex-shrink-0 m-2 w-80 sm:w-64 flex flex-col h-full">
+              <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
                 {addingNewCat ? (
                   <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
                     <input
@@ -875,10 +890,10 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="h-12 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                    className="h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
                   >
                     <FaPlus />
-                    <span className="text-xs">Add New Category</span>
+                    <span className="text-xs">New Category</span>
                   </button>
                 )}
               </div>

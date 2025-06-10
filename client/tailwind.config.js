@@ -22,7 +22,7 @@ export default {
     extend: {
       colors: {
         pine: "#163A28",
-        teal: "#25554D",
+        teal: "#172b4d",
         sand: "#FCEFC9",
         sunset: "#E0B251",
         ember: "#E76F51",

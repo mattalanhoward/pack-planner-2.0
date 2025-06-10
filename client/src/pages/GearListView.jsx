@@ -29,6 +29,7 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
+import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 
 import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
@@ -768,14 +769,14 @@ export default function GearListView({
   const bgstyle = {
     // transform: CSS.Transform.toString(transform),
     // transition,
-    backgroundImage: `url(${grandcanyonbg})`, // ← add this
+    backgroundImage: `url(${sierraNevadaBg})`, // ← add this
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <h2 className="pl-10 pt-4 text-2xl font-bold text-pine">{listName}</h2>
+      <h2 className="pl-10 pt-4 text-2xl font-bold text-sunset">{listName}</h2>
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}

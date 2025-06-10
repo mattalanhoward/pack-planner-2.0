@@ -4,13 +4,6 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from "react-icons/fa";
 
-/**
- * Props:
- *   - item: the gearItem object from itemsMap[catId]
- *   - catId: the category _id this item currently lives in
- *   - onToggleConsumable, onToggleWorn, onQuantityChange, onDelete: callbacks
- *   - isListMode: boolean (true when viewMode === 'list'; false otherwise)
- */
 export default function SortableItem({
   item,
   catId,
@@ -18,11 +11,9 @@ export default function SortableItem({
   onToggleWorn,
   onQuantityChange,
   onDelete,
-  isListMode, // ← new prop
+  isListMode,
 }) {
-  // Unique sortable ID (must match what GearListView uses)
   const itemKey = `item-${catId}-${item._id}`;
-
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
       id: itemKey,
@@ -34,35 +25,177 @@ export default function SortableItem({
     transition,
   };
 
+  // ─── List Mode: responsive two-row on mobile, one-row grid on desktop ───
+  if (isListMode) {
+    return (
+      <>
+        {/* Mobile layout: two rows */}
+        <div
+          ref={setNodeRef}
+          style={style}
+          className="bg-sand px-3 py-2 rounded shadow mb-2 flex flex-col sm:hidden"
+          {...attributes}
+          {...listeners}
+        >
+          {/* Row 1: handle, type, name */}
+          <div className="flex items-center justify-between">
+            <div className="cursor-grab">
+              <FaGripVertical />
+            </div>
+            <div className="font-semibold text-gray-800 truncate mx-2 flex-1">
+              {item.itemType || "—"}
+            </div>
+            <div className="truncate text-sm text-gray-700 flex-1">
+              {item.brand && <span className="mr-1">{item.brand}</span>}
+              {item.name}
+            </div>
+          </div>
+          {/* Row 2: weight, toggles, price, qty, delete */}
+          <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
+            <span className="text-gray-600">
+              {item.weight != null ? `${item.weight}g` : ""}
+            </span>
+            <FaUtensils
+              onClick={() => onToggleConsumable(catId, item._id)}
+              className={`cursor-pointer ${
+                item.consumable ? "text-green-600" : "opacity-30"
+              }`}
+            />
+            <FaTshirt
+              onClick={() => onToggleWorn(catId, item._id)}
+              className={`cursor-pointer ${
+                item.worn ? "text-blue-600" : "opacity-30"
+              }`}
+            />
+            <span className="text-gray-600">
+              {item.price != null ? `€${item.price}` : ""}
+            </span>
+            <select
+              value={item.quantity}
+              onChange={(e) =>
+                onQuantityChange(catId, item._id, Number(e.target.value))
+              }
+              className="border rounded p-1 bg-sand"
+            >
+              {[...Array(10)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => onDelete(catId, item._id)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+        {/* Desktop layout: one-row grid */}
+        <div
+          ref={setNodeRef}
+          style={style}
+          className={`bg-sand px-3 py-2 rounded shadow mb-2
+             hidden sm:grid items-center gap-2
+             grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px]`}
+          {...attributes}
+          {...listeners}
+        >
+          <div className="cursor-grab">
+            <FaGripVertical />
+          </div>
+          <div className="font-semibold text-gray-800 truncate">
+            {item.itemType || "—"}
+          </div>
+          <div className="truncate text-sm text-gray-700">
+            {item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                {item.brand && <span className="mr-1">{item.brand}</span>}
+                {item.name}
+              </a>
+            ) : (
+              <>
+                {item.brand && <span className="mr-1">{item.brand}</span>}
+                {item.name}
+              </>
+            )}
+          </div>
+          <div className="text-center text-sm text-gray-600">
+            {item.weight != null ? `${item.weight}g` : ""}
+          </div>
+          <div className="text-center">
+            <FaUtensils
+              onClick={() => onToggleConsumable(catId, item._id)}
+              className={`cursor-pointer ${
+                item.consumable ? "text-green-600" : "opacity-30"
+              }`}
+            />
+          </div>
+          <div className="text-center">
+            <FaTshirt
+              onClick={() => onToggleWorn(catId, item._id)}
+              className={`cursor-pointer ${
+                item.worn ? "text-blue-600" : "opacity-30"
+              }`}
+            />
+          </div>
+          <div className="text-center text-sm text-gray-600">
+            {item.price != null ? `€${item.price}` : ""}
+          </div>
+          <div className="text-center">
+            <select
+              value={item.quantity}
+              onChange={(e) =>
+                onQuantityChange(catId, item._id, Number(e.target.value))
+              }
+              className="border rounded p-1 bg-sand"
+            >
+              {[...Array(10)].map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={() => onDelete(catId, item._id)}
+              className="text-red-500 hover:text-red-700"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Column Mode: unchanged two-row layout
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`
-        bg-sand p-3 rounded shadow mb-2
-        flex flex-col
-        ${isListMode ? "md:flex-row md:items-center md:justify-between" : ""}
-      `}
+      className="bg-sand px-3 py-1 rounded shadow mb-2 flex flex-col"
     >
-      {/** ───── Row 1: Grip icon + itemType ───── */}
-      <div
-        className={`flex items-center mb-1 ${
-          isListMode ? "md:mb-0 md:mr-4" : ""
-        }`}
-      >
+      {/* Row 1: Grip + itemType */}
+      <div className="flex items-center mb-1">
         <FaGripVertical
           {...attributes}
           {...listeners}
           className="mr-2 cursor-grab text-gray-500"
-          title="Drag to reorder"
         />
-        <div className="text-lg font-semibold text-gray-800">
+        <div className="text-base font-semibold text-gray-800">
           {item.itemType || "—"}
         </div>
       </div>
 
-      {/** ───── Row 2: Brand + Name (with optional link) ───── */}
-      <div className={`text-sm mb-1 ${isListMode ? "md:flex-1" : ""}`}>
+      {/* Row 2: Brand + Name */}
+      <div className="text-sm">
         {item.link ? (
           <a
             href={item.link}
@@ -82,60 +215,27 @@ export default function SortableItem({
         )}
       </div>
 
-      {/** ───── Row 3: Weight + toggles + price + qty + delete ───── */}
-      <div
-        className={`
-          flex items-center justify-between text-sm mt-3
-          ${isListMode ? "md:mt-0 md:ml-auto" : ""}
-        `}
-      >
-        {/* Weight */}
-        <span
-          className={`${
-            isListMode ? "md:mr-4 text-gray-600" : "text-gray-600"
-          }`}
-        >
+      {/* Row 3: Weight + toggles + price + qty + delete */}
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-gray-600">
           {item.weight != null ? `${item.weight}g` : ""}
         </span>
-
         <div className="flex items-center space-x-3">
-          {/* Consumable toggle */}
           <FaUtensils
             onClick={() => onToggleConsumable(catId, item._id)}
             className={`cursor-pointer ${
               item.consumable ? "text-green-600" : "opacity-30"
             }`}
-            title="Toggle consumable"
-            aria-label="Toggle Consumable"
           />
-
-          {/* Worn toggle */}
           <FaTshirt
             onClick={() => onToggleWorn(catId, item._id)}
             className={`cursor-pointer ${
               item.worn ? "text-blue-600" : "opacity-30"
             }`}
-            title="Toggle worn"
-            aria-label="Toggle Worn"
           />
-
-          {/* Price (with buy-link styling) */}
-          {item.price != null &&
-            (item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-teal-600 hover:text-teal-800 hover:underline transition-colors duration-200"
-                title={`View ${item.brand} ${item.name}`}
-              >
-                €{item.price}
-              </a>
-            ) : (
-              <span className="text-gray-600">€{item.price}</span>
-            ))}
-
-          {/* Quantity selector */}
+          {item.price != null && (
+            <span className="text-gray-600">€{item.price}</span>
+          )}
           <select
             value={item.quantity}
             onChange={(e) =>
@@ -149,13 +249,9 @@ export default function SortableItem({
               </option>
             ))}
           </select>
-
           <button
-            type="button"
             onClick={() => onDelete(catId, item._id)}
             className="hover:text-red-700 text-red-500"
-            title="Delete item"
-            aria-label="Delete item"
           >
             <FaTrash />
           </button>

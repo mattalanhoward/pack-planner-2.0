@@ -96,30 +96,47 @@ export default function GearListView({
 
   // — inline‐edit handlers for items —
   // — toggle consumable status —
-  const toggleConsumable = async (catId, itemId) => {
-    try {
-      const item = itemsMap[catId].find((i) => i._id === itemId);
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        consumable: !item.consumable,
+  const toggleConsumable = (catId, itemId) => {
+    // 1) Optimistically update the icon
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, consumable: !i.consumable } : i
+      ),
+    }));
+
+    // 2) Send the request in the background
+    api
+      .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
+        consumable: !itemsMap[catId].find((i) => i._id === itemId).consumable,
+      })
+      .catch((err) => {
+        // If it fails, roll back or re-fetch that category
+        fetchItems(catId);
+        toast.error("Failed to toggle consumable");
       });
-      fetchItems(catId);
-    } catch (err) {
-      // show the error message
-      toast.error(err.message || "Failed to toggle consumable");
-    }
   };
 
   // — toggle worn status of an item —
-  const toggleWorn = async (catId, itemId) => {
-    const item = itemsMap[catId].find((i) => i._id === itemId);
-    try {
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        worn: !item.worn,
+  const toggleWorn = (catId, itemId) => {
+    // 1) Optimistically update the icon
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, worn: !i.worn } : i
+      ),
+    }));
+
+    // 2) Send the request in the background
+    api
+      .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
+        worn: !itemsMap[catId].find((i) => i._id === itemId).worn,
+      })
+      .catch((err) => {
+        // If it fails, roll back or re-fetch that category
+        fetchItems(catId);
+        toast.error(err.message || "Failed to toggle worn");
       });
-      fetchItems(catId);
-    } catch (err) {
-      toast.error(err.message || "Failed to toggle worn");
-    }
   };
 
   // — update item quantity inline —

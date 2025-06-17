@@ -592,8 +592,10 @@ export default function GearListView({
     const [localTitle, setLocalTitle] = useState(category.title);
 
     const totalWeight = (items || []).reduce((sum, i) => {
-      if (i.worn) return sum;
-      return sum + (i.weight || 0) * (i.quantity || 1);
+      const qty = i.quantity || 1;
+      // If worn, we only carry qty−1 units; otherwise all units:
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
     }, 0);
 
     // useSortable for the category header itself:
@@ -721,8 +723,10 @@ export default function GearListView({
     const catId = category._id;
     const [localTitle, setLocalTitle] = useState(category.title);
     const totalWeight = (items || []).reduce((sum, i) => {
-      if (i.worn) return sum;
-      return sum + (i.weight || 0) * (i.quantity || 1);
+      const qty = i.quantity || 1;
+      // If worn, we only carry qty−1 units; otherwise all units:
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
     }, 0);
 
     const { attributes, listeners, setNodeRef, transform, transition } =

@@ -62,6 +62,8 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
+  // track drag-over placeholder slot
+  const [dragOver, setDragOver] = useState({ catId: null, index: -1 });
 
   // — fetch list title —
   useEffect(() => {
@@ -255,6 +257,8 @@ export default function GearListView({
   );
 
   const handleDragEnd = async ({ active, over }) => {
+    setDragOver({ catId: null, index: -1 });
+
     if (!over) {
       return; // if dropped outside anywhere, do nothing
     }
@@ -495,6 +499,28 @@ export default function GearListView({
     }
   };
 
+  // ** NEW: handle drag-over to set placeholder **
+  const handleDragOver = ({ active, over }) => {
+    if (!active.id.startsWith("item-")) {
+      setDragOver({ catId: null, index: -1 });
+      return;
+    }
+    if (!over) {
+      setDragOver({ catId: null, index: -1 });
+      return;
+    }
+    if (over.id.startsWith("item-")) {
+      const [, overCatId, overItemId] = over.id.split("-");
+      const arr = itemsMap[overCatId] || [];
+      const idx = arr.findIndex((i) => i._id === overItemId);
+      setDragOver({ catId: overCatId, index: idx });
+    } else if (over.id.startsWith("cat-")) {
+      const overCatId = over.id.replace("cat-", "");
+      const arr = itemsMap[overCatId] || [];
+      setDragOver({ catId: overCatId, index: arr.length });
+    }
+  };
+
   const axisModifier = (args) => {
     const { active, transform } = args;
 
@@ -544,9 +570,27 @@ export default function GearListView({
     setShowAddModalCat,
     fetchItems,
     listId,
+    activeId,
   }) {
+    const filtered = React.useMemo(
+      () => items.filter((i) => `item-${category._id}-${i._id}` !== activeId),
+      [items, activeId, category._id]
+    );
+
+    const displayItems = React.useMemo(() => {
+      if (dragOver.catId !== category._id) return items;
+      const base = [...filtered];
+      base.splice(dragOver.index, 0, {
+        _id: "placeholder",
+        isPlaceholder: true,
+      });
+      return base;
+    }, [filtered, dragOver, category._id]);
+
     const catId = category._id;
+
     const [localTitle, setLocalTitle] = useState(category.title);
+
     const totalWeight = (items || []).reduce((sum, i) => {
       if (i.worn) return sum;
       return sum + (i.weight || 0) * (i.quantity || 1);
@@ -617,18 +661,26 @@ export default function GearListView({
           strategy={verticalListSortingStrategy}
         >
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {items.map((item) => (
-              <SortableItem
-                key={item._id}
-                item={item}
-                catId={catId}
-                onToggleConsumable={onToggleConsumable}
-                onToggleWorn={onToggleWorn}
-                onQuantityChange={onQuantityChange}
-                onDelete={handleDeleteClick}
-                isListMode={viewMode === "list"}
-              />
-            ))}
+            {displayItems.map((item, idx) =>
+              item.isPlaceholder ? (
+                // MINIMAL: just a thin bar
+                <div
+                  key={`ph-${idx}`}
+                  className="w-full h-[2px] bg-teal-400 my-1"
+                />
+              ) : (
+                <SortableItem
+                  key={item._id}
+                  item={item}
+                  catId={catId}
+                  onToggleConsumable={onToggleConsumable}
+                  onToggleWorn={onToggleWorn}
+                  onQuantityChange={onQuantityChange}
+                  onDelete={handleDeleteClick}
+                  isListMode={viewMode === "list"}
+                />
+              )
+            )}
           </div>
         </SortableContext>
         {/* ──────────────────────────────────────────────────────────────── */}
@@ -789,6 +841,7 @@ export default function GearListView({
         collisionDetection={collisionDetectionStrategy}
         modifiers={[axisModifier]}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={(event) => {
           // 1) Do all the reordering & PATCH calls…
           handleDragEnd(event);

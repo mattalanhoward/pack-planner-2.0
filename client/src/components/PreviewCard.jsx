@@ -1,67 +1,131 @@
-import React from 'react';
-import { FaUtensils, FaTshirt, FaTrash } from 'react-icons/fa';
+// src/components/PreviewCard.jsx
+import React from "react";
+import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from "react-icons/fa";
 
-export default function PreviewCard({ item }) {
+export default function PreviewCard({ item, viewMode, isPreview }) {
+  const ghostStyles = isPreview
+    ? {
+        transform: "scale(1.05)",
+        opacity: 0.75,
+        boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+      }
+    : {};
+  // ─────────── LIST MODE PREVIEW ───────────
+  if (viewMode === "list") {
+    return (
+      <>
+        {/* Mobile layout: two rows */}
+        <div
+          style={ghostStyles}
+          className="bg-sand px-3 py-2 rounded shadow mb-2 flex flex-col sm:hidden"
+        >
+          <div className="flex items-center justify-between">
+            <div className="cursor-grab">
+              <FaGripVertical />
+            </div>
+            <div className="font-semibold text-gray-800 truncate mx-2 flex-1">
+              {item.itemType || "—"}
+            </div>
+            <div className="truncate text-sm text-gray-700 flex-1">
+              {item.brand && <span className="mr-1">{item.brand}</span>}
+              {item.name}
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
+            <span className="text-gray-600">
+              {item.weight != null ? `${item.weight}g` : ""}
+            </span>
+            <FaUtensils
+              className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
+            />
+            <FaTshirt
+              className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
+            />
+            <span className="text-gray-600">
+              {item.price != null ? `€${item.price}` : ""}
+            </span>
+            <span className="border rounded p-1 bg-sand">{item.quantity}</span>
+            <FaTrash className="text-red-500 hover:text-red-700" />
+          </div>
+        </div>
+
+        {/* Desktop layout: one-row grid */}
+        <div
+          style={ghostStyles}
+          className="bg-sand px-3 py-2 rounded shadow mb-2 hidden sm:grid items-center gap-2
+                     grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px]"
+        >
+          <div className="cursor-grab">
+            <FaGripVertical />
+          </div>
+          <div className="font-semibold text-gray-800 truncate">
+            {item.itemType || "—"}
+          </div>
+          <div className="truncate text-sm text-gray-700">
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </div>
+          <div className="text-center text-sm text-gray-600">
+            {item.weight != null ? `${item.weight}g` : ""}
+          </div>
+          <div className="text-center">
+            <FaUtensils
+              className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
+            />
+          </div>
+          <div className="text-center">
+            <FaTshirt
+              className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
+            />
+          </div>
+          <div className="text-center text-sm text-gray-600">
+            {item.price != null ? `€${item.price}` : ""}
+          </div>
+          <div className="text-center">
+            <span className="border rounded p-1 bg-sand">{item.quantity}</span>
+          </div>
+          <div className="text-center">
+            <FaTrash className="text-red-500 hover:text-red-700" />
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ─────────── COLUMN MODE PREVIEW ───────────
   return (
     <div
-      style={{
-        width: '16rem',                // roughly the same as your card width (w-64 ≈ 16rem)
-        padding: '0.75rem',            // p-3
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}
+      style={ghostStyles}
+      className="bg-sand px-3 py-1 rounded shadow mb-2 flex flex-col"
     >
-      {/* Top row: itemType */}
-      <div style={{ fontSize: '1.125rem', fontWeight: 600, color: '#2d3748', marginBottom: '0.25rem' }}>
-        {item.itemType || '—'}
+      <div className="flex items-center mb-1">
+        <FaGripVertical className="mr-2 cursor-grab text-gray-500" />
+        <div className="text-base font-semibold text-gray-800">
+          {item.itemType || "—"}
+        </div>
       </div>
 
-      {/* Brand + name */}
-      <div style={{ fontSize: '0.875rem', color: '#4a5568' }}>
-        {item.brand && <span style={{ marginRight: '0.25rem' }}>{item.brand}</span>}
+      <div className="text-sm text-gray-700 mb-1">
+        {item.brand && <span className="mr-1">{item.brand}</span>}
         {item.name}
       </div>
 
-      {/* Bottom row: weight + icons + price + qty + delete */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: '0.75rem',
-          fontSize: '0.875rem',
-          color: '#4a5568',
-        }}
-      >
-        <span>{item.weight != null ? `${item.weight}g` : ''}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-gray-600">
+          {item.weight != null ? `${item.weight}g` : ""}
+        </span>
+        <div className="flex items-center space-x-3">
           <FaUtensils
-            style={{ opacity: item.consumable ? 1 : 0.3, cursor: 'default' }}
-            title="Consumable?"
+            className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
           />
           <FaTshirt
-            style={{ opacity: item.worn ? 1 : 0.3, cursor: 'default' }}
-            title="Worn?"
+            className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
           />
           {item.price != null && (
-            item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#319795', textDecoration: 'none' }}
-              >
-                ${item.price}
-              </a>
-            ) : (
-              <span>${item.price}</span>
-            )
+            <span className="text-gray-600">€{item.price}</span>
           )}
-          <span style={{ padding: '0.25rem', border: '1px solid #cbd5e0', borderRadius: '0.25rem' }}>
-            {item.quantity}
-          </span>
-          <FaTrash style={{ color: '#e53e3e' }} />
+          <span className="border rounded p-1 bg-sand">{item.quantity}</span>
+          <FaTrash className="hover:text-red-700 text-red-500" />
         </div>
       </div>
     </div>

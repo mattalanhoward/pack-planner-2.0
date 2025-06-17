@@ -25,21 +25,17 @@ export default function SortableItem({
     transition,
   };
 
-  // ─── List Mode: responsive two-row on mobile, one-row grid on desktop ───
   if (isListMode) {
     return (
-      <>
-        {/* Mobile layout: two rows */}
-        <div
-          ref={setNodeRef}
-          style={style}
-          className="bg-sand px-3 py-2 rounded shadow mb-2 flex flex-col sm:hidden"
-          {...attributes}
-          {...listeners}
-        >
-          {/* Row 1: handle, type, name */}
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="bg-sand px-3 py-2 rounded shadow mb-2"
+      >
+        {/* Mobile: two rows */}
+        <div className="flex flex-col sm:hidden">
           <div className="flex items-center justify-between">
-            <div className="cursor-grab">
+            <div className="cursor-grab" {...attributes} {...listeners}>
               <FaGripVertical />
             </div>
             <div className="font-semibold text-gray-800 truncate mx-2 flex-1">
@@ -50,7 +46,6 @@ export default function SortableItem({
               {item.name}
             </div>
           </div>
-          {/* Row 2: weight, toggles, price, qty, delete */}
           <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
             <span className="text-gray-600">
               {item.weight != null ? `${item.weight}g` : ""}
@@ -91,17 +86,10 @@ export default function SortableItem({
             </button>
           </div>
         </div>
-        {/* Desktop layout: one-row grid */}
-        <div
-          ref={setNodeRef}
-          style={style}
-          className={`bg-sand px-3 py-2 rounded shadow mb-2
-             hidden sm:grid items-center gap-2
-             grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px]`}
-          {...attributes}
-          {...listeners}
-        >
-          <div className="cursor-grab">
+
+        {/* Desktop: one-row grid */}
+        <div className="hidden sm:grid sm:grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px] items-center gap-2">
+          <div className="cursor-grab" {...attributes} {...listeners}>
             <FaGripVertical />
           </div>
           <div className="font-semibold text-gray-800 truncate">
@@ -171,51 +159,35 @@ export default function SortableItem({
             </button>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
-  // Column Mode: unchanged two-row layout
+  // ─── COLUMN MODE ─────────────────────────────────────────────────────────────
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="bg-sand px-3 py-1 rounded shadow mb-2 flex flex-col"
     >
-      {/* Row 1: Grip + itemType */}
       <div className="flex items-center mb-1">
-        <FaGripVertical
+        <div
+          className="mr-2 cursor-grab text-gray-500"
           {...attributes}
           {...listeners}
-          className="mr-2 cursor-grab text-gray-500"
-        />
+        >
+          <FaGripVertical />
+        </div>
         <div className="text-base font-semibold text-gray-800">
           {item.itemType || "—"}
         </div>
       </div>
 
-      {/* Row 2: Brand + Name */}
-      <div className="text-sm">
-        {item.link ? (
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="!text-teal-600 hover:!text-teal-800 hover:underline transition-colors duration-200"
-            title={`View ${item.brand} ${item.name}`}
-          >
-            {item.brand && <span className="mr-1">{item.brand}</span>}
-            {item.name}
-          </a>
-        ) : (
-          <span className="text-gray-700">
-            {item.brand && <span className="mr-1">{item.brand}</span>}
-            {item.name}
-          </span>
-        )}
+      <div className="text-sm text-gray-700 mb-1">
+        {item.brand && <span className="mr-1">{item.brand}</span>}
+        {item.name}
       </div>
 
-      {/* Row 3: Weight + toggles + price + qty + delete */}
       <div className="flex items-center justify-between text-sm">
         <span className="text-gray-600">
           {item.weight != null ? `${item.weight}g` : ""}

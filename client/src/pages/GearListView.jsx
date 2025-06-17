@@ -908,7 +908,7 @@ export default function GearListView({
           }}
         >
           {activeItem ? (
-            <PreviewCard item={activeItem.item} />
+            <PreviewCard item={activeItem.item} viewMode={viewMode} isPreview />
           ) : activeCategory ? (
             <PreviewColumn
               category={activeCategory}

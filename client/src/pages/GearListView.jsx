@@ -239,8 +239,6 @@ export default function GearListView({
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over) {
-      setActiveItem(null);
-      setActiveCategory(null);
       return; // if dropped outside anywhere, do nothing
     }
     // ─── CATEGORY REORDER BRANCH ───
@@ -253,8 +251,6 @@ export default function GearListView({
 
       // If either index is -1 or they’re equal, do nothing
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        setActiveItem(null);
-        setActiveCategory(null);
         return;
       }
 
@@ -295,8 +291,6 @@ export default function GearListView({
           );
         }
       }
-      setActiveCategory(null);
-      setActiveItem(null);
       return;
     }
 
@@ -404,8 +398,7 @@ export default function GearListView({
           }
         }
       }
-      setActiveCategory(null);
-      setActiveItem(null);
+
       return;
     }
 
@@ -460,13 +453,9 @@ export default function GearListView({
           );
         }
       }
-      setActiveCategory(null);
-      setActiveItem(null);
+
       return;
     }
-    // Fallback: if we reach here, it means the drag was not handled
-    setActiveItem(null);
-    setActiveCategory(null);
   };
 
   const handleDragStart = ({ active }) => {
@@ -783,7 +772,16 @@ export default function GearListView({
         collisionDetection={collisionDetectionStrategy}
         modifiers={[axisModifier]}
         onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        onDragEnd={(event) => {
+          // 1) Do all the reordering & PATCH calls…
+          handleDragEnd(event);
+
+          // 2) Then after the dropAnimation runs, clear the preview
+          setTimeout(() => {
+            setActiveItem(null);
+            setActiveCategory(null);
+          }, 300); // <— match this to your dropAnimation.duration
+        }}
       >
         {viewMode === "list" ? (
           // ──── LIST MODE ────
@@ -902,7 +900,13 @@ export default function GearListView({
         )}
 
         {/* ───── DragOverlay for the active item ───── */}
-        <DragOverlay>
+        <DragOverlay
+          style={{ pointerEvents: "none", zIndex: 1000 }}
+          dropAnimation={{
+            duration: 300,
+            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+          }}
+        >
           {activeItem ? (
             <PreviewCard item={activeItem.item} />
           ) : activeCategory ? (

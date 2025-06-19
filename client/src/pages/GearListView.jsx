@@ -31,7 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 
-import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -62,6 +62,8 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
+  // track drag-over placeholder slot
+  const [dragOver, setDragOver] = useState({ catId: null, index: -1 });
 
   // — fetch list title —
   useEffect(() => {
@@ -96,30 +98,58 @@ export default function GearListView({
 
   // — inline‐edit handlers for items —
   // — toggle consumable status —
-  const toggleConsumable = async (catId, itemId) => {
-    try {
-      const item = itemsMap[catId].find((i) => i._id === itemId);
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        consumable: !item.consumable,
-      });
-      fetchItems(catId);
-    } catch (err) {
-      // show the error message
-      toast.error(err.message || "Failed to toggle consumable");
-    }
+  const toggleConsumable = (catId, itemId) => {
+    // read old state & flip
+    const old = itemsMap[catId].find((i) => i._id === itemId).consumable;
+    const next = !old;
+
+    // 1) Optimistic UI update
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, consumable: next } : i
+      ),
+    }));
+
+    // 2) persist in background with try/catch
+    (async () => {
+      try {
+        await api.patch(
+          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          { consumable: next }
+        );
+      } catch (err) {
+        fetchItems(catId);
+        toast.error("Failed to toggle consumable");
+      }
+    })();
   };
 
-  // — toggle worn status of an item —
-  const toggleWorn = async (catId, itemId) => {
-    const item = itemsMap[catId].find((i) => i._id === itemId);
-    try {
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        worn: !item.worn,
-      });
-      fetchItems(catId);
-    } catch (err) {
-      toast.error(err.message || "Failed to toggle worn");
-    }
+  const toggleWorn = (catId, itemId) => {
+    // read old state & flip
+    const old = itemsMap[catId].find((i) => i._id === itemId).worn;
+    const next = !old;
+
+    // 1) Optimistic UI update
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, worn: next } : i
+      ),
+    }));
+
+    // 2) persist in background with try/catch
+    (async () => {
+      try {
+        await api.patch(
+          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          { worn: next }
+        );
+      } catch {
+        fetchItems(catId);
+        toast.error("Failed to toggle worn");
+      }
+    })();
   };
 
   // — update item quantity inline —
@@ -238,6 +268,8 @@ export default function GearListView({
   );
 
   const handleDragEnd = async ({ active, over }) => {
+    setDragOver({ catId: null, index: -1 });
+
     if (!over) {
       return; // if dropped outside anywhere, do nothing
     }
@@ -478,6 +510,28 @@ export default function GearListView({
     }
   };
 
+  // ** NEW: handle drag-over to set placeholder **
+  const handleDragOver = ({ active, over }) => {
+    if (!active.id.startsWith("item-")) {
+      setDragOver({ catId: null, index: -1 });
+      return;
+    }
+    if (!over) {
+      setDragOver({ catId: null, index: -1 });
+      return;
+    }
+    if (over.id.startsWith("item-")) {
+      const [, overCatId, overItemId] = over.id.split("-");
+      const arr = itemsMap[overCatId] || [];
+      const idx = arr.findIndex((i) => i._id === overItemId);
+      setDragOver({ catId: overCatId, index: idx });
+    } else if (over.id.startsWith("cat-")) {
+      const overCatId = over.id.replace("cat-", "");
+      const arr = itemsMap[overCatId] || [];
+      setDragOver({ catId: overCatId, index: arr.length });
+    }
+  };
+
   const axisModifier = (args) => {
     const { active, transform } = args;
 
@@ -527,12 +581,32 @@ export default function GearListView({
     setShowAddModalCat,
     fetchItems,
     listId,
+    activeId,
   }) {
+    const filtered = React.useMemo(
+      () => items.filter((i) => `item-${category._id}-${i._id}` !== activeId),
+      [items, activeId, category._id]
+    );
+
+    const displayItems = React.useMemo(() => {
+      if (dragOver.catId !== category._id) return items;
+      const base = [...filtered];
+      base.splice(dragOver.index, 0, {
+        _id: "placeholder",
+        isPlaceholder: true,
+      });
+      return base;
+    }, [filtered, dragOver, category._id]);
+
     const catId = category._id;
+
     const [localTitle, setLocalTitle] = useState(category.title);
+
     const totalWeight = (items || []).reduce((sum, i) => {
-      if (i.worn) return sum;
-      return sum + (i.weight || 0) * (i.quantity || 1);
+      const qty = i.quantity || 1;
+      // If worn, we only carry qty−1 units; otherwise all units:
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
     }, 0);
 
     // useSortable for the category header itself:
@@ -586,6 +660,7 @@ export default function GearListView({
 
               {/* Only show delete icon now */}
               <FaTrash
+                aria-label="Delete category"
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
@@ -600,18 +675,26 @@ export default function GearListView({
           strategy={verticalListSortingStrategy}
         >
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {items.map((item) => (
-              <SortableItem
-                key={item._id}
-                item={item}
-                catId={catId}
-                onToggleConsumable={onToggleConsumable}
-                onToggleWorn={onToggleWorn}
-                onQuantityChange={onQuantityChange}
-                onDelete={handleDeleteClick}
-                isListMode={viewMode === "list"}
-              />
-            ))}
+            {displayItems.map((item, idx) =>
+              item.isPlaceholder ? (
+                // MINIMAL: just a thin bar
+                <div
+                  key={`ph-${idx}`}
+                  className="w-full h-[2px] bg-teal-400 my-1"
+                />
+              ) : (
+                <SortableItem
+                  key={item._id}
+                  item={item}
+                  catId={catId}
+                  onToggleConsumable={onToggleConsumable}
+                  onToggleWorn={onToggleWorn}
+                  onQuantityChange={onQuantityChange}
+                  onDelete={handleDeleteClick}
+                  isListMode={viewMode === "list"}
+                />
+              )
+            )}
           </div>
         </SortableContext>
         {/* ──────────────────────────────────────────────────────────────── */}
@@ -652,8 +735,10 @@ export default function GearListView({
     const catId = category._id;
     const [localTitle, setLocalTitle] = useState(category.title);
     const totalWeight = (items || []).reduce((sum, i) => {
-      if (i.worn) return sum;
-      return sum + (i.weight || 0) * (i.quantity || 1);
+      const qty = i.quantity || 1;
+      // If worn, we only carry qty−1 units; otherwise all units:
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
     }, 0);
 
     const { attributes, listeners, setNodeRef, transform, transition } =
@@ -706,6 +791,7 @@ export default function GearListView({
 
               {/* Only show delete icon now */}
               <FaTrash
+                aria-label="Delete category"
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
@@ -758,20 +844,28 @@ export default function GearListView({
   const bgstyle = {
     // transform: CSS.Transform.toString(transform),
     // transition,
-    backgroundImage: `url(${sierraNevadaBg})`, // ← add this
+    backgroundImage: `url(${sierraNevadaBg})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <h2 className="pl-10 pt-4 text-2xl font-bold text-sunset">{listName}</h2>
+      <h2
+        className={
+          `pl-10 pt-4 text-2xl font-bold text-sunset ` +
+          (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
+        }
+      >
+        {listName}
+      </h2>{" "}
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
         modifiers={[axisModifier]}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={(event) => {
           // 1) Do all the reordering & PATCH calls…
           handleDragEnd(event);
@@ -790,7 +884,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex-1 overflow-y-auto px-4 py-2">
+            <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
               {categories.map((cat) => (
                 <SortableSection
                   key={cat._id}
@@ -811,7 +905,7 @@ export default function GearListView({
                 />
               ))}
 
-              {/* Add New Category button (unchanged) */}
+              {/* Add New Category button */}
               <div className="px-4 mt-4">
                 {addingNewCat ? (
                   <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
@@ -832,7 +926,7 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="px-4 py-2 border border-pine rounded hover:bg-sand/20 flex items-center"
+                    className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
                   >
                     <FaPlus className="mr-2" /> Add New Category
                   </button>
@@ -888,7 +982,7 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                    className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
                   >
                     <FaPlus />
                     <span className="text-xs">New Category</span>

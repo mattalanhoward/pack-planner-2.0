@@ -1,5 +1,4 @@
-// src/components/SortableItem.jsx
-import React from "react";
+import React, { memo, useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from "react-icons/fa";
@@ -19,6 +18,48 @@ export default function SortableItem({
       id: itemKey,
       data: { catId, itemId: item._id },
     });
+
+  function QuantityInline({ qty, onChange }) {
+    const [editing, setEditing] = useState(false);
+    const [value, setValue] = useState(qty);
+
+    useEffect(() => {
+      setValue(qty);
+    }, [qty]);
+
+    const commit = () => {
+      const n = parseInt(value, 10);
+      if (!isNaN(n) && n > 0 && n !== qty) {
+        onChange(n);
+      }
+      setEditing(false);
+    };
+
+    if (editing) {
+      return (
+        <input
+          type="number"
+          min="1"
+          className="w-12 text-center border rounded p-1 bg-sand"
+          value={value}
+          autoFocus
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === "Enter" && commit()}
+        />
+      );
+    }
+
+    return (
+      <span
+        onClick={() => setEditing(true)}
+        className="cursor-pointer select-none px-1"
+        title="Click to edit quantity"
+      >
+        {qty}
+      </span>
+    );
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -42,8 +83,22 @@ export default function SortableItem({
               {item.itemType || "—"}
             </div>
             <div className="truncate text-sm text-gray-700 flex-1">
-              {item.brand && <span className="mr-1">{item.brand}</span>}
-              {item.name}
+              {item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full"
+                >
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </a>
+              ) : (
+                <>
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
@@ -51,34 +106,41 @@ export default function SortableItem({
               {item.weight != null ? `${item.weight}g` : ""}
             </span>
             <FaUtensils
+              title="Toggle consumable"
+              aria-label="Toggle consumable"
               onClick={() => onToggleConsumable(catId, item._id)}
               className={`cursor-pointer ${
                 item.consumable ? "text-green-600" : "opacity-30"
               }`}
             />
             <FaTshirt
+              title="Toggle worn"
+              aria-label="Toggle worn"
               onClick={() => onToggleWorn(catId, item._id)}
               className={`cursor-pointer ${
                 item.worn ? "text-blue-600" : "opacity-30"
               }`}
             />
-            <span className="text-gray-600">
-              {item.price != null ? `€${item.price}` : ""}
-            </span>
-            <select
-              value={item.quantity}
-              onChange={(e) =>
-                onQuantityChange(catId, item._id, Number(e.target.value))
-              }
-              className="border rounded p-1 bg-sand"
-            >
-              {[...Array(10)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1}
-                </option>
+            {item.price != null &&
+              (item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600"
+                >
+                  €{item.price}
+                </a>
+              ) : (
+                <span className="text-gray-600">€{item.price}</span>
               ))}
-            </select>
+            <QuantityInline
+              qty={item.quantity}
+              onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+            />
             <button
+              title="Delete item"
+              aria-label="Delete item"
               onClick={() => onDelete(catId, item._id)}
               className="text-red-500 hover:text-red-700"
             >
@@ -87,71 +149,74 @@ export default function SortableItem({
           </div>
         </div>
 
-        {/* Desktop: one-row grid */}
-        <div className="hidden sm:grid sm:grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px] items-center gap-2">
-          <div className="cursor-grab" {...attributes} {...listeners}>
-            <FaGripVertical />
+        {/* Desktop: one row */}
+        <div className="hidden sm:flex items-center justify-between text-sm">
+          <div className="flex items-center">
+            <div className="cursor-grab mr-2" {...attributes} {...listeners}>
+              <FaGripVertical />
+            </div>
+            <div className="font-semibold text-gray-800 truncate mr-4">
+              {item.itemType || "—"}
+            </div>
+            <div className="truncate text-sm text-gray-700 flex-1">
+              {item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full"
+                >
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </a>
+              ) : (
+                <>
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </>
+              )}
+            </div>
           </div>
-          <div className="font-semibold text-gray-800 truncate">
-            {item.itemType || "—"}
-          </div>
-          <div className="truncate text-sm text-gray-700">
-            {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                {item.brand && <span className="mr-1">{item.brand}</span>}
-                {item.name}
-              </a>
-            ) : (
-              <>
-                {item.brand && <span className="mr-1">{item.brand}</span>}
-                {item.name}
-              </>
-            )}
-          </div>
-          <div className="text-center text-sm text-gray-600">
-            {item.weight != null ? `${item.weight}g` : ""}
-          </div>
-          <div className="text-center">
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-600">
+              {item.weight != null ? `${item.weight}g` : ""}
+            </span>
             <FaUtensils
+              title="Toggle consumable"
+              aria-label="Toggle consumable"
               onClick={() => onToggleConsumable(catId, item._id)}
               className={`cursor-pointer ${
                 item.consumable ? "text-green-600" : "opacity-30"
               }`}
             />
-          </div>
-          <div className="text-center">
             <FaTshirt
+              title="Toggle worn"
+              aria-label="Toggle worn"
               onClick={() => onToggleWorn(catId, item._id)}
               className={`cursor-pointer ${
                 item.worn ? "text-blue-600" : "opacity-30"
               }`}
             />
-          </div>
-          <div className="text-center text-sm text-gray-600">
-            {item.price != null ? `€${item.price}` : ""}
-          </div>
-          <div className="text-center">
-            <select
-              value={item.quantity}
-              onChange={(e) =>
-                onQuantityChange(catId, item._id, Number(e.target.value))
-              }
-              className="border rounded p-1 bg-sand"
-            >
-              {[...Array(10)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1}
-                </option>
+            {item.price != null &&
+              (item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600"
+                >
+                  €{item.price}
+                </a>
+              ) : (
+                <span className="text-gray-600">€{item.price}</span>
               ))}
-            </select>
-          </div>
-          <div className="text-center">
+            <QuantityInline
+              qty={item.quantity}
+              onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+            />
             <button
+              title="Delete item"
+              aria-label="Delete item"
               onClick={() => onDelete(catId, item._id)}
               className="text-red-500 hover:text-red-700"
             >
@@ -163,7 +228,7 @@ export default function SortableItem({
     );
   }
 
-  // ─── COLUMN MODE ─────────────────────────────────────────────────────────────
+  // COLUMN MODE
   return (
     <div
       ref={setNodeRef}
@@ -183,9 +248,23 @@ export default function SortableItem({
         </div>
       </div>
 
-      <div className="text-sm text-gray-700 mb-1">
-        {item.brand && <span className="mr-1">{item.brand}</span>}
-        {item.name}
+      <div className="truncate text-sm text-gray-700 flex-1">
+        {item.link ? (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full"
+          >
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </a>
+        ) : (
+          <>
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-sm">
@@ -194,34 +273,41 @@ export default function SortableItem({
         </span>
         <div className="flex items-center space-x-3">
           <FaUtensils
+            title="Toggle consumable"
+            aria-label="Toggle consumable"
             onClick={() => onToggleConsumable(catId, item._id)}
             className={`cursor-pointer ${
               item.consumable ? "text-green-600" : "opacity-30"
             }`}
           />
           <FaTshirt
+            title="Toggle worn"
+            aria-label="Toggle worn"
             onClick={() => onToggleWorn(catId, item._id)}
             className={`cursor-pointer ${
               item.worn ? "text-blue-600" : "opacity-30"
             }`}
           />
-          {item.price != null && (
-            <span className="text-gray-600">€{item.price}</span>
-          )}
-          <select
-            value={item.quantity}
-            onChange={(e) =>
-              onQuantityChange(catId, item._id, Number(e.target.value))
-            }
-            className="border rounded p-1 bg-sand"
-          >
-            {[...Array(10)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>
-                {i + 1}
-              </option>
+          {item.price != null &&
+            (item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600"
+              >
+                €{item.price}
+              </a>
+            ) : (
+              <span className="text-gray-600">€{item.price}</span>
             ))}
-          </select>
+          <QuantityInline
+            qty={item.quantity}
+            onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+          />
           <button
+            title="Delete item"
+            aria-label="Delete item"
             onClick={() => onDelete(catId, item._id)}
             className="hover:text-red-700 text-red-500"
           >

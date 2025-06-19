@@ -23,7 +23,7 @@ export default {
       colors: {
         pine: "#163A28",
         teal: "#172b4d",
-        sand: "#FCEFC9",
+        sand: "#fdf7e4",
         sunset: "#E0B251",
         ember: "#E76F51",
       },

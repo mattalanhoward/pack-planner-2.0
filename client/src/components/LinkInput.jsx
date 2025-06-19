@@ -45,6 +45,9 @@ export default function LinkInput({
     onChange(e.target.value);
   };
 
+  // Remove any leading http(s):// before rendering
+  const displayPlaceholder = placeholder.replace(/^https?:\/\//i, "");
+
   return (
     <div>
       <label
@@ -59,7 +62,7 @@ export default function LinkInput({
         id={name}
         name={name}
         type="text"
-        placeholder={placeholder}
+        placeholder={displayPlaceholder}
         value={value}
         onChange={handleChange}
         onBlur={normalizeAndValidate}

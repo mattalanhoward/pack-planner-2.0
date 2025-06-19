@@ -905,7 +905,7 @@ export default function GearListView({
                 />
               ))}
 
-              {/* Add New Category button (unchanged) */}
+              {/* Add New Category button */}
               <div className="px-4 mt-4">
                 {addingNewCat ? (
                   <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
@@ -926,7 +926,7 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="px-4 py-2 border border-pine rounded hover:bg-sand/20 flex items-center"
+                    className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
                   >
                     <FaPlus className="mr-2" /> Add New Category
                   </button>
@@ -982,7 +982,7 @@ export default function GearListView({
                 ) : (
                   <button
                     onClick={() => setAddingNewCat(true)}
-                    className="h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                    className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
                   >
                     <FaPlus />
                     <span className="text-xs">New Category</span>

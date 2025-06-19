@@ -24,29 +24,43 @@ export default function SortableItem({
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(qty);
 
-    useEffect(() => setValue(qty), [qty]);
+    // Keep local value in sync when qty prop changes
+    useEffect(() => {
+      setValue(qty);
+    }, [qty]);
+
+    // Commit the new value if it's valid
+    const commit = () => {
+      const n = parseInt(value, 10);
+      if (!isNaN(n) && n > 0 && n !== qty) {
+        onChange(n);
+      }
+      setEditing(false);
+    };
 
     if (editing) {
       return (
         <input
           type="number"
+          min="1"
           className="w-12 text-center border rounded p-1 bg-sand"
           value={value}
           autoFocus
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue(v);
-            const n = parseInt(v, 10);
-            if (n > 0 && n !== qty) {
-              onChange(n);
+          // Update local state on any change (typing or arrows)
+          onChange={(e) => setValue(e.target.value)}
+          // Commit on losing focus
+          onBlur={commit}
+          // Commit on Enter key
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              commit();
             }
           }}
-          onBlur={() => setEditing(false)}
-          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         />
       );
     }
 
+    // Display mode: click to enter edit mode
     return (
       <span
         onClick={() => setEditing(true)}
@@ -89,12 +103,16 @@ export default function SortableItem({
               {item.weight != null ? `${item.weight}g` : ""}
             </span>
             <FaUtensils
+              title="Toggle consumable"
+              aria-label="Toggle consumable"
               onClick={() => onToggleConsumable(catId, item._id)}
               className={`cursor-pointer ${
                 item.consumable ? "text-green-600" : "opacity-30"
               }`}
             />
             <FaTshirt
+              title="Toggle worn"
+              aria-label="Toggle worn"
               onClick={() => onToggleWorn(catId, item._id)}
               className={`cursor-pointer ${
                 item.worn ? "text-blue-600" : "opacity-30"
@@ -108,6 +126,8 @@ export default function SortableItem({
               onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
             />
             <button
+              title="Delete item"
+              aria-label="Delete item"
               onClick={() => onDelete(catId, item._id)}
               className="text-red-500 hover:text-red-700"
             >
@@ -147,6 +167,8 @@ export default function SortableItem({
           </div>
           <div className="text-center">
             <FaUtensils
+              title="Toggle consumable"
+              aria-label="Toggle consumable"
               onClick={() => onToggleConsumable(catId, item._id)}
               className={`cursor-pointer ${
                 item.consumable ? "text-green-600" : "opacity-30"
@@ -155,6 +177,8 @@ export default function SortableItem({
           </div>
           <div className="text-center">
             <FaTshirt
+              title="Toggle worn"
+              aria-label="Toggle worn"
               onClick={() => onToggleWorn(catId, item._id)}
               className={`cursor-pointer ${
                 item.worn ? "text-blue-600" : "opacity-30"
@@ -172,6 +196,8 @@ export default function SortableItem({
           </div>
           <div className="text-center">
             <button
+              title="Delete item"
+              aria-label="Delete item"
               onClick={() => onDelete(catId, item._id)}
               className="text-red-500 hover:text-red-700"
             >
@@ -214,12 +240,16 @@ export default function SortableItem({
         </span>
         <div className="flex items-center space-x-3">
           <FaUtensils
+            title="Toggle consumable"
+            aria-label="Toggle consumable"
             onClick={() => onToggleConsumable(catId, item._id)}
             className={`cursor-pointer ${
               item.consumable ? "text-green-600" : "opacity-30"
             }`}
           />
           <FaTshirt
+            title="Toggle worn"
+            aria-label="Toggle worn"
             onClick={() => onToggleWorn(catId, item._id)}
             className={`cursor-pointer ${
               item.worn ? "text-blue-600" : "opacity-30"
@@ -233,6 +263,8 @@ export default function SortableItem({
             onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
           />
           <button
+            title="Delete item"
+            aria-label="Delete item"
             onClick={() => onDelete(catId, item._id)}
             className="hover:text-red-700 text-red-500"
           >

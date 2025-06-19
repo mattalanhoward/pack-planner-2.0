@@ -1,4 +1,3 @@
-// src/components/SortableItem.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import SortableItem from "./SortableItem";
@@ -26,7 +25,7 @@ describe("SortableItem component", () => {
     jest.clearAllMocks();
   });
 
-  test("renders item details correctly", () => {
+  test("renders item details correctly in list mode", () => {
     render(
       <SortableItem
         item={dummyItem}
@@ -39,21 +38,49 @@ describe("SortableItem component", () => {
       />
     );
 
-    // Brand & name appear
+    // Brand appears twice (mobile & desktop)
+    const brands = screen.getAllByText(/Acme/);
+    expect(brands).toHaveLength(2);
+
+    // Name appears twice
+    const names = screen.getAllByText(/UltraTent/);
+    expect(names).toHaveLength(2);
+
+    // Weight appears twice
+    const weights = screen.getAllByText(/1500g/);
+    expect(weights).toHaveLength(2);
+
+    // Price appears twice
+    const prices = screen.getAllByText("€120");
+    expect(prices).toHaveLength(2);
+  });
+
+  test("renders item details correctly in column mode", () => {
+    render(
+      <SortableItem
+        item={dummyItem}
+        catId="catA"
+        onToggleConsumable={mockOnToggleConsumable}
+        onToggleWorn={mockOnToggleWorn}
+        onQuantityChange={mockOnQuantityChange}
+        onDelete={mockOnDelete}
+        isListMode={false}
+      />
+    );
+
+    // Brand and name appear once
     expect(screen.getByText(/Acme/)).toBeInTheDocument();
     expect(screen.getByText(/UltraTent/)).toBeInTheDocument();
 
-    // Weight “1500g” appears
+    // Link around name
+    const nameLink = screen.getByRole("link", { name: /UltraTent/ });
+    expect(nameLink).toHaveAttribute("href", dummyItem.link);
+
+    // Weight appears
     expect(screen.getByText(/1500g/)).toBeInTheDocument();
 
-    // Price “€120” is rendered as a link (anchor)
-    const priceLink = screen.getByText("€120");
-    expect(priceLink.tagName).toBe("A");
-    expect(priceLink).toHaveAttribute("href", "https://example.com");
-
-    // Quantity select shows default “2”
-    const qtySelect = screen.getByDisplayValue("2");
-    expect(qtySelect).toBeInTheDocument();
+    // Price appears
+    expect(screen.getByText("€120")).toBeInTheDocument();
   });
 
   test("clicking consumable icon calls onToggleConsumable", () => {
@@ -69,7 +96,6 @@ describe("SortableItem component", () => {
       />
     );
 
-    // The utensil icon has title="Toggle consumable"
     const utensilIcon = screen.getByTitle("Toggle consumable");
     fireEvent.click(utensilIcon);
     expect(mockOnToggleConsumable).toHaveBeenCalledWith("catA", "123");
@@ -88,13 +114,12 @@ describe("SortableItem component", () => {
       />
     );
 
-    // The T-shirt icon has title="Toggle worn"
     const tshirtIcon = screen.getByTitle("Toggle worn");
     fireEvent.click(tshirtIcon);
     expect(mockOnToggleWorn).toHaveBeenCalledWith("catA", "123");
   });
 
-  test("changing quantity calls onQuantityChange", () => {
+  test("changing quantity via inline edit calls onQuantityChange", () => {
     render(
       <SortableItem
         item={dummyItem}
@@ -107,9 +132,15 @@ describe("SortableItem component", () => {
       />
     );
 
-    // Find the <select> by its current value “2”
-    const select = screen.getByDisplayValue("2");
-    fireEvent.change(select, { target: { value: "5" } });
+    // Enter edit mode by clicking the displayed quantity
+    const qtySpan = screen.getByText("2");
+    fireEvent.click(qtySpan);
+
+    // Should render a number input
+    const input = screen.getByRole("spinbutton");
+    fireEvent.change(input, { target: { value: "5" } });
+    fireEvent.blur(input);
+
     expect(mockOnQuantityChange).toHaveBeenCalledWith("catA", "123", 5);
   });
 
@@ -126,7 +157,6 @@ describe("SortableItem component", () => {
       />
     );
 
-    // The delete button has title="Delete item"
     const deleteBtn = screen.getByTitle("Delete item");
     fireEvent.click(deleteBtn);
     expect(mockOnDelete).toHaveBeenCalledWith("catA", "123");

@@ -31,7 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 
-import { FaGripVertical, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -99,46 +99,57 @@ export default function GearListView({
   // — inline‐edit handlers for items —
   // — toggle consumable status —
   const toggleConsumable = (catId, itemId) => {
-    // 1) Optimistically update the icon
+    // read old state & flip
+    const old = itemsMap[catId].find((i) => i._id === itemId).consumable;
+    const next = !old;
+
+    // 1) Optimistic UI update
     setItemsMap((m) => ({
       ...m,
       [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, consumable: !i.consumable } : i
+        i._id === itemId ? { ...i, consumable: next } : i
       ),
     }));
 
-    // 2) Send the request in the background
-    api
-      .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        consumable: !itemsMap[catId].find((i) => i._id === itemId).consumable,
-      })
-      .catch((err) => {
-        // If it fails, roll back or re-fetch that category
+    // 2) persist in background with try/catch
+    (async () => {
+      try {
+        await api.patch(
+          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          { consumable: next }
+        );
+      } catch (err) {
         fetchItems(catId);
         toast.error("Failed to toggle consumable");
-      });
+      }
+    })();
   };
 
-  // — toggle worn status of an item —
   const toggleWorn = (catId, itemId) => {
-    // 1) Optimistically update the icon
+    // read old state & flip
+    const old = itemsMap[catId].find((i) => i._id === itemId).worn;
+    const next = !old;
+
+    // 1) Optimistic UI update
     setItemsMap((m) => ({
       ...m,
       [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, worn: !i.worn } : i
+        i._id === itemId ? { ...i, worn: next } : i
       ),
     }));
 
-    // 2) Send the request in the background
-    api
-      .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        worn: !itemsMap[catId].find((i) => i._id === itemId).worn,
-      })
-      .catch((err) => {
-        // If it fails, roll back or re-fetch that category
+    // 2) persist in background with try/catch
+    (async () => {
+      try {
+        await api.patch(
+          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          { worn: next }
+        );
+      } catch {
         fetchItems(catId);
-        toast.error(err.message || "Failed to toggle worn");
-      });
+        toast.error("Failed to toggle worn");
+      }
+    })();
   };
 
   // — update item quantity inline —
@@ -649,6 +660,7 @@ export default function GearListView({
 
               {/* Only show delete icon now */}
               <FaTrash
+                aria-label="Delete category"
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
@@ -779,6 +791,7 @@ export default function GearListView({
 
               {/* Only show delete icon now */}
               <FaTrash
+                aria-label="Delete category"
                 title="Delete category"
                 onClick={() => handleDeleteCatClick(catId)}
                 className="cursor-pointer text-ember"
@@ -831,7 +844,7 @@ export default function GearListView({
   const bgstyle = {
     // transform: CSS.Transform.toString(transform),
     // transition,
-    backgroundImage: `url(${sierraNevadaBg})`, // ← add this
+    backgroundImage: `url(${sierraNevadaBg})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };

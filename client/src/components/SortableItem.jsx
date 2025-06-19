@@ -1,4 +1,3 @@
-// src/components/SortableItem.jsx
 import React, { memo, useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -24,12 +23,10 @@ export default function SortableItem({
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(qty);
 
-    // Keep local value in sync when qty prop changes
     useEffect(() => {
       setValue(qty);
     }, [qty]);
 
-    // Commit the new value if it's valid
     const commit = () => {
       const n = parseInt(value, 10);
       if (!isNaN(n) && n > 0 && n !== qty) {
@@ -46,21 +43,13 @@ export default function SortableItem({
           className="w-12 text-center border rounded p-1 bg-sand"
           value={value}
           autoFocus
-          // Update local state on any change (typing or arrows)
           onChange={(e) => setValue(e.target.value)}
-          // Commit on losing focus
           onBlur={commit}
-          // Commit on Enter key
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              commit();
-            }
-          }}
+          onKeyDown={(e) => e.key === "Enter" && commit()}
         />
       );
     }
 
-    // Display mode: click to enter edit mode
     return (
       <span
         onClick={() => setEditing(true)}
@@ -94,8 +83,22 @@ export default function SortableItem({
               {item.itemType || "—"}
             </div>
             <div className="truncate text-sm text-gray-700 flex-1">
-              {item.brand && <span className="mr-1">{item.brand}</span>}
-              {item.name}
+              {item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full"
+                >
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </a>
+              ) : (
+                <>
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
@@ -118,9 +121,19 @@ export default function SortableItem({
                 item.worn ? "text-blue-600" : "opacity-30"
               }`}
             />
-            <span className="text-gray-600">
-              {item.price != null ? `€${item.price}` : ""}
-            </span>
+            {item.price != null &&
+              (item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600"
+                >
+                  €{item.price}
+                </a>
+              ) : (
+                <span className="text-gray-600">€{item.price}</span>
+              ))}
             <QuantityInline
               qty={item.quantity}
               onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
@@ -136,36 +149,38 @@ export default function SortableItem({
           </div>
         </div>
 
-        {/* Desktop: one-row grid */}
-        <div className="hidden sm:grid sm:grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px] items-center gap-2">
-          <div className="cursor-grab" {...attributes} {...listeners}>
-            <FaGripVertical />
+        {/* Desktop: one row */}
+        <div className="hidden sm:flex items-center justify-between text-sm">
+          <div className="flex items-center">
+            <div className="cursor-grab mr-2" {...attributes} {...listeners}>
+              <FaGripVertical />
+            </div>
+            <div className="font-semibold text-gray-800 truncate mr-4">
+              {item.itemType || "—"}
+            </div>
+            <div className="truncate text-sm text-gray-700 flex-1">
+              {item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full"
+                >
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </a>
+              ) : (
+                <>
+                  {item.brand && <span className="mr-1">{item.brand}</span>}
+                  {item.name}
+                </>
+              )}
+            </div>
           </div>
-          <div className="font-semibold text-gray-800 truncate">
-            {item.itemType || "—"}
-          </div>
-          <div className="truncate text-sm text-gray-700">
-            {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline"
-              >
-                {item.brand && <span className="mr-1">{item.brand}</span>}
-                {item.name}
-              </a>
-            ) : (
-              <>
-                {item.brand && <span className="mr-1">{item.brand}</span>}
-                {item.name}
-              </>
-            )}
-          </div>
-          <div className="text-center text-sm text-gray-600">
-            {item.weight != null ? `${item.weight}g` : ""}
-          </div>
-          <div className="text-center">
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-600">
+              {item.weight != null ? `${item.weight}g` : ""}
+            </span>
             <FaUtensils
               title="Toggle consumable"
               aria-label="Toggle consumable"
@@ -174,8 +189,6 @@ export default function SortableItem({
                 item.consumable ? "text-green-600" : "opacity-30"
               }`}
             />
-          </div>
-          <div className="text-center">
             <FaTshirt
               title="Toggle worn"
               aria-label="Toggle worn"
@@ -184,17 +197,23 @@ export default function SortableItem({
                 item.worn ? "text-blue-600" : "opacity-30"
               }`}
             />
-          </div>
-          <div className="text-center text-sm text-gray-600">
-            {item.price != null ? `€${item.price}` : ""}
-          </div>
-          <div className="text-center">
+            {item.price != null &&
+              (item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600"
+                >
+                  €{item.price}
+                </a>
+              ) : (
+                <span className="text-gray-600">€{item.price}</span>
+              ))}
             <QuantityInline
               qty={item.quantity}
               onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
             />
-          </div>
-          <div className="text-center">
             <button
               title="Delete item"
               aria-label="Delete item"
@@ -209,7 +228,7 @@ export default function SortableItem({
     );
   }
 
-  // ─── COLUMN MODE ─────────────────────────────────────────────────────────────
+  // COLUMN MODE
   return (
     <div
       ref={setNodeRef}
@@ -229,9 +248,23 @@ export default function SortableItem({
         </div>
       </div>
 
-      <div className="text-sm text-gray-700 mb-1">
-        {item.brand && <span className="mr-1">{item.brand}</span>}
-        {item.name}
+      <div className="truncate text-sm text-gray-700 flex-1">
+        {item.link ? (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full"
+          >
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </a>
+        ) : (
+          <>
+            {item.brand && <span className="mr-1">{item.brand}</span>}
+            {item.name}
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-sm">
@@ -255,9 +288,19 @@ export default function SortableItem({
               item.worn ? "text-blue-600" : "opacity-30"
             }`}
           />
-          {item.price != null && (
-            <span className="text-gray-600">€{item.price}</span>
-          )}
+          {item.price != null &&
+            (item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600"
+              >
+                €{item.price}
+              </a>
+            ) : (
+              <span className="text-gray-600">€{item.price}</span>
+            ))}
           <QuantityInline
             qty={item.quantity}
             onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}

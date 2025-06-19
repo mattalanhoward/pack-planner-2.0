@@ -43,6 +43,7 @@ export default function GearListView({
   listId,
   refreshToggle,
   templateToggle,
+  renameToggle,
   viewMode, // "columns" or "list"
 }) {
   const [listName, setListName] = useState("");
@@ -73,7 +74,7 @@ export default function GearListView({
       const found = data.find((l) => l._id === listId);
       setListName(found?.title || "");
     })();
-  }, [listId]);
+  }, [listId, renameToggle]);
 
   // — load categories —
   useEffect(() => {

@@ -9,12 +9,17 @@ export default function Dashboard() {
   const [currentListId, setCurrentListId] = useState(null);
   const [refreshToggle, setRefreshToggle] = useState(false);
   const [templateToggle, setTemplateToggle] = useState(false);
-  const [viewMode, setViewMode] = useState("columns"); // ← new state
-
+  const [viewMode, setViewMode] = useState("columns");
+  const [currentListTitle, setCurrentListTitle] = useState("");
+  const [renameToggle, setRenameToggle] = useState(false);
   const handleItemAdded = () => setRefreshToggle((t) => !t);
   const handleTemplateEdited = () => setTemplateToggle((t) => !t);
 
   if (!isAuthenticated) return null;
+
+  const handleListRenamed = () => {
+    setRenameToggle((t) => !t);
+  };
 
   return (
     <div className="flex flex-col h-d-screen overflow-hidden">
@@ -26,8 +31,11 @@ export default function Dashboard() {
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
+          onListRenamed={handleListRenamed}
           currentListId={currentListId}
-          onSelectList={setCurrentListId}
+          onSelectList={(id) => {
+            setCurrentListId(id);
+          }}
           onItemAdded={handleItemAdded}
           onTemplateEdited={handleTemplateEdited}
         />
@@ -36,6 +44,7 @@ export default function Dashboard() {
           {currentListId ? (
             <GearListView
               listId={currentListId}
+              renameToggle={renameToggle}
               refreshToggle={refreshToggle}
               templateToggle={templateToggle}
               viewMode={viewMode} // ← pass it down

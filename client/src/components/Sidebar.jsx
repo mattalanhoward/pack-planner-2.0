@@ -14,6 +14,7 @@ import { toast } from "react-hot-toast";
 import ConfirmDialog from "./ConfirmDialog"; // <-- our reusable ConfirmDialog
 
 export default function Sidebar({
+  onListRenamed,
   currentListId,
   onSelectList,
   onItemAdded,
@@ -123,23 +124,33 @@ export default function Sidebar({
 
   // Save inline edit
   const saveEditList = async (id) => {
+    if (currentListId === id) {
+      onSelectList(id);
+      onListRenamed();
+    }
     const title = editingTitle.trim();
     if (!title) {
-      toast.error("List name cannot be empty.");
-      return;
+      return toast.error("List name cannot be empty.");
     }
+
     try {
       await api.patch(`/lists/${id}`, { title });
       setEditingId(null);
       setEditingTitle("");
+
       await fetchLists();
-      if (currentListId === id) onSelectList(id);
+
+      if (currentListId === id) {
+        onSelectList(id); // reload categories/items
+        onListRenamed(id, title); // update the dashboard heading
+      }
+
       toast.success("List renamed!");
     } catch (err) {
-      console.error("Error updating list:", err);
-      toast.error(err.response?.data?.message || "Could not update list name.");
+      toast.error(err.response?.data?.message || "Could not update list.");
     }
   };
+
   const cancelEditList = () => {
     setEditingId(null);
     setEditingTitle("");
@@ -308,25 +319,21 @@ export default function Sidebar({
                 {sortedLists.map((l) => (
                   <li key={l._id} className="flex items-center">
                     {editingId === l._id ? (
-                      <>
-                        <input
-                          className="flex-1 rounded-lg p-1 text-pine hover:text-pine/80"
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                        />
-                        <button
-                          onClick={() => saveEditList(l._id)}
-                          className="ml-2 text-sunset"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={cancelEditList}
-                          className="ml-1 text-ember"
-                        >
-                          ×
-                        </button>
-                      </>
+                      <input
+                        className="flex-1 rounded-lg p-2 text-pine border border-pine"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onBlur={() => saveEditList(l._id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            saveEditList(l._id);
+                          } else if (e.key === "Escape") {
+                            cancelEditList();
+                          }
+                        }}
+                        autoFocus
+                      />
                     ) : (
                       <>
                         <button

@@ -21,12 +21,15 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [worn, setWorn] = useState(false);
   const [consumable, setConsumable] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [link, setLink] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
+    // take item.link (e.g. "https://smartwool.com") and strip protocol
+    const rawLink = item.link || "";
+    const stripped = rawLink.replace(/^https?:\/\//i, "");
+
     if (!item) return;
     setForm({
       category: item.category || "",
@@ -36,7 +39,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
       description: item.description || "",
       weight: item.weight || "",
       price: item.price || "",
-      link: item.link || "",
+      link: stripped || "",
     });
     setWorn(item.worn);
     setConsumable(item.consumable);
@@ -171,8 +174,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           {/* Link */}
           <div>
             <LinkInput
-              value={link}
-              onChange={setLink}
+              value={form.link}
+              onChange={(newLink) => setForm((f) => ({ ...f, link: newLink }))}
               label="Link"
               placeholder="tarptent.com"
               required={false}

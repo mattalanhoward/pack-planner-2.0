@@ -851,7 +851,14 @@ export default function GearListView({
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <h2 className="pl-10 pt-4 text-2xl font-bold text-sunset">{listName}</h2>
+      <h2
+        className={
+          `pl-10 pt-4 text-2xl font-bold text-sunset ` +
+          (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
+        }
+      >
+        {listName}
+      </h2>{" "}
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
@@ -877,7 +884,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex-1 overflow-y-auto px-4 py-2">
+            <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
               {categories.map((cat) => (
                 <SortableSection
                   key={cat._id}

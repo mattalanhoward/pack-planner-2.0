@@ -653,7 +653,7 @@ export default function GearListView({
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
               >
                 <span>{category.title}</span>
               </h3>
@@ -784,7 +784,7 @@ export default function GearListView({
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
               >
                 <span>{category.title}</span>
               </h3>
@@ -854,16 +854,16 @@ export default function GearListView({
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
       <div
         className={
-          `flex justify-between items-center px-10 py-4 ` +
+          `flex justify-between items-center px-6 py-2 ` +
           (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
         }
       >
-        <h2 className="text-2xl font-bold text-sunset">{listName}</h2>
+        <h2 className="text-xl text-sunset">{listName}</h2>
 
         {/* make the link a flex container too */}
         <a
           href="#"
-          className="inline-flex items-center justify-center text-2xl font-bold text-sunset hover:text-sunset-dark leading-none"
+          className="inline-flex items-center justify-center text-l text-sunset hover:text-sunset-dark leading-none"
           aria-label="More options"
         >
           <FaEllipsisH />

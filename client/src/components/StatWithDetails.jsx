@@ -14,7 +14,8 @@ function baseColorClass(grams) {
 }
 
 function StatWithDetails({ icon: Icon, raw, label, items = [], colorClass }) {
-  const { weightUnit } = useUserSettings();
+  // use 'auto' to switch to kg if >= 1000g, else g
+  const displayValue = formatWeight(raw, "auto");
 
   return (
     <Popover.Root>
@@ -24,7 +25,7 @@ function StatWithDetails({ icon: Icon, raw, label, items = [], colorClass }) {
           className={`flex items-center space-x-1 cursor-help ${colorClass}`}
         >
           <Icon className="w-4 h-4" />
-          <span>{formatWeight(raw, "auto")}</span>
+          <span>{displayValue}</span>
         </div>
       </Popover.Trigger>
 
@@ -32,9 +33,14 @@ function StatWithDetails({ icon: Icon, raw, label, items = [], colorClass }) {
         <Popover.Content
           side="bottom"
           align="center"
-          className="w-56 p-2 bg-sand rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs"
+          className="w-56 p-2 bg-white rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs"
         >
-          <div className="font-medium mb-1">{label}</div>
+          {/* Popover header: label left, total weight right with auto units */}
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-medium text-gray-800">{label}</span>
+            <span className="font-medium text-gray-800">{displayValue}</span>
+          </div>
+
           <ul className="divide-y divide-gray-200">
             {items.map((it) => (
               <li
@@ -71,28 +77,28 @@ export default function PackStats({
     {
       icon: BsBackpack4,
       raw: base,
-      label: "Base Weight",
+      label: "Base",
       items: breakdowns.base,
       colorClass: baseColorClass(base),
     },
     {
       icon: FaTshirt,
       raw: worn,
-      label: "Worn Items Weight",
+      label: "Worn",
       items: breakdowns.worn,
       colorClass: "text-blue-600",
     },
     {
       icon: FaUtensils,
       raw: consumable,
-      label: "Consumable Weight",
+      label: "Consumable",
       items: breakdowns.consumable,
       colorClass: "text-green-600",
     },
     {
       icon: FaBalanceScale,
       raw: total,
-      label: "Total Weight",
+      label: "Total",
       items: breakdowns.total,
       colorClass: "text-sunset",
     },

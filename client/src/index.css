@@ -24,3 +24,21 @@ a {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* hide-on-touch: anything with a coarse pointer (i.e. finger) */
+@media (pointer: coarse) {
+  .hide-on-touch {
+    display: none !important;
+  }
+}
+
+/* show-on-touch: only on coarse‐pointer devices (phones/tablets) */
+@media (pointer: coarse) {
+  .show-on-touch {
+    display: inline !important;
+  }
+}
+/* default: hide */
+.show-on-touch {
+  display: none;
+}

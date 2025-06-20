@@ -198,7 +198,7 @@ export default function AddGearItemModal({
                         </div>
                         {disabled && (
                           <span className="text-red-500 text-xs ml-2">
-                            Already added
+                            Added
                           </span>
                         )}
                       </div>

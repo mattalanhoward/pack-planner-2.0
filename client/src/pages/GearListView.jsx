@@ -31,7 +31,7 @@ import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 
-import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTrash, FaPlus, FaEllipsisH } from "react-icons/fa";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -653,7 +653,7 @@ export default function GearListView({
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
               >
                 <span>{category.title}</span>
               </h3>
@@ -784,7 +784,7 @@ export default function GearListView({
                   setEditingCatId(catId);
                   setLocalTitle(category.title);
                 }}
-                className="flex-1 font-semibold text-sunset cursor-text flex items-baseline justify-between pr-4"
+                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
               >
                 <span>{category.title}</span>
               </h3>
@@ -852,14 +852,24 @@ export default function GearListView({
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <h2
+      <div
         className={
-          `pl-10 pt-4 text-2xl font-bold text-sunset ` +
+          `flex justify-between items-center px-6 py-2 ` +
           (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
         }
       >
-        {listName}
-      </h2>{" "}
+        <h2 className="text-xl text-sunset">{listName}</h2>
+
+        {/* make the link a flex container too */}
+        <a
+          href="#"
+          className="inline-flex items-center justify-center text-l text-sunset hover:text-sunset-dark leading-none"
+          aria-label="More options"
+        >
+          <FaEllipsisH />
+        </a>
+      </div>
+
       {/* ───── Wrap everything in one DndContext ───── */}
       <DndContext
         sensors={sensors}
@@ -885,7 +895,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
+            <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
               {categories.map((cat) => (
                 <SortableSection
                   key={cat._id}
@@ -942,7 +952,7 @@ export default function GearListView({
             items={categories.map((c) => `cat-${c._id}`)}
             strategy={horizontalListSortingStrategy}
           >
-            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
+            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
               {categories.map((cat) => (
                 <SortableColumn
                   key={cat._id}

@@ -71,7 +71,7 @@ export default function SortableItem({
       <div
         ref={setNodeRef}
         style={style}
-        className="bg-sand px-3 py-2 rounded shadow mb-2"
+        className="aaa bg-sand px-3 py-2 rounded shadow mb-2"
       >
         {/* Mobile: two rows */}
         <div className="flex flex-col sm:hidden">

@@ -1,53 +1,50 @@
 // src/components/DndContextWrapper.jsx
-import React from 'react';
+import React from "react";
 import {
   DndContext,
   closestCenter,
   PointerSensor,
   KeyboardSensor,
   useSensor,
-  useSensors
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy
-} from '@dnd-kit/sortable';
+  useSensors,
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { SortableContext } from "@dnd-kit/sortable";
 
 export function DndContextWrapper({
+  // required: the array of ids for the top‐level SortableContext
   items,
+  strategy,
+  onDragStart,
+  onDragOver,
   onDragEnd,
-  strategy = verticalListSortingStrategy,
-  children
+  collisionDetection = closestCenter,
+  modifiers = [],
+  // how to render the DragOverlay
+  renderDragOverlay,
+  // all your draggable content
+  children,
 }) {
-  // set up mouse/touch & keyboard sensors
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      const oldIndex = items.indexOf(active.id);
-      const newIndex = items.indexOf(over.id);
-      onDragEnd(oldIndex, newIndex);
-    }
-  }
 
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
+      collisionDetection={collisionDetection}
+      modifiers={modifiers}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
     >
       <SortableContext items={items} strategy={strategy}>
         {children}
       </SortableContext>
+      {renderDragOverlay && renderDragOverlay()}
     </DndContext>
   );
 }

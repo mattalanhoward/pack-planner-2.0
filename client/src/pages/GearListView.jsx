@@ -1,31 +1,20 @@
 // src/pages/GearListView.jsx
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  pointerWithin,
-  DragOverlay,
-} from "@dnd-kit/core";
-
+import { DragOverlay, closestCorners, pointerWithin } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
   restrictToVerticalAxis,
 } from "@dnd-kit/modifiers";
-
 import {
-  SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
   useSortable,
   sortableKeyboardCoordinates,
+  SortableContext,
 } from "@dnd-kit/sortable";
+import { DndContextWrapper } from "../components/DndContextWrapper";
 
 import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
@@ -315,12 +304,6 @@ export default function GearListView({
       toast.error(err.response?.data?.message || "Failed to rename category");
     }
   };
-
-  // — DnD sensors & handler —
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
 
   const handleDragEnd = async ({ active, over }) => {
     setDragOver({ catId: null, index: -1 });
@@ -932,177 +915,169 @@ export default function GearListView({
         </a>
       </div>
 
-      {/* ───── Wrap everything in one DndContext ───── */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={collisionDetectionStrategy}
-        modifiers={[axisModifier]}
+      {/* ───── Wrap everything in one DndContextWrapper ───── */}
+      <DndContextWrapper
+        items={categories.map((c) => `cat-${c._id}`)}
+        strategy={
+          viewMode === "list"
+            ? verticalListSortingStrategy
+            : horizontalListSortingStrategy
+        }
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={(event) => {
-          // 1) Do all the reordering & PATCH calls…
           handleDragEnd(event);
-
-          // 2) Then after the dropAnimation runs, clear the preview
+          // clear previews after dropAnimation
           setTimeout(() => {
             setActiveItem(null);
             setActiveCategory(null);
-          }, 300); // <— match this to your dropAnimation.duration
+          }, 300);
         }}
+        collisionDetection={collisionDetectionStrategy}
+        modifiers={[axisModifier]}
+        renderDragOverlay={() => (
+          <DragOverlay
+            style={{ pointerEvents: "none", zIndex: 1000 }}
+            dropAnimation={{
+              duration: 300,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
+            {activeItem ? (
+              <PreviewCard
+                item={activeItem.item}
+                viewMode={viewMode}
+                isPreview
+              />
+            ) : activeCategory ? (
+              <PreviewColumn
+                category={activeCategory}
+                items={itemsMap[activeCategory._id] || []}
+              />
+            ) : null}
+          </DragOverlay>
+        )}
       >
         {viewMode === "list" ? (
-          // ──── LIST MODE ────
-          <SortableContext
-            // Category‐level SortableContext, items = [ 'cat-<cat1Id>', 'cat-<cat2Id>', … ]
-            items={categories.map((c) => `cat-${c._id}`)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
-              {categories.map((cat) => (
-                <SortableSection
-                  key={cat._id}
-                  category={cat}
-                  items={itemsMap[cat._id] || []}
-                  editingCatId={editingCatId}
-                  setEditingCatId={setEditingCatId}
-                  onEditCat={editCat}
-                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                  onToggleConsumable={toggleConsumable}
-                  onToggleWorn={toggleWorn}
-                  onQuantityChange={updateQuantity}
-                  onDeleteItem={handleDeleteClick}
-                  showAddModalCat={showAddModalCat}
-                  setShowAddModalCat={setShowAddModalCat}
-                  fetchItems={fetchItems}
-                  listId={listId}
-                />
-              ))}
-
-              {/* Add New Category button */}
-              <div className="px-4 mt-4">
-                {addingNewCat ? (
-                  <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
-                    <input
-                      autoFocus
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      placeholder="Category name"
-                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
-                    />
-                    <button onClick={cancelAddCat} className="text-ember">
-                      ×
-                    </button>
-                    <button onClick={confirmAddCat} className="text-teal">
-                      ✓
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingNewCat(true)}
-                    className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
-                  >
-                    <FaPlus className="mr-2" /> Add New Category
+          <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
+            {categories.map((cat) => (
+              <SortableSection
+                key={cat._id}
+                category={cat}
+                items={itemsMap[cat._id] || []}
+                editingCatId={editingCatId}
+                setEditingCatId={setEditingCatId}
+                onEditCat={editCat}
+                onDeleteCat={() => handleDeleteCatClick(cat._id)}
+                onToggleConsumable={toggleConsumable}
+                onToggleWorn={toggleWorn}
+                onQuantityChange={updateQuantity}
+                onDeleteItem={handleDeleteClick}
+                showAddModalCat={showAddModalCat}
+                setShowAddModalCat={setShowAddModalCat}
+                fetchItems={fetchItems}
+                listId={listId}
+              />
+            ))}
+            {/* Add New Category button */}
+            <div className="px-4 mt-4">
+              {addingNewCat ? (
+                <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
+                  <input
+                    autoFocus
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Category name"
+                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                  />
+                  <button onClick={cancelAddCat} className="text-ember">
+                    ×
                   </button>
-                )}
-              </div>
+                  <button onClick={confirmAddCat} className="text-teal">
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingNewCat(true)}
+                  className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
+                >
+                  <FaPlus className="mr-2" /> Add New Category
+                </button>
+              )}
             </div>
-          </SortableContext>
+          </div>
         ) : (
-          // ──── COLUMN MODE ────
-          <SortableContext
-            // Category‐level SortableContext for columns
-            items={categories.map((c) => `cat-${c._id}`)}
-            strategy={horizontalListSortingStrategy}
-          >
-            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
-              {categories.map((cat) => (
-                <SortableColumn
-                  key={cat._id}
-                  category={cat}
-                  items={itemsMap[cat._id] || []}
-                  editingCatId={editingCatId}
-                  setEditingCatId={setEditingCatId}
-                  onEditCat={editCat}
-                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                  onToggleConsumable={toggleConsumable}
-                  onToggleWorn={toggleWorn}
-                  onQuantityChange={updateQuantity}
-                  onDeleteItem={handleDeleteClick}
-                  showAddModalCat={showAddModalCat}
-                  setShowAddModalCat={setShowAddModalCat}
-                  fetchItems={fetchItems}
-                  listId={listId}
-                />
-              ))}
-              {/* Add New Category column (unchanged) */}
-              <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
-                {addingNewCat ? (
-                  <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
-                    <input
-                      autoFocus
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      placeholder="Category name"
-                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
-                    />
-                    <button onClick={cancelAddCat} className="text-ember p-1">
-                      ×
-                    </button>
-                    <button onClick={confirmAddCat} className="text-teal p-1">
-                      ✓
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingNewCat(true)}
-                    className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
-                  >
-                    <FaPlus />
-                    <span className="text-xs">New Category</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </SortableContext>
-        )}
+          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
+            {categories.map((cat) => (
+              <SortableColumn
+                key={cat._id}
+                category={cat}
+                items={itemsMap[cat._id] || []}
+                editingCatId={editingCatId}
+                setEditingCatId={setEditingCatId}
+                onEditCat={editCat}
+                onDeleteCat={() => handleDeleteCatClick(cat._id)}
+                onToggleConsumable={toggleConsumable}
+                onToggleWorn={toggleWorn}
+                onQuantityChange={updateQuantity}
+                onDeleteItem={handleDeleteClick}
+                showAddModalCat={showAddModalCat}
+                setShowAddModalCat={setShowAddModalCat}
+                fetchItems={fetchItems}
+                listId={listId}
+              />
+            ))}
 
-        {/* ───── DragOverlay for the active item ───── */}
-        <DragOverlay
-          style={{ pointerEvents: "none", zIndex: 1000 }}
-          dropAnimation={{
-            duration: 300,
-            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
-          }}
-        >
-          {activeItem ? (
-            <PreviewCard item={activeItem.item} viewMode={viewMode} isPreview />
-          ) : activeCategory ? (
-            <PreviewColumn
-              category={activeCategory}
-              // pass the array of items currently in that category
-              items={itemsMap[activeCategory._id] || []}
-            />
-          ) : null}
-        </DragOverlay>
-        <ConfirmDialog
-          isOpen={confirmOpen}
-          title="Delete this item?"
-          message="This action cannot be undone."
-          confirmText="Yes, delete"
-          cancelText="Cancel"
-          onConfirm={actuallyDeleteItem}
-          onCancel={cancelDelete}
-        />
-        <ConfirmDialog
-          isOpen={confirmCatOpen}
-          title="Delete this category?"
-          message="Deleting a category will remove all its items. Proceed?"
-          confirmText="Yes, delete"
-          cancelText="Cancel"
-          onConfirm={actuallyDeleteCat}
-          onCancel={cancelDeleteCat}
-        />
-      </DndContext>
+            {/* Add New Category column (unchanged) */}
+            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
+              {addingNewCat ? (
+                <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
+                  <input
+                    autoFocus
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Category name"
+                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                  />
+                  <button onClick={cancelAddCat} className="text-ember p-1">
+                    ×
+                  </button>
+                  <button onClick={confirmAddCat} className="text-teal p-1">
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingNewCat(true)}
+                  className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                >
+                  <FaPlus />
+                  <span className="text-xs">New Category</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </DndContextWrapper>
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Delete this item?"
+        message="This action cannot be undone."
+        confirmText="Yes, delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteItem}
+        onCancel={cancelDelete}
+      />
+      <ConfirmDialog
+        isOpen={confirmCatOpen}
+        title="Delete this category?"
+        message="Deleting a category will remove all its items. Proceed?"
+        confirmText="Yes, delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteCat}
+        onCancel={cancelDeleteCat}
+      />
     </div>
   );
 }

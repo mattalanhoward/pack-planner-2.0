@@ -16,3 +16,11 @@ a {
   color: #25554d;
   text-decoration: none; /* or “none” if you don’t want underlines by default */
 }
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

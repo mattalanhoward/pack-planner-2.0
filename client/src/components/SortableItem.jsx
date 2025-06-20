@@ -1,7 +1,13 @@
 import React, { memo, useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from "react-icons/fa";
+import {
+  FaGripVertical,
+  FaUtensils,
+  FaTshirt,
+  FaTrash,
+  FaEllipsisH,
+} from "react-icons/fa";
 
 export default function SortableItem({
   item,
@@ -75,8 +81,8 @@ export default function SortableItem({
       >
         {/* Mobile: two rows */}
         <div className="flex flex-col sm:hidden">
-          <div className="flex items-center justify-between">
-            {/* Drag handle for non-touch, ellipsis for touch */}
+          <div className="relative flex items-center justify-between">
+            {/* Drag handle for non-touch */}
             <div
               className="cursor-grab mr-2 hide-on-touch"
               {...attributes}
@@ -84,12 +90,13 @@ export default function SortableItem({
             >
               <FaGripVertical />
             </div>
+            {/* Ellipsis for touch */}
             <a
               href="#"
-              className="show-on-touch text-gray-500 hover:text-gray-700 mr-2"
+              className="show-on-touch absolute right-0 text-lg text-gray-400"
               title="See details"
             >
-              …
+              <FaEllipsisH />
             </a>
             <div className="font-semibold text-gray-800 truncate sm:mx-2 flex-1">
               {item.itemType || "—"}
@@ -164,7 +171,7 @@ export default function SortableItem({
         {/* Desktop: one row */}
         <div className="hidden sm:flex items-center justify-between text-sm">
           <div className="flex items-center">
-            {/* Drag handle for non-touch, ellipsis for touch */}
+            {/* Drag handle for non-touch */}
             <div
               className="cursor-grab mr-2 hide-on-touch"
               {...attributes}
@@ -172,13 +179,7 @@ export default function SortableItem({
             >
               <FaGripVertical />
             </div>
-            <a
-              href="#"
-              className="show-on-touch text-gray-500 hover:text-gray-700 mr-2"
-              title="See details"
-            >
-              …
-            </a>
+
             <div className="font-semibold text-gray-800 truncate mr-4">
               {item.itemType || "—"}
             </div>
@@ -246,6 +247,14 @@ export default function SortableItem({
             >
               <FaTrash />
             </button>
+            {/* Ellipsis for touch */}
+            <a
+              href="#"
+              className="show-on-touch text-gray-500 hover:text-gray-700 mr-2"
+              title="See details"
+            >
+              <FaEllipsisH />
+            </a>
           </div>
         </div>
       </div>
@@ -259,8 +268,8 @@ export default function SortableItem({
       style={style}
       className="bg-sand px-3 py-1 rounded shadow mb-2 flex flex-col"
     >
-      <div className="flex items-center mb-1">
-        {/* Drag handle for non-touch, ellipsis for touch */}
+      <div className="relative flex items-center mb-1">
+        {/* Drag handle for non-touch */}
         <div
           className="cursor-grab mr-2 hide-on-touch"
           {...attributes}
@@ -268,12 +277,13 @@ export default function SortableItem({
         >
           <FaGripVertical />
         </div>
+        {/* Ellipsis for touch */}
         <a
           href="#"
-          className="show-on-touch text-gray-500 hover:text-gray-700 mr-2"
+          className="show-on-touch absolute right-0 text-gray-500 hover:text-gray-700"
           title="See details"
         >
-          …
+          <FaEllipsisH />
         </a>
         <div className="text-base font-semibold text-gray-800">
           {item.itemType || "—"}

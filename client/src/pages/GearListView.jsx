@@ -38,6 +38,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import SortableItem from "../components/SortableItem";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn"; // (or wherever you placed that inline component)
+import PackStats from "../components/StatWithDetails";
 
 export default function GearListView({
   listId,
@@ -95,6 +96,59 @@ export default function GearListView({
       `/lists/${listId}/categories/${catId}/items`
     );
     setItemsMap((m) => ({ ...m, [catId]: data }));
+  };
+
+  // - Calculate total weights -
+  // This is done after all items are loaded, so we can calculate totals correctly.
+  // flatten into one array (or empty array if nothing’s loaded yet)
+  const all = Object.values(itemsMap).flat();
+
+  // sum up “worn” items
+  const wornWeight = all
+    .filter((i) => i.worn)
+    .reduce((sum, i) => {
+      const qty = i.quantity || 1;
+      const w = i.weight || 0;
+      return sum + w * qty;
+    }, 0);
+
+  // sum up “consumable” items
+  const consumableWeight = all
+    .filter((i) => i.consumable)
+    .reduce((sum, i) => {
+      const qty = i.quantity || 1;
+      const w = i.weight || 0;
+      return sum + w * qty;
+    }, 0);
+
+  // sum up “base” (neither worn nor consumable)
+  const baseWeight = all
+    .filter((i) => !i.worn && !i.consumable)
+    .reduce((sum, i) => {
+      const qty = i.quantity || 1;
+      const w = i.weight || 0;
+      return sum + w * qty;
+    }, 0);
+
+  // grand total
+  const totalWeight = wornWeight + consumableWeight + baseWeight;
+
+  // flatten ALL items into one array
+  const allItems = Object.values(itemsMap).flat();
+
+  // split them into the four buckets
+  const baseItems = allItems.filter((i) => !i.worn && !i.consumable);
+  const wornItems = allItems.filter((i) => i.worn);
+  const consumableItems = allItems.filter((i) => i.consumable);
+  // “total” is just everything
+  const totalItems = allItems;
+
+  // build the breakdowns object
+  const breakdowns = {
+    base: baseItems,
+    worn: wornItems,
+    consumable: consumableItems,
+    total: totalItems,
   };
 
   // — inline‐edit handlers for items —
@@ -858,8 +912,16 @@ export default function GearListView({
           (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
         }
       >
-        <h2 className="text-xl text-sunset">{listName}</h2>
-
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl text-sunset">{listName}</h2>
+          <PackStats
+            base={baseWeight}
+            worn={wornWeight}
+            consumable={consumableWeight}
+            total={totalWeight}
+            breakdowns={breakdowns}
+          />
+        </div>
         {/* make the link a flex container too */}
         <a
           href="#"

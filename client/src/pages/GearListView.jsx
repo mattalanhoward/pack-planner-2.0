@@ -53,9 +53,6 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
-  // track drag-over placeholder slot
-  const [dragOver, setDragOver] = useState({ catId: null, index: -1 });
-
   // — fetch list title —
   useEffect(() => {
     if (!listId) return;
@@ -305,90 +302,65 @@ export default function GearListView({
     }
   };
 
-  const handleDragEnd = async ({ active, over }) => {
-    setDragOver({ catId: null, index: -1 });
+  // at the top of your file:
+  // import arrayMove from "@dnd-kit/sortable"  (you already have this)
+  // import api, categories, itemsMap, listId, setCategories, setItemsMap
 
-    if (!over) {
-      return; // if dropped outside anywhere, do nothing
-    }
-    // ─── CATEGORY REORDER BRANCH ───
+  const handleDragEnd = async ({ active, over }) => {
+    // if dropped outside any valid drop target, do nothing
+    if (!over) return;
+
+    // ─── CATEGORY REORDER ───
     if (active.id.startsWith("cat-") && over.id.startsWith("cat-")) {
-      // 1) Extract old & new indices from the namespaced IDs ("cat-<catId>")
       const oldIndex = categories.findIndex(
         (c) => `cat-${c._id}` === active.id
       );
       const newIndex = categories.findIndex((c) => `cat-${c._id}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reordered = arrayMove(categories, oldIndex, newIndex).map(
+          (catObj, idx) => ({ ...catObj, position: idx })
+        );
+        // update UI immediately
+        setCategories(reordered);
 
-      // If either index is -1 or they’re equal, do nothing
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        return;
-      }
-
-      // 2) Compute a brand new, in-memory array of categories, each with a new `position` field
-      //    `arrayMove` shifts the element at oldIndex → newIndex; then we re‐assign positions [0..]
-      const reordered = arrayMove(categories, oldIndex, newIndex).map(
-        (catObj, idx) => ({
-          ...catObj,
-          position: idx,
-        })
-      );
-
-      // 3) Update local state immediately so the UI re‐renders in the new order
-      setCategories(reordered);
-
-      // 4) Persist *all* changed positions to the server in a loop
-      //    We need to compare `reordered[i]._id` vs. the original categories array to see who actually moved.
-      //    The simplest way: for each `reordered[i]`, look up its old index and old position,
-      //    and if `oldPosition !== newIndex`, send a PATCH for it.
-
-      // Build a small lookup from categoryId → oldPosition
-      const oldPositions = {};
-      categories.forEach((catObj, idx) => {
-        oldPositions[catObj._id] = catObj.position;
-      });
-
-      // Loop through every category in `reordered`
-      for (let i = 0; i < reordered.length; i++) {
-        const catObj = reordered[i];
-        const oldPos = oldPositions[catObj._id];
-        const newPos = catObj.position; // which is i
-
-        // If the position actually changed in memory, send a PATCH
-        if (oldPos !== newPos) {
-          await api.patch(
-            `/lists/${listId}/categories/${catObj._id}/position`,
-            { position: newPos }
-          );
+        // persist positions
+        const oldPositions = Object.fromEntries(
+          categories.map((c) => [c._id, c.position])
+        );
+        for (let i = 0; i < reordered.length; i++) {
+          const { _id, position } = reordered[i];
+          if (oldPositions[_id] !== position) {
+            await api.patch(`/lists/${listId}/categories/${_id}/position`, {
+              position,
+            });
+          }
         }
       }
       return;
     }
 
-    // 2) ITEM DRAG:
+    // ─── ITEM REORDER WITHIN SAME CATEGORY ───
     if (active.id.startsWith("item-") && over.id.startsWith("item-")) {
-      // Parse out source catId + itemId from active.id = `item-<catId>-<itemId>`
       const [, sourceCatId, sourceItemId] = active.id.split("-");
-      // Similarly, destination catId + destItemId:
       const [, destCatId, destItemId] = over.id.split("-");
 
-      // If sourceCatId === destCatId, we're merely reordering _within_ the same category
+      // same-category reorder
       if (sourceCatId === destCatId) {
         const oldArray = itemsMap[sourceCatId] || [];
         const oldIndex = oldArray.findIndex((i) => i._id === sourceItemId);
         const newIndex = oldArray.findIndex((i) => i._id === destItemId);
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const newArr = arrayMove(oldArray, oldIndex, newIndex).map(
-            (itemObj, idx) => ({ ...itemObj, position: idx })
+          const reordered = arrayMove(oldArray, oldIndex, newIndex).map(
+            (it, idx) => ({ ...it, position: idx })
           );
-          // 1) Immediately update UI:
-          setItemsMap((prev) => ({
-            ...prev,
-            [sourceCatId]: newArr,
+          setItemsMap((m) => ({
+            ...m,
+            [sourceCatId]: reordered,
           }));
-          // 2) Persist each changed position to server:
-          for (let i = 0; i < newArr.length; i++) {
-            const it = newArr[i];
-            // Only PATCH if the position truly changed:
+
+          // persist item positions
+          for (let i = 0; i < reordered.length; i++) {
+            const it = reordered[i];
             if (
               it.position !== oldArray.find((x) => x._id === it._id).position
             ) {
@@ -399,68 +371,62 @@ export default function GearListView({
             }
           }
         }
-      } else {
-        // Cross‐category move: remove from sourceCatId, insert into destCatId at destIndex
-        const sourceArr = itemsMap[sourceCatId] || [];
-        const destArr = itemsMap[destCatId] || [];
+        return;
+      }
 
-        const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
-        const insertedIdx = destArr.findIndex((i) => i._id === destItemId);
+      // ─── ITEM MOVED TO A DIFFERENT CATEGORY ───
+      const sourceArr = itemsMap[sourceCatId] || [];
+      const destArr = itemsMap[destCatId] || [];
+      const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
+      const insertedIdx = destArr.findIndex((i) => i._id === destItemId);
 
-        if (removedIdx === -1 || insertedIdx === -1) return;
-
-        // 1) Compute new arrays in memory:
-        // → “take out” the moved item
+      if (removedIdx !== -1 && insertedIdx !== -1) {
         const movedItem = sourceArr[removedIdx];
-        const newSourceArr = sourceArr
+        const newSource = sourceArr
           .filter((i) => i._id !== sourceItemId)
           .map((it, idx) => ({ ...it, position: idx }));
-        // → “insert” into destArr at insertedIdx
-        const newDestArr = [
+        const newDest = [
           ...destArr.slice(0, insertedIdx),
           movedItem,
           ...destArr.slice(insertedIdx),
         ].map((it, idx) => ({
           ...it,
           position: idx,
-          // If this is the movedItem, its category changes to destCatId
           category: it._id === movedItem._id ? destCatId : it.category,
         }));
-
-        // 2) Immediately update UI:
-        setItemsMap((prev) => ({
-          ...prev,
-          [sourceCatId]: newSourceArr,
-          [destCatId]: newDestArr,
+        setItemsMap((m) => ({
+          ...m,
+          [sourceCatId]: newSource,
+          [destCatId]: newDest,
         }));
 
-        // 3) Persist to server in (multiple) PATCHes:
-        //    a) Update moved item’s category AND new position in destCat
+        // 1) update moved item's category + position
         await api.patch(
           `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
           {
             category: destCatId,
-            position: newDestArr.find((i) => i._id === sourceItemId).position,
+            position: newDest.find((i) => i._id === sourceItemId).position,
           }
         );
-        //    b) Update the “position” of every other item in old category (newSourceArr)
-        for (let i = 0; i < newSourceArr.length; i++) {
-          const it = newSourceArr[i];
-          const oldPos = sourceArr.find((x) => x._id === it._id).position;
-          if (oldPos !== i) {
+        // 2) reindex source siblings
+        for (let i = 0; i < newSource.length; i++) {
+          const it = newSource[i];
+          if (
+            it.position !== sourceArr.find((x) => x._id === it._id).position
+          ) {
             await api.patch(
               `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
               { position: i }
             );
           }
         }
-        //    c) Update the “position” of every other item in new category (newDestArr),
-        //       except the moved one (which we already patched above)
-        for (let i = 0; i < newDestArr.length; i++) {
-          const it = newDestArr[i];
-          if (it._id === sourceItemId) continue;
-          const oldPos = destArr.find((x) => x._id === it._id).position;
-          if (oldPos !== i) {
+        // 3) reindex dest siblings
+        for (let i = 0; i < newDest.length; i++) {
+          const it = newDest[i];
+          if (
+            it._id !== sourceItemId &&
+            it.position !== destArr.find((x) => x._id === it._id).position
+          ) {
             await api.patch(
               `/lists/${listId}/categories/${destCatId}/items/${it._id}`,
               { position: i }
@@ -468,63 +434,52 @@ export default function GearListView({
           }
         }
       }
-
       return;
     }
 
-    // 3) ITEM DROPPED INTO AN EMPTY CATEGORY (optional):
-    // If active.id startsWith('item-') but over.id is exactly equal to `cat-<someCatId>`,
-    // then we know the user dropped it “into the empty space” of that category.
-    // We then treat it as “insert at end of that category.”
+    // ─── DROP INTO EMPTY CATEGORY ───
     if (active.id.startsWith("item-") && over.id.startsWith("cat-")) {
       const [, sourceCatId, sourceItemId] = active.id.split("-");
-      const destCatId = over.id.replace(/^cat-/, "");
-
-      if (sourceCatId === destCatId) return; // nothing changed
+      const destCatId = over.id.replace("cat-", "");
+      if (sourceCatId === destCatId) return;
 
       const sourceArr = itemsMap[sourceCatId] || [];
       const destArr = itemsMap[destCatId] || [];
-
       const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
       if (removedIdx === -1) return;
 
-      // “move to end of destArr”
       const movedItem = sourceArr[removedIdx];
-      const newSourceArr = sourceArr
+      const newSource = sourceArr
         .filter((i) => i._id !== sourceItemId)
         .map((it, idx) => ({ ...it, position: idx }));
-      const newDestArr = [...destArr, movedItem].map((it, idx) => ({
+      const newDest = [...destArr, movedItem].map((it, idx) => ({
         ...it,
         position: idx,
         category: it._id === movedItem._id ? destCatId : it.category,
       }));
-
-      // Update UI immediately
-      setItemsMap((prev) => ({
-        ...prev,
-        [sourceCatId]: newSourceArr,
-        [destCatId]: newDestArr,
+      setItemsMap((m) => ({
+        ...m,
+        [sourceCatId]: newSource,
+        [destCatId]: newDest,
       }));
 
-      // Persist changes to server
-      // a) moved item’s category + new position
+      // persist
       await api.patch(
         `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
-        { category: destCatId, position: newDestArr.length - 1 }
+        {
+          category: destCatId,
+          position: newDest.length - 1,
+        }
       );
-      // b) re-index source category
-      for (let i = 0; i < newSourceArr.length; i++) {
-        const it = newSourceArr[i];
-        const oldPos = sourceArr.find((x) => x._id === it._id).position;
-        if (oldPos !== i) {
+      for (let i = 0; i < newSource.length; i++) {
+        const it = newSource[i];
+        if (it.position !== sourceArr.find((x) => x._id === it._id).position) {
           await api.patch(
             `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
             { position: i }
           );
         }
       }
-
-      return;
     }
   };
 
@@ -545,28 +500,6 @@ export default function GearListView({
       if (foundCat) {
         setActiveCategory(foundCat);
       }
-    }
-  };
-
-  // ** NEW: handle drag-over to set placeholder **
-  const handleDragOver = ({ active, over }) => {
-    if (!active.id.startsWith("item-")) {
-      setDragOver({ catId: null, index: -1 });
-      return;
-    }
-    if (!over) {
-      setDragOver({ catId: null, index: -1 });
-      return;
-    }
-    if (over.id.startsWith("item-")) {
-      const [, overCatId, overItemId] = over.id.split("-");
-      const arr = itemsMap[overCatId] || [];
-      const idx = arr.findIndex((i) => i._id === overItemId);
-      setDragOver({ catId: overCatId, index: idx });
-    } else if (over.id.startsWith("cat-")) {
-      const overCatId = over.id.replace("cat-", "");
-      const arr = itemsMap[overCatId] || [];
-      setDragOver({ catId: overCatId, index: arr.length });
     }
   };
 
@@ -626,15 +559,15 @@ export default function GearListView({
       [items, activeId, category._id]
     );
 
-    const displayItems = React.useMemo(() => {
-      if (dragOver.catId !== category._id) return items;
-      const base = [...filtered];
-      base.splice(dragOver.index, 0, {
-        _id: "placeholder",
-        isPlaceholder: true,
-      });
-      return base;
-    }, [filtered, dragOver, category._id]);
+    // const displayItems = React.useMemo(() => {
+    //   if (dragOver.catId !== category._id) return items;
+    //   const base = [...filtered];
+    //   base.splice(dragOver.index, 0, {
+    //     _id: "placeholder",
+    //     isPlaceholder: true,
+    //   });
+    //   return base;
+    // }, [filtered, dragOver, category._id]);
 
     const catId = category._id;
 
@@ -713,26 +646,18 @@ export default function GearListView({
           strategy={verticalListSortingStrategy}
         >
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {displayItems.map((item, idx) =>
-              item.isPlaceholder ? (
-                // MINIMAL: just a thin bar
-                <div
-                  key={`ph-${idx}`}
-                  className="w-full h-[2px] bg-teal-400 my-1"
-                />
-              ) : (
-                <SortableItem
-                  key={item._id}
-                  item={item}
-                  catId={catId}
-                  onToggleConsumable={onToggleConsumable}
-                  onToggleWorn={onToggleWorn}
-                  onQuantityChange={onQuantityChange}
-                  onDelete={handleDeleteClick}
-                  isListMode={viewMode === "list"}
-                />
-              )
-            )}
+            {items.map((item) => (
+              <SortableItem
+                key={item._id}
+                item={item}
+                catId={catId}
+                onToggleConsumable={onToggleConsumable}
+                onToggleWorn={onToggleWorn}
+                onQuantityChange={onQuantityChange}
+                onDelete={handleDeleteClick}
+                isListMode={viewMode === "list"}
+              />
+            ))}
           </div>
         </SortableContext>
         {/* ──────────────────────────────────────────────────────────────── */}
@@ -924,7 +849,6 @@ export default function GearListView({
             : horizontalListSortingStrategy
         }
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={(event) => {
           handleDragEnd(event);
           // clear previews after dropAnimation

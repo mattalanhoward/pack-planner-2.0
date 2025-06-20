@@ -679,7 +679,7 @@ export default function GearListView({
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-sunset"
+            className="hide-on-touch mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
@@ -806,11 +806,11 @@ export default function GearListView({
         style={style}
         className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-teal/60 rounded-lg p-3 flex flex-col self-start max-h-full"
       >
-        <div className="flex items-center mb-2">
+        <div className="flex items-center mb-2 ">
           <FaGripVertical
             {...attributes}
             {...listeners}
-            className="mr-2 cursor-grab text-sunset"
+            className="hide-on-touch mr-2 cursor-grab text-sunset"
           />
 
           {editingCatId === catId ? (
@@ -908,12 +908,12 @@ export default function GearListView({
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
       <div
         className={
-          `flex justify-between items-center px-6 py-2 ` +
+          `flex justify-between items-center px-6 py-4 ` +
           (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
         }
       >
         <div className="flex items-center space-x-4">
-          <h2 className="text-xl text-sunset">{listName}</h2>
+          <h2 className="hide-on-touch text-xl text-sunset">{listName}</h2>
           <PackStats
             base={baseWeight}
             worn={wornWeight}

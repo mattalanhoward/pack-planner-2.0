@@ -137,74 +137,6 @@ export default function GearListView({
     total: totalItems,
   };
 
-  // — inline‐edit handlers for items —
-  // — toggle consumable status —
-  const toggleConsumable = (catId, itemId) => {
-    // read old state & flip
-    const old = itemsMap[catId].find((i) => i._id === itemId).consumable;
-    const next = !old;
-
-    // 1) Optimistic UI update
-    setItemsMap((m) => ({
-      ...m,
-      [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, consumable: next } : i
-      ),
-    }));
-
-    // 2) persist in background with try/catch
-    (async () => {
-      try {
-        await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
-          { consumable: next }
-        );
-      } catch (err) {
-        fetchItems(catId);
-        toast.error("Failed to toggle consumable");
-      }
-    })();
-  };
-
-  const toggleWorn = (catId, itemId) => {
-    // read old state & flip
-    const old = itemsMap[catId].find((i) => i._id === itemId).worn;
-    const next = !old;
-
-    // 1) Optimistic UI update
-    setItemsMap((m) => ({
-      ...m,
-      [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, worn: next } : i
-      ),
-    }));
-
-    // 2) persist in background with try/catch
-    (async () => {
-      try {
-        await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
-          { worn: next }
-        );
-      } catch {
-        fetchItems(catId);
-        toast.error("Failed to toggle worn");
-      }
-    })();
-  };
-
-  // — update item quantity inline —
-  const updateQuantity = async (catId, itemId, qty) => {
-    try {
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        quantity: qty,
-      });
-      fetchItems(catId);
-    } catch (err) {
-      toast.error(err.message || "Failed to update quantity");
-    }
-  };
-
   const handleDeleteClick = (catId, itemId) => {
     // Open the dialog, storing which catId/itemId is about to be deleted
     setPendingDelete({ catId, itemId });
@@ -301,10 +233,6 @@ export default function GearListView({
       toast.error(err.response?.data?.message || "Failed to rename category");
     }
   };
-
-  // at the top of your file:
-  // import arrayMove from "@dnd-kit/sortable"  (you already have this)
-  // import api, categories, itemsMap, listId, setCategories, setItemsMap
 
   const handleDragEnd = async ({ active, over }) => {
     // if dropped outside any valid drop target, do nothing
@@ -545,9 +473,6 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onToggleConsumable,
-    onToggleWorn,
-    onQuantityChange,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -648,12 +573,11 @@ export default function GearListView({
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
             {items.map((item) => (
               <SortableItem
+                fetchItems={fetchItems}
+                listId={listId}
                 key={item._id}
                 item={item}
                 catId={catId}
-                onToggleConsumable={onToggleConsumable}
-                onToggleWorn={onToggleWorn}
-                onQuantityChange={onQuantityChange}
                 onDelete={handleDeleteClick}
                 isListMode={viewMode === "list"}
               />
@@ -687,9 +611,6 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onToggleConsumable,
-    onToggleWorn,
-    onQuantityChange,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -771,12 +692,11 @@ export default function GearListView({
           <div className="overflow-y-auto space-y-2 mb-2">
             {items.map((item) => (
               <SortableItem
+                fetchItems={fetchItems}
+                listId={listId}
                 key={item._id}
                 item={item}
                 catId={catId}
-                onToggleConsumable={onToggleConsumable}
-                onToggleWorn={onToggleWorn}
-                onQuantityChange={onQuantityChange}
                 onDelete={handleDeleteClick}
                 isListMode={false}
               />
@@ -893,9 +813,6 @@ export default function GearListView({
                 setEditingCatId={setEditingCatId}
                 onEditCat={editCat}
                 onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                onToggleConsumable={toggleConsumable}
-                onToggleWorn={toggleWorn}
-                onQuantityChange={updateQuantity}
                 onDeleteItem={handleDeleteClick}
                 showAddModalCat={showAddModalCat}
                 setShowAddModalCat={setShowAddModalCat}
@@ -942,9 +859,6 @@ export default function GearListView({
                 setEditingCatId={setEditingCatId}
                 onEditCat={editCat}
                 onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                onToggleConsumable={toggleConsumable}
-                onToggleWorn={toggleWorn}
-                onQuantityChange={updateQuantity}
                 onDeleteItem={handleDeleteClick}
                 showAddModalCat={showAddModalCat}
                 setShowAddModalCat={setShowAddModalCat}

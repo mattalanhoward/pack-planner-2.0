@@ -1,4 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
+import api from "../services/api";
+
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -11,13 +13,18 @@ import {
 
 export default function SortableItem({
   item,
+  listId,
   catId,
   onToggleConsumable,
   onToggleWorn,
-  onQuantityChange,
   onDelete,
   isListMode,
+  fetchItems,
+  onQuantityChange,
 }) {
+  const [wornLocal, setWornLocal] = useState(item.worn);
+  const [consumableLocal, setConsumableLocal] = useState(item.consumable);
+
   const itemKey = `item-${catId}-${item._id}`;
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
@@ -25,18 +32,88 @@ export default function SortableItem({
       data: { catId, itemId: item._id },
     });
 
-  function QuantityInline({ qty, onChange }) {
+  const handleWornClick = () => {
+    // 1) Compute the new flag from local state
+    const newWorn = !wornLocal;
+
+    // 2) Immediately update this item’s UI
+    setWornLocal(newWorn);
+
+    // 3) Send the correct `newWorn` to the server
+    api
+      .patch(
+        `/lists/${listId}/categories/${catId}/items/${item._id}`,
+        { worn: newWorn } // ← use newWorn, not item.worn
+      )
+      .then(() => {
+        // Optionally notify parent if you still want your "single source of truth"
+        onToggleWorn?.(catId, item._id);
+      })
+      .catch((err) => {
+        // Roll back on error
+        setWornLocal(!newWorn);
+        fetchItems?.(catId);
+        toast.error(err.message || "Failed to toggle worn");
+      });
+  };
+
+  const handleConsumableClick = () => {
+    const newConsumable = !consumableLocal;
+    setConsumableLocal(newConsumable);
+
+    api
+      .patch(`/lists/${listId}/categories/${catId}/items/${item._id}`, {
+        consumable: newConsumable,
+      })
+      .then(() => {
+        // Optionally notify parent if you still want your "single source of truth"
+        onToggleConsumable?.(catId, item._id);
+      })
+      .catch((err) => {
+        // rollback on error
+        setConsumableLocal(!newConsumable);
+        fetchItems(catId);
+        toast.error(err.message || "Failed to toggle consumable");
+      });
+  };
+
+  function QuantityInline({
+    qty,
+    onChange,
+    catId,
+    listId,
+    itemId,
+    fetchItems,
+  }) {
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState(qty);
+    const [localQty, setLocalQty] = useState(qty);
 
+    // keep local in sync if item prop changes
     useEffect(() => {
       setValue(qty);
+      setLocalQty(qty);
     }, [qty]);
 
     const commit = () => {
       const n = parseInt(value, 10);
-      if (!isNaN(n) && n > 0 && n !== qty) {
-        onChange(n);
+      if (!isNaN(n) && n > 0 && n !== localQty) {
+        const newQty = n;
+        setLocalQty(newQty);
+
+        api
+          .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
+            quantity: newQty,
+          })
+          .catch((err) => {
+            // rollback
+            setLocalQty(qty);
+            fetchItems(catId);
+            toast.error(err.message || "Failed to update quantity");
+          });
+
+        // optionally notify parent:
+        onChange(newQty);
       }
       setEditing(false);
     };
@@ -62,7 +139,7 @@ export default function SortableItem({
         className="cursor-pointer select-none px-1"
         title="Click to edit quantity"
       >
-        {qty}
+        {localQty}
       </span>
     );
   }
@@ -127,17 +204,17 @@ export default function SortableItem({
             <FaUtensils
               title="Toggle consumable"
               aria-label="Toggle consumable"
-              onClick={() => onToggleConsumable(catId, item._id)}
+              onClick={handleConsumableClick}
               className={`cursor-pointer ${
-                item.consumable ? "text-green-600" : "opacity-30"
+                consumableLocal ? "text-green-600" : "opacity-30"
               }`}
             />
             <FaTshirt
               title="Toggle worn"
               aria-label="Toggle worn"
-              onClick={() => onToggleWorn(catId, item._id)}
+              onClick={handleWornClick}
               className={`cursor-pointer ${
-                item.worn ? "text-blue-600" : "opacity-30"
+                wornLocal ? "text-blue-600" : "opacity-30"
               }`}
             />
             {item.price != null &&
@@ -155,7 +232,11 @@ export default function SortableItem({
               ))}
             <QuantityInline
               qty={item.quantity}
-              onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+              onChange={(n) => onQuantityChange(catId, item._id, n)}
+              catId={catId}
+              listId={listId}
+              itemId={item._id}
+              fetchItems={fetchItems}
             />
             <button
               title="Delete item"
@@ -209,17 +290,17 @@ export default function SortableItem({
             <FaUtensils
               title="Toggle consumable"
               aria-label="Toggle consumable"
-              onClick={() => onToggleConsumable(catId, item._id)}
+              onClick={handleConsumableClick}
               className={`cursor-pointer ${
-                item.consumable ? "text-green-600" : "opacity-30"
+                consumableLocal ? "text-green-600" : "opacity-30"
               }`}
             />
             <FaTshirt
               title="Toggle worn"
               aria-label="Toggle worn"
-              onClick={() => onToggleWorn(catId, item._id)}
+              onClick={handleWornClick}
               className={`cursor-pointer ${
-                item.worn ? "text-blue-600" : "opacity-30"
+                wornLocal ? "text-blue-600" : "opacity-30"
               }`}
             />
             {item.price != null &&
@@ -237,7 +318,11 @@ export default function SortableItem({
               ))}
             <QuantityInline
               qty={item.quantity}
-              onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+              onChange={(n) => onQuantityChange(catId, item._id, n)}
+              catId={catId}
+              listId={listId}
+              itemId={item._id}
+              fetchItems={fetchItems}
             />
             <button
               title="Delete item"
@@ -317,17 +402,17 @@ export default function SortableItem({
           <FaUtensils
             title="Toggle consumable"
             aria-label="Toggle consumable"
-            onClick={() => onToggleConsumable(catId, item._id)}
+            onClick={handleConsumableClick}
             className={`cursor-pointer ${
-              item.consumable ? "text-green-600" : "opacity-30"
+              consumableLocal ? "text-green-600" : "opacity-30"
             }`}
           />
           <FaTshirt
             title="Toggle worn"
             aria-label="Toggle worn"
-            onClick={() => onToggleWorn(catId, item._id)}
+            onClick={handleWornClick}
             className={`cursor-pointer ${
-              item.worn ? "text-blue-600" : "opacity-30"
+              wornLocal ? "text-blue-600" : "opacity-30"
             }`}
           />
           {item.price != null &&
@@ -345,7 +430,11 @@ export default function SortableItem({
             ))}
           <QuantityInline
             qty={item.quantity}
-            onChange={(newQty) => onQuantityChange(catId, item._id, newQty)}
+            onChange={(n) => onQuantityChange(catId, item._id, n)}
+            catId={catId}
+            listId={listId}
+            itemId={item._id}
+            fetchItems={fetchItems}
           />
           <button
             title="Delete item"

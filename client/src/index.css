@@ -42,3 +42,11 @@ a {
 .show-on-touch {
   display: none;
 }
+
+/* src/index.css */
+[data-reorderable-placeholder] {
+  display: block;
+  height: 2px;
+  background: var(--teal-400);
+  margin: 0.5rem 0;
+}

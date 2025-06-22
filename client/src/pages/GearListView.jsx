@@ -1,31 +1,20 @@
 // src/pages/GearListView.jsx
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-  pointerWithin,
-  DragOverlay,
-} from "@dnd-kit/core";
-
+import { DragOverlay, closestCorners, pointerWithin } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
   restrictToVerticalAxis,
 } from "@dnd-kit/modifiers";
-
 import {
-  SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
   useSortable,
   sortableKeyboardCoordinates,
+  SortableContext,
 } from "@dnd-kit/sortable";
+import { DndContextWrapper } from "../components/DndContextWrapper";
 
 import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
@@ -64,9 +53,6 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
-  // track drag-over placeholder slot
-  const [dragOver, setDragOver] = useState({ catId: null, index: -1 });
-
   // — fetch list title —
   useEffect(() => {
     if (!listId) return;
@@ -149,74 +135,6 @@ export default function GearListView({
     worn: wornItems,
     consumable: consumableItems,
     total: totalItems,
-  };
-
-  // — inline‐edit handlers for items —
-  // — toggle consumable status —
-  const toggleConsumable = (catId, itemId) => {
-    // read old state & flip
-    const old = itemsMap[catId].find((i) => i._id === itemId).consumable;
-    const next = !old;
-
-    // 1) Optimistic UI update
-    setItemsMap((m) => ({
-      ...m,
-      [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, consumable: next } : i
-      ),
-    }));
-
-    // 2) persist in background with try/catch
-    (async () => {
-      try {
-        await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
-          { consumable: next }
-        );
-      } catch (err) {
-        fetchItems(catId);
-        toast.error("Failed to toggle consumable");
-      }
-    })();
-  };
-
-  const toggleWorn = (catId, itemId) => {
-    // read old state & flip
-    const old = itemsMap[catId].find((i) => i._id === itemId).worn;
-    const next = !old;
-
-    // 1) Optimistic UI update
-    setItemsMap((m) => ({
-      ...m,
-      [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, worn: next } : i
-      ),
-    }));
-
-    // 2) persist in background with try/catch
-    (async () => {
-      try {
-        await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
-          { worn: next }
-        );
-      } catch {
-        fetchItems(catId);
-        toast.error("Failed to toggle worn");
-      }
-    })();
-  };
-
-  // — update item quantity inline —
-  const updateQuantity = async (catId, itemId, qty) => {
-    try {
-      await api.patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        quantity: qty,
-      });
-      fetchItems(catId);
-    } catch (err) {
-      toast.error(err.message || "Failed to update quantity");
-    }
   };
 
   const handleDeleteClick = (catId, itemId) => {
@@ -316,96 +234,61 @@ export default function GearListView({
     }
   };
 
-  // — DnD sensors & handler —
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
   const handleDragEnd = async ({ active, over }) => {
-    setDragOver({ catId: null, index: -1 });
+    // if dropped outside any valid drop target, do nothing
+    if (!over) return;
 
-    if (!over) {
-      return; // if dropped outside anywhere, do nothing
-    }
-    // ─── CATEGORY REORDER BRANCH ───
+    // ─── CATEGORY REORDER ───
     if (active.id.startsWith("cat-") && over.id.startsWith("cat-")) {
-      // 1) Extract old & new indices from the namespaced IDs ("cat-<catId>")
       const oldIndex = categories.findIndex(
         (c) => `cat-${c._id}` === active.id
       );
       const newIndex = categories.findIndex((c) => `cat-${c._id}` === over.id);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reordered = arrayMove(categories, oldIndex, newIndex).map(
+          (catObj, idx) => ({ ...catObj, position: idx })
+        );
+        // update UI immediately
+        setCategories(reordered);
 
-      // If either index is -1 or they’re equal, do nothing
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        return;
-      }
-
-      // 2) Compute a brand new, in-memory array of categories, each with a new `position` field
-      //    `arrayMove` shifts the element at oldIndex → newIndex; then we re‐assign positions [0..]
-      const reordered = arrayMove(categories, oldIndex, newIndex).map(
-        (catObj, idx) => ({
-          ...catObj,
-          position: idx,
-        })
-      );
-
-      // 3) Update local state immediately so the UI re‐renders in the new order
-      setCategories(reordered);
-
-      // 4) Persist *all* changed positions to the server in a loop
-      //    We need to compare `reordered[i]._id` vs. the original categories array to see who actually moved.
-      //    The simplest way: for each `reordered[i]`, look up its old index and old position,
-      //    and if `oldPosition !== newIndex`, send a PATCH for it.
-
-      // Build a small lookup from categoryId → oldPosition
-      const oldPositions = {};
-      categories.forEach((catObj, idx) => {
-        oldPositions[catObj._id] = catObj.position;
-      });
-
-      // Loop through every category in `reordered`
-      for (let i = 0; i < reordered.length; i++) {
-        const catObj = reordered[i];
-        const oldPos = oldPositions[catObj._id];
-        const newPos = catObj.position; // which is i
-
-        // If the position actually changed in memory, send a PATCH
-        if (oldPos !== newPos) {
-          await api.patch(
-            `/lists/${listId}/categories/${catObj._id}/position`,
-            { position: newPos }
-          );
+        // persist positions
+        const oldPositions = Object.fromEntries(
+          categories.map((c) => [c._id, c.position])
+        );
+        for (let i = 0; i < reordered.length; i++) {
+          const { _id, position } = reordered[i];
+          if (oldPositions[_id] !== position) {
+            await api.patch(`/lists/${listId}/categories/${_id}/position`, {
+              position,
+            });
+          }
         }
       }
       return;
     }
 
-    // 2) ITEM DRAG:
+    // ─── ITEM REORDER WITHIN SAME CATEGORY ───
     if (active.id.startsWith("item-") && over.id.startsWith("item-")) {
-      // Parse out source catId + itemId from active.id = `item-<catId>-<itemId>`
       const [, sourceCatId, sourceItemId] = active.id.split("-");
-      // Similarly, destination catId + destItemId:
       const [, destCatId, destItemId] = over.id.split("-");
 
-      // If sourceCatId === destCatId, we're merely reordering _within_ the same category
+      // same-category reorder
       if (sourceCatId === destCatId) {
         const oldArray = itemsMap[sourceCatId] || [];
         const oldIndex = oldArray.findIndex((i) => i._id === sourceItemId);
         const newIndex = oldArray.findIndex((i) => i._id === destItemId);
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const newArr = arrayMove(oldArray, oldIndex, newIndex).map(
-            (itemObj, idx) => ({ ...itemObj, position: idx })
+          const reordered = arrayMove(oldArray, oldIndex, newIndex).map(
+            (it, idx) => ({ ...it, position: idx })
           );
-          // 1) Immediately update UI:
-          setItemsMap((prev) => ({
-            ...prev,
-            [sourceCatId]: newArr,
+          setItemsMap((m) => ({
+            ...m,
+            [sourceCatId]: reordered,
           }));
-          // 2) Persist each changed position to server:
-          for (let i = 0; i < newArr.length; i++) {
-            const it = newArr[i];
-            // Only PATCH if the position truly changed:
+
+          // persist item positions
+          for (let i = 0; i < reordered.length; i++) {
+            const it = reordered[i];
             if (
               it.position !== oldArray.find((x) => x._id === it._id).position
             ) {
@@ -416,68 +299,62 @@ export default function GearListView({
             }
           }
         }
-      } else {
-        // Cross‐category move: remove from sourceCatId, insert into destCatId at destIndex
-        const sourceArr = itemsMap[sourceCatId] || [];
-        const destArr = itemsMap[destCatId] || [];
+        return;
+      }
 
-        const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
-        const insertedIdx = destArr.findIndex((i) => i._id === destItemId);
+      // ─── ITEM MOVED TO A DIFFERENT CATEGORY ───
+      const sourceArr = itemsMap[sourceCatId] || [];
+      const destArr = itemsMap[destCatId] || [];
+      const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
+      const insertedIdx = destArr.findIndex((i) => i._id === destItemId);
 
-        if (removedIdx === -1 || insertedIdx === -1) return;
-
-        // 1) Compute new arrays in memory:
-        // → “take out” the moved item
+      if (removedIdx !== -1 && insertedIdx !== -1) {
         const movedItem = sourceArr[removedIdx];
-        const newSourceArr = sourceArr
+        const newSource = sourceArr
           .filter((i) => i._id !== sourceItemId)
           .map((it, idx) => ({ ...it, position: idx }));
-        // → “insert” into destArr at insertedIdx
-        const newDestArr = [
+        const newDest = [
           ...destArr.slice(0, insertedIdx),
           movedItem,
           ...destArr.slice(insertedIdx),
         ].map((it, idx) => ({
           ...it,
           position: idx,
-          // If this is the movedItem, its category changes to destCatId
           category: it._id === movedItem._id ? destCatId : it.category,
         }));
-
-        // 2) Immediately update UI:
-        setItemsMap((prev) => ({
-          ...prev,
-          [sourceCatId]: newSourceArr,
-          [destCatId]: newDestArr,
+        setItemsMap((m) => ({
+          ...m,
+          [sourceCatId]: newSource,
+          [destCatId]: newDest,
         }));
 
-        // 3) Persist to server in (multiple) PATCHes:
-        //    a) Update moved item’s category AND new position in destCat
+        // 1) update moved item's category + position
         await api.patch(
           `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
           {
             category: destCatId,
-            position: newDestArr.find((i) => i._id === sourceItemId).position,
+            position: newDest.find((i) => i._id === sourceItemId).position,
           }
         );
-        //    b) Update the “position” of every other item in old category (newSourceArr)
-        for (let i = 0; i < newSourceArr.length; i++) {
-          const it = newSourceArr[i];
-          const oldPos = sourceArr.find((x) => x._id === it._id).position;
-          if (oldPos !== i) {
+        // 2) reindex source siblings
+        for (let i = 0; i < newSource.length; i++) {
+          const it = newSource[i];
+          if (
+            it.position !== sourceArr.find((x) => x._id === it._id).position
+          ) {
             await api.patch(
               `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
               { position: i }
             );
           }
         }
-        //    c) Update the “position” of every other item in new category (newDestArr),
-        //       except the moved one (which we already patched above)
-        for (let i = 0; i < newDestArr.length; i++) {
-          const it = newDestArr[i];
-          if (it._id === sourceItemId) continue;
-          const oldPos = destArr.find((x) => x._id === it._id).position;
-          if (oldPos !== i) {
+        // 3) reindex dest siblings
+        for (let i = 0; i < newDest.length; i++) {
+          const it = newDest[i];
+          if (
+            it._id !== sourceItemId &&
+            it.position !== destArr.find((x) => x._id === it._id).position
+          ) {
             await api.patch(
               `/lists/${listId}/categories/${destCatId}/items/${it._id}`,
               { position: i }
@@ -485,63 +362,52 @@ export default function GearListView({
           }
         }
       }
-
       return;
     }
 
-    // 3) ITEM DROPPED INTO AN EMPTY CATEGORY (optional):
-    // If active.id startsWith('item-') but over.id is exactly equal to `cat-<someCatId>`,
-    // then we know the user dropped it “into the empty space” of that category.
-    // We then treat it as “insert at end of that category.”
+    // ─── DROP INTO EMPTY CATEGORY ───
     if (active.id.startsWith("item-") && over.id.startsWith("cat-")) {
       const [, sourceCatId, sourceItemId] = active.id.split("-");
-      const destCatId = over.id.replace(/^cat-/, "");
-
-      if (sourceCatId === destCatId) return; // nothing changed
+      const destCatId = over.id.replace("cat-", "");
+      if (sourceCatId === destCatId) return;
 
       const sourceArr = itemsMap[sourceCatId] || [];
       const destArr = itemsMap[destCatId] || [];
-
       const removedIdx = sourceArr.findIndex((i) => i._id === sourceItemId);
       if (removedIdx === -1) return;
 
-      // “move to end of destArr”
       const movedItem = sourceArr[removedIdx];
-      const newSourceArr = sourceArr
+      const newSource = sourceArr
         .filter((i) => i._id !== sourceItemId)
         .map((it, idx) => ({ ...it, position: idx }));
-      const newDestArr = [...destArr, movedItem].map((it, idx) => ({
+      const newDest = [...destArr, movedItem].map((it, idx) => ({
         ...it,
         position: idx,
         category: it._id === movedItem._id ? destCatId : it.category,
       }));
-
-      // Update UI immediately
-      setItemsMap((prev) => ({
-        ...prev,
-        [sourceCatId]: newSourceArr,
-        [destCatId]: newDestArr,
+      setItemsMap((m) => ({
+        ...m,
+        [sourceCatId]: newSource,
+        [destCatId]: newDest,
       }));
 
-      // Persist changes to server
-      // a) moved item’s category + new position
+      // persist
       await api.patch(
         `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
-        { category: destCatId, position: newDestArr.length - 1 }
+        {
+          category: destCatId,
+          position: newDest.length - 1,
+        }
       );
-      // b) re-index source category
-      for (let i = 0; i < newSourceArr.length; i++) {
-        const it = newSourceArr[i];
-        const oldPos = sourceArr.find((x) => x._id === it._id).position;
-        if (oldPos !== i) {
+      for (let i = 0; i < newSource.length; i++) {
+        const it = newSource[i];
+        if (it.position !== sourceArr.find((x) => x._id === it._id).position) {
           await api.patch(
             `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
             { position: i }
           );
         }
       }
-
-      return;
     }
   };
 
@@ -562,28 +428,6 @@ export default function GearListView({
       if (foundCat) {
         setActiveCategory(foundCat);
       }
-    }
-  };
-
-  // ** NEW: handle drag-over to set placeholder **
-  const handleDragOver = ({ active, over }) => {
-    if (!active.id.startsWith("item-")) {
-      setDragOver({ catId: null, index: -1 });
-      return;
-    }
-    if (!over) {
-      setDragOver({ catId: null, index: -1 });
-      return;
-    }
-    if (over.id.startsWith("item-")) {
-      const [, overCatId, overItemId] = over.id.split("-");
-      const arr = itemsMap[overCatId] || [];
-      const idx = arr.findIndex((i) => i._id === overItemId);
-      setDragOver({ catId: overCatId, index: idx });
-    } else if (over.id.startsWith("cat-")) {
-      const overCatId = over.id.replace("cat-", "");
-      const arr = itemsMap[overCatId] || [];
-      setDragOver({ catId: overCatId, index: arr.length });
     }
   };
 
@@ -629,9 +473,6 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onToggleConsumable,
-    onToggleWorn,
-    onQuantityChange,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -643,15 +484,15 @@ export default function GearListView({
       [items, activeId, category._id]
     );
 
-    const displayItems = React.useMemo(() => {
-      if (dragOver.catId !== category._id) return items;
-      const base = [...filtered];
-      base.splice(dragOver.index, 0, {
-        _id: "placeholder",
-        isPlaceholder: true,
-      });
-      return base;
-    }, [filtered, dragOver, category._id]);
+    // const displayItems = React.useMemo(() => {
+    //   if (dragOver.catId !== category._id) return items;
+    //   const base = [...filtered];
+    //   base.splice(dragOver.index, 0, {
+    //     _id: "placeholder",
+    //     isPlaceholder: true,
+    //   });
+    //   return base;
+    // }, [filtered, dragOver, category._id]);
 
     const catId = category._id;
 
@@ -730,26 +571,17 @@ export default function GearListView({
           strategy={verticalListSortingStrategy}
         >
           <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {displayItems.map((item, idx) =>
-              item.isPlaceholder ? (
-                // MINIMAL: just a thin bar
-                <div
-                  key={`ph-${idx}`}
-                  className="w-full h-[2px] bg-teal-400 my-1"
-                />
-              ) : (
-                <SortableItem
-                  key={item._id}
-                  item={item}
-                  catId={catId}
-                  onToggleConsumable={onToggleConsumable}
-                  onToggleWorn={onToggleWorn}
-                  onQuantityChange={onQuantityChange}
-                  onDelete={handleDeleteClick}
-                  isListMode={viewMode === "list"}
-                />
-              )
-            )}
+            {items.map((item) => (
+              <SortableItem
+                fetchItems={fetchItems}
+                listId={listId}
+                key={item._id}
+                item={item}
+                catId={catId}
+                onDelete={handleDeleteClick}
+                isListMode={viewMode === "list"}
+              />
+            ))}
           </div>
         </SortableContext>
         {/* ──────────────────────────────────────────────────────────────── */}
@@ -779,9 +611,6 @@ export default function GearListView({
     editingCatId,
     setEditingCatId,
     onEditCat,
-    onToggleConsumable,
-    onToggleWorn,
-    onQuantityChange,
     showAddModalCat,
     setShowAddModalCat,
     fetchItems,
@@ -863,12 +692,11 @@ export default function GearListView({
           <div className="overflow-y-auto space-y-2 mb-2">
             {items.map((item) => (
               <SortableItem
+                fetchItems={fetchItems}
+                listId={listId}
                 key={item._id}
                 item={item}
                 catId={catId}
-                onToggleConsumable={onToggleConsumable}
-                onToggleWorn={onToggleWorn}
-                onQuantityChange={onQuantityChange}
                 onDelete={handleDeleteClick}
                 isListMode={false}
               />
@@ -932,177 +760,162 @@ export default function GearListView({
         </a>
       </div>
 
-      {/* ───── Wrap everything in one DndContext ───── */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={collisionDetectionStrategy}
-        modifiers={[axisModifier]}
+      {/* ───── Wrap everything in one DndContextWrapper ───── */}
+      <DndContextWrapper
+        items={categories.map((c) => `cat-${c._id}`)}
+        strategy={
+          viewMode === "list"
+            ? verticalListSortingStrategy
+            : horizontalListSortingStrategy
+        }
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={(event) => {
-          // 1) Do all the reordering & PATCH calls…
           handleDragEnd(event);
-
-          // 2) Then after the dropAnimation runs, clear the preview
+          // clear previews after dropAnimation
           setTimeout(() => {
             setActiveItem(null);
             setActiveCategory(null);
-          }, 300); // <— match this to your dropAnimation.duration
+          }, 300);
         }}
+        collisionDetection={collisionDetectionStrategy}
+        modifiers={[axisModifier]}
+        renderDragOverlay={() => (
+          <DragOverlay
+            style={{ pointerEvents: "none", zIndex: 1000 }}
+            dropAnimation={{
+              duration: 300,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
+            {activeItem ? (
+              <PreviewCard
+                item={activeItem.item}
+                viewMode={viewMode}
+                isPreview
+              />
+            ) : activeCategory ? (
+              <PreviewColumn
+                category={activeCategory}
+                items={itemsMap[activeCategory._id] || []}
+              />
+            ) : null}
+          </DragOverlay>
+        )}
       >
         {viewMode === "list" ? (
-          // ──── LIST MODE ────
-          <SortableContext
-            // Category‐level SortableContext, items = [ 'cat-<cat1Id>', 'cat-<cat2Id>', … ]
-            items={categories.map((c) => `cat-${c._id}`)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
-              {categories.map((cat) => (
-                <SortableSection
-                  key={cat._id}
-                  category={cat}
-                  items={itemsMap[cat._id] || []}
-                  editingCatId={editingCatId}
-                  setEditingCatId={setEditingCatId}
-                  onEditCat={editCat}
-                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                  onToggleConsumable={toggleConsumable}
-                  onToggleWorn={toggleWorn}
-                  onQuantityChange={updateQuantity}
-                  onDeleteItem={handleDeleteClick}
-                  showAddModalCat={showAddModalCat}
-                  setShowAddModalCat={setShowAddModalCat}
-                  fetchItems={fetchItems}
-                  listId={listId}
-                />
-              ))}
-
-              {/* Add New Category button */}
-              <div className="px-4 mt-4">
-                {addingNewCat ? (
-                  <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
-                    <input
-                      autoFocus
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      placeholder="Category name"
-                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
-                    />
-                    <button onClick={cancelAddCat} className="text-ember">
-                      ×
-                    </button>
-                    <button onClick={confirmAddCat} className="text-teal">
-                      ✓
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingNewCat(true)}
-                    className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
-                  >
-                    <FaPlus className="mr-2" /> Add New Category
+          <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
+            {categories.map((cat) => (
+              <SortableSection
+                key={cat._id}
+                category={cat}
+                items={itemsMap[cat._id] || []}
+                editingCatId={editingCatId}
+                setEditingCatId={setEditingCatId}
+                onEditCat={editCat}
+                onDeleteCat={() => handleDeleteCatClick(cat._id)}
+                onDeleteItem={handleDeleteClick}
+                showAddModalCat={showAddModalCat}
+                setShowAddModalCat={setShowAddModalCat}
+                fetchItems={fetchItems}
+                listId={listId}
+              />
+            ))}
+            {/* Add New Category button */}
+            <div className="px-4 mt-4">
+              {addingNewCat ? (
+                <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
+                  <input
+                    autoFocus
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Category name"
+                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                  />
+                  <button onClick={cancelAddCat} className="text-ember">
+                    ×
                   </button>
-                )}
-              </div>
+                  <button onClick={confirmAddCat} className="text-teal">
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingNewCat(true)}
+                  className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
+                >
+                  <FaPlus className="mr-2" /> Add New Category
+                </button>
+              )}
             </div>
-          </SortableContext>
+          </div>
         ) : (
-          // ──── COLUMN MODE ────
-          <SortableContext
-            // Category‐level SortableContext for columns
-            items={categories.map((c) => `cat-${c._id}`)}
-            strategy={horizontalListSortingStrategy}
-          >
-            <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
-              {categories.map((cat) => (
-                <SortableColumn
-                  key={cat._id}
-                  category={cat}
-                  items={itemsMap[cat._id] || []}
-                  editingCatId={editingCatId}
-                  setEditingCatId={setEditingCatId}
-                  onEditCat={editCat}
-                  onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                  onToggleConsumable={toggleConsumable}
-                  onToggleWorn={toggleWorn}
-                  onQuantityChange={updateQuantity}
-                  onDeleteItem={handleDeleteClick}
-                  showAddModalCat={showAddModalCat}
-                  setShowAddModalCat={setShowAddModalCat}
-                  fetchItems={fetchItems}
-                  listId={listId}
-                />
-              ))}
-              {/* Add New Category column (unchanged) */}
-              <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
-                {addingNewCat ? (
-                  <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
-                    <input
-                      autoFocus
-                      value={newCatName}
-                      onChange={(e) => setNewCatName(e.target.value)}
-                      placeholder="Category name"
-                      className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
-                    />
-                    <button onClick={cancelAddCat} className="text-ember p-1">
-                      ×
-                    </button>
-                    <button onClick={confirmAddCat} className="text-teal p-1">
-                      ✓
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingNewCat(true)}
-                    className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
-                  >
-                    <FaPlus />
-                    <span className="text-xs">New Category</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </SortableContext>
-        )}
+          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
+            {categories.map((cat) => (
+              <SortableColumn
+                key={cat._id}
+                category={cat}
+                items={itemsMap[cat._id] || []}
+                editingCatId={editingCatId}
+                setEditingCatId={setEditingCatId}
+                onEditCat={editCat}
+                onDeleteCat={() => handleDeleteCatClick(cat._id)}
+                onDeleteItem={handleDeleteClick}
+                showAddModalCat={showAddModalCat}
+                setShowAddModalCat={setShowAddModalCat}
+                fetchItems={fetchItems}
+                listId={listId}
+              />
+            ))}
 
-        {/* ───── DragOverlay for the active item ───── */}
-        <DragOverlay
-          style={{ pointerEvents: "none", zIndex: 1000 }}
-          dropAnimation={{
-            duration: 300,
-            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
-          }}
-        >
-          {activeItem ? (
-            <PreviewCard item={activeItem.item} viewMode={viewMode} isPreview />
-          ) : activeCategory ? (
-            <PreviewColumn
-              category={activeCategory}
-              // pass the array of items currently in that category
-              items={itemsMap[activeCategory._id] || []}
-            />
-          ) : null}
-        </DragOverlay>
-        <ConfirmDialog
-          isOpen={confirmOpen}
-          title="Delete this item?"
-          message="This action cannot be undone."
-          confirmText="Yes, delete"
-          cancelText="Cancel"
-          onConfirm={actuallyDeleteItem}
-          onCancel={cancelDelete}
-        />
-        <ConfirmDialog
-          isOpen={confirmCatOpen}
-          title="Delete this category?"
-          message="Deleting a category will remove all its items. Proceed?"
-          confirmText="Yes, delete"
-          cancelText="Cancel"
-          onConfirm={actuallyDeleteCat}
-          onCancel={cancelDeleteCat}
-        />
-      </DndContext>
+            {/* Add New Category column (unchanged) */}
+            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
+              {addingNewCat ? (
+                <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
+                  <input
+                    autoFocus
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Category name"
+                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                  />
+                  <button onClick={cancelAddCat} className="text-ember p-1">
+                    ×
+                  </button>
+                  <button onClick={confirmAddCat} className="text-teal p-1">
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingNewCat(true)}
+                  className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                >
+                  <FaPlus />
+                  <span className="text-xs">New Category</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </DndContextWrapper>
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Delete this item?"
+        message="This action cannot be undone."
+        confirmText="Yes, delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteItem}
+        onCancel={cancelDelete}
+      />
+      <ConfirmDialog
+        isOpen={confirmCatOpen}
+        title="Delete this category?"
+        message="Deleting a category will remove all its items. Proceed?"
+        confirmText="Yes, delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteCat}
+        onCancel={cancelDeleteCat}
+      />
     </div>
   );
 }

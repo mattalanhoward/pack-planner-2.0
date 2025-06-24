@@ -32,31 +32,27 @@ export default function SortableItem({
       data: { catId, itemId: item._id },
     });
 
+  // → handleWornClick
   const handleWornClick = () => {
-    // 1) Compute the new flag from local state
     const newWorn = !wornLocal;
-
-    // 2) Immediately update this item’s UI
     setWornLocal(newWorn);
 
-    // 3) Send the correct `newWorn` to the server
     api
-      .patch(
-        `/lists/${listId}/categories/${catId}/items/${item._id}`,
-        { worn: newWorn } // ← use newWorn, not item.worn
-      )
-      .then(() => {
-        // Optionally notify parent if you still want your "single source of truth"
-        onToggleWorn?.(catId, item._id);
+      .patch(`/lists/${listId}/categories/${catId}/items/${item._id}`, {
+        worn: newWorn,
       })
       .catch((err) => {
-        // Roll back on error
+        // rollback on error
         setWornLocal(!newWorn);
         fetchItems?.(catId);
         toast.error(err.message || "Failed to toggle worn");
       });
+
+    // notify parent with new value
+    onToggleWorn?.(catId, item._id, newWorn);
   };
 
+  // → handleConsumableClick
   const handleConsumableClick = () => {
     const newConsumable = !consumableLocal;
     setConsumableLocal(newConsumable);
@@ -65,16 +61,15 @@ export default function SortableItem({
       .patch(`/lists/${listId}/categories/${catId}/items/${item._id}`, {
         consumable: newConsumable,
       })
-      .then(() => {
-        // Optionally notify parent if you still want your "single source of truth"
-        onToggleConsumable?.(catId, item._id);
-      })
       .catch((err) => {
         // rollback on error
         setConsumableLocal(!newConsumable);
         fetchItems(catId);
         toast.error(err.message || "Failed to toggle consumable");
       });
+
+    // notify parent with new value
+    onToggleConsumable?.(catId, item._id, newConsumable);
   };
 
   function QuantityInline({
@@ -95,6 +90,7 @@ export default function SortableItem({
       setLocalQty(qty);
     }, [qty]);
 
+    // → commit inside QuantityInline
     const commit = () => {
       const n = parseInt(value, 10);
       if (!isNaN(n) && n > 0 && n !== localQty) {
@@ -106,14 +102,14 @@ export default function SortableItem({
             quantity: newQty,
           })
           .catch((err) => {
-            // rollback
+            // rollback on error
             setLocalQty(qty);
             fetchItems(catId);
             toast.error(err.message || "Failed to update quantity");
           });
 
-        // optionally notify parent:
-        onChange(newQty);
+        // notify parent with new quantity
+        onQuantityChange?.(catId, itemId, newQty);
       }
       setEditing(false);
     };

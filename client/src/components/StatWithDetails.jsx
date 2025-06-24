@@ -15,9 +15,6 @@ export default function StatWithDetails({
 }) {
   const displayValue = formatWeight(raw, "auto");
 
-  console.log("Popover namespace:", Popover);
-  console.log("Icon prop is:", Icon);
-
   return (
     <Popover.Root>
       <Popover.Trigger asChild>

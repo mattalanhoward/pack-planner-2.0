@@ -10,8 +10,7 @@ import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useScrollPreserver } from "../hooks/useScrollPreserver";
 
-// Rename the impl function so we can memoize it
-function SortableColumnImpl({
+export default function SortableColumn({
   category,
   items,
   editingCatId,
@@ -127,30 +126,3 @@ function SortableColumnImpl({
     </div>
   );
 }
-
-// 2) Module-level comparator
-function columnPropsAreEqual(prev, next) {
-  // category or length changed?
-  if (prev.category._id !== next.category._id) return false;
-  if (prev.items.length !== next.items.length) return false;
-
-  for (let i = 0; i < prev.items.length; i++) {
-    const a = prev.items[i];
-    const b = next.items[i];
-    // also compare quantity now!
-    if (a._id !== b._id || a.quantity !== b.quantity) return false;
-  }
-
-  // and still re-render if the “add item” modal toggles
-  const wasOpen = prev.showAddModalCat === prev.category._id;
-  const willOpen = next.showAddModalCat === next.category._id;
-  if (wasOpen !== willOpen) return false;
-
-  return true; // everything else equal → skip render
-}
-
-// 3) Export the memoized version
-export const SortableColumn = React.memo(
-  SortableColumnImpl,
-  columnPropsAreEqual
-);

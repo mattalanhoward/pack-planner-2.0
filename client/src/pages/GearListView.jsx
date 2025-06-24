@@ -16,13 +16,11 @@ import { DndContextWrapper } from "../components/DndContextWrapper";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 import api from "../services/api";
-import AddGearItemModal from "../components/AddGearItemModal";
 import ConfirmDialog from "../components/ConfirmDialog";
-import SortableItem from "../components/SortableItem";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn";
 import PackStats from "../components/PackStats";
-import { SortableColumn } from "../components/SortableColumn";
+import SortableColumn from "../components/SortableColumn";
 import SortableSection from "../components/SortableSection";
 
 export default function GearListView({

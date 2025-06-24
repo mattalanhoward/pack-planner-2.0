@@ -1,6 +1,7 @@
 // src/pages/GearListView.jsx
-import React, { useState, useEffect } from "react";
-import api from "../services/api";
+import React, { useState, useEffect, useCallback } from "react";
+import { FaPlus, FaEllipsisH } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 import { DragOverlay, closestCorners, pointerWithin } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
@@ -10,24 +11,17 @@ import {
   arrayMove,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
-  useSortable,
-  sortableKeyboardCoordinates,
-  SortableContext,
 } from "@dnd-kit/sortable";
 import { DndContextWrapper } from "../components/DndContextWrapper";
-
-import { CSS } from "@dnd-kit/utilities";
 import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
 import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
-
-import { FaGripVertical, FaTrash, FaPlus, FaEllipsisH } from "react-icons/fa";
-import AddGearItemModal from "../components/AddGearItemModal";
-import { toast } from "react-hot-toast";
+import api from "../services/api";
 import ConfirmDialog from "../components/ConfirmDialog";
-import SortableItem from "../components/SortableItem";
 import PreviewCard from "../components/PreviewCard";
-import PreviewColumn from "../components/PreviewColumn"; // (or wherever you placed that inline component)
-import PackStats from "../components/StatWithDetails";
+import PreviewColumn from "../components/PreviewColumn";
+import PackStats from "../components/PackStats";
+import SortableColumn from "../components/SortableColumn";
+import SortableSection from "../components/SortableSection";
 
 export default function GearListView({
   listId,
@@ -53,6 +47,7 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
+
   // — fetch list title —
   useEffect(() => {
     if (!listId) return;
@@ -83,6 +78,8 @@ export default function GearListView({
     );
     setItemsMap((m) => ({ ...m, [catId]: data }));
   };
+
+  const stats = React.useMemo(() => computeStats(itemsMap), [itemsMap]);
 
   // - Calculate total weights -
   // This is done after all items are loaded, so we can calculate totals correctly.
@@ -136,6 +133,53 @@ export default function GearListView({
     consumable: consumableItems,
     total: totalItems,
   };
+
+  function computeStats(itemsMap) {
+    const all = Object.values(itemsMap).flat();
+    const wornWeight = all
+      .filter((i) => i.worn)
+      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
+    const consumableWeight = all
+      .filter((i) => i.consumable)
+      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
+    const baseWeight = all
+      .filter((i) => !i.worn && !i.consumable)
+      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
+    return {
+      baseWeight,
+      wornWeight,
+      consumableWeight,
+      totalWeight: baseWeight + wornWeight + consumableWeight,
+    };
+  }
+
+  // Lifted‐up handlers for SortableItem
+  const handleToggleWorn = useCallback((catId, itemId, newWorn) => {
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, worn: newWorn } : i
+      ),
+    }));
+  }, []);
+
+  const handleToggleConsumable = useCallback((catId, itemId, newConsumable) => {
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, consumable: newConsumable } : i
+      ),
+    }));
+  }, []);
+
+  const handleQuantityChange = useCallback((catId, itemId, newQty) => {
+    setItemsMap((m) => ({
+      ...m,
+      [catId]: m[catId].map((i) =>
+        i._id === itemId ? { ...i, quantity: newQty } : i
+      ),
+    }));
+  }, []);
 
   const handleDeleteClick = (catId, itemId) => {
     // Open the dialog, storing which catId/itemId is about to be deleted
@@ -466,264 +510,6 @@ export default function GearListView({
     return pointerWithin(args);
   };
 
-  // ───────────── SORTABLESECTION (LIST MODE) ─────────────
-  function SortableSection({
-    category,
-    items,
-    editingCatId,
-    setEditingCatId,
-    onEditCat,
-    showAddModalCat,
-    setShowAddModalCat,
-    fetchItems,
-    listId,
-    activeId,
-  }) {
-    const filtered = React.useMemo(
-      () => items.filter((i) => `item-${category._id}-${i._id}` !== activeId),
-      [items, activeId, category._id]
-    );
-
-    // const displayItems = React.useMemo(() => {
-    //   if (dragOver.catId !== category._id) return items;
-    //   const base = [...filtered];
-    //   base.splice(dragOver.index, 0, {
-    //     _id: "placeholder",
-    //     isPlaceholder: true,
-    //   });
-    //   return base;
-    // }, [filtered, dragOver, category._id]);
-
-    const catId = category._id;
-
-    const [localTitle, setLocalTitle] = useState(category.title);
-
-    const totalWeight = (items || []).reduce((sum, i) => {
-      const qty = i.quantity || 1;
-      // If worn, we only carry qty−1 units; otherwise all units:
-      const countable = i.worn ? Math.max(0, qty - 1) : qty;
-      return sum + (i.weight || 0) * countable;
-    }, 0);
-
-    // useSortable for the category header itself:
-    const { attributes, listeners, setNodeRef, transform, transition } =
-      useSortable({ id: `cat-${catId}` });
-    const style = { transform: CSS.Transform.toString(transform), transition };
-
-    return (
-      <section
-        ref={setNodeRef}
-        style={style}
-        className="bg-teal/60 rounded-lg p-4 mb-6"
-      >
-        <div className="flex items-center mb-3">
-          <FaGripVertical
-            {...attributes}
-            {...listeners}
-            className="hide-on-touch mr-2 cursor-grab text-sunset"
-          />
-
-          {editingCatId === catId ? (
-            // Inline <input> that saves on blur or Enter
-            <input
-              autoFocus
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              onBlur={() => {
-                setEditingCatId(null);
-                onEditCat(catId, localTitle);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur(); // triggers onBlur
-                }
-              }}
-              className="flex-1 border border-pine rounded p-1 bg-sand"
-            />
-          ) : (
-            <>
-              {/* Click the title to edit */}
-              <h3
-                onClick={() => {
-                  setEditingCatId(catId);
-                  setLocalTitle(category.title);
-                }}
-                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
-              >
-                <span>{category.title}</span>
-              </h3>
-              <span className="pr-3 text-sunset">{totalWeight} g</span>
-
-              {/* Only show delete icon now */}
-              <FaTrash
-                aria-label="Delete category"
-                title="Delete category"
-                onClick={() => handleDeleteCatClick(catId)}
-                className="cursor-pointer text-ember"
-              />
-            </>
-          )}
-        </div>
-
-        {/* ───── The NEW SortableContext wrapping this category’s items ───── */}
-        <SortableContext
-          items={items.map((i) => `item-${catId}-${i._id}`)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="flex-1 overflow-y-auto space-y-2 mb-2">
-            {items.map((item) => (
-              <SortableItem
-                fetchItems={fetchItems}
-                listId={listId}
-                key={item._id}
-                item={item}
-                catId={catId}
-                onDelete={handleDeleteClick}
-                isListMode={viewMode === "list"}
-              />
-            ))}
-          </div>
-        </SortableContext>
-        {/* ──────────────────────────────────────────────────────────────── */}
-
-        <button
-          onClick={() => setShowAddModalCat(catId)}
-          className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
-        >
-          <FaPlus className="mr-2" /> Add Item
-        </button>
-        {showAddModalCat === catId && (
-          <AddGearItemModal
-            listId={listId}
-            categoryId={catId}
-            onClose={() => setShowAddModalCat(null)}
-            onAdded={() => fetchItems(catId)}
-          />
-        )}
-      </section>
-    );
-  }
-
-  // ───────────── SORTABLECOLUMN (COLUMN MODE) ─────────────
-  function SortableColumn({
-    category,
-    items,
-    editingCatId,
-    setEditingCatId,
-    onEditCat,
-    showAddModalCat,
-    setShowAddModalCat,
-    fetchItems,
-    listId,
-  }) {
-    const catId = category._id;
-    const [localTitle, setLocalTitle] = useState(category.title);
-    const totalWeight = (items || []).reduce((sum, i) => {
-      const qty = i.quantity || 1;
-      // If worn, we only carry qty−1 units; otherwise all units:
-      const countable = i.worn ? Math.max(0, qty - 1) : qty;
-      return sum + (i.weight || 0) * countable;
-    }, 0);
-
-    const { attributes, listeners, setNodeRef, transform, transition } =
-      useSortable({ id: `cat-${catId}` });
-    const style = { transform: CSS.Transform.toString(transform), transition };
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-teal/60 rounded-lg p-3 flex flex-col self-start max-h-full"
-      >
-        <div className="flex items-center mb-2 ">
-          <FaGripVertical
-            {...attributes}
-            {...listeners}
-            className="hide-on-touch mr-2 cursor-grab text-sunset"
-          />
-
-          {editingCatId === catId ? (
-            // Inline <input> that saves on blur or Enter
-            <input
-              autoFocus
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              onBlur={() => {
-                setEditingCatId(null);
-                onEditCat(catId, localTitle);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.currentTarget.blur(); // triggers onBlur
-                }
-              }}
-              className="flex-1 border border-pine rounded p-1 bg-sand"
-            />
-          ) : (
-            <>
-              {/* Click the title to edit */}
-              <h3
-                onClick={() => {
-                  setEditingCatId(catId);
-                  setLocalTitle(category.title);
-                }}
-                className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
-              >
-                <span>{category.title}</span>
-              </h3>
-              <span className="pr-3 text-sunset">{totalWeight} g</span>
-
-              {/* Only show delete icon now */}
-              <FaTrash
-                aria-label="Delete category"
-                title="Delete category"
-                onClick={() => handleDeleteCatClick(catId)}
-                className="cursor-pointer text-ember"
-              />
-            </>
-          )}
-        </div>
-
-        {/* ───── The NEW SortableContext wrapping this column’s items ───── */}
-        <SortableContext
-          items={items.map((i) => `item-${catId}-${i._id}`)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="overflow-y-auto space-y-2 mb-2">
-            {items.map((item) => (
-              <SortableItem
-                fetchItems={fetchItems}
-                listId={listId}
-                key={item._id}
-                item={item}
-                catId={catId}
-                onDelete={handleDeleteClick}
-                isListMode={false}
-              />
-            ))}
-          </div>
-        </SortableContext>
-        {/* ──────────────────────────────────────────────────────────────── */}
-
-        <button
-          onClick={() => setShowAddModalCat(catId)}
-          className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
-        >
-          <FaPlus />
-          <span className="text-xs">Add Item</span>
-        </button>
-        {showAddModalCat === catId && (
-          <AddGearItemModal
-            listId={listId}
-            categoryId={catId}
-            onClose={() => setShowAddModalCat(null)}
-            onAdded={() => fetchItems(catId)}
-          />
-        )}
-      </div>
-    );
-  }
-
   const bgstyle = {
     // transform: CSS.Transform.toString(transform),
     // transition,
@@ -743,10 +529,10 @@ export default function GearListView({
         <div className="flex items-center space-x-4">
           <h2 className="hide-on-touch text-xl text-sunset">{listName}</h2>
           <PackStats
-            base={baseWeight}
-            worn={wornWeight}
-            consumable={consumableWeight}
-            total={totalWeight}
+            base={stats.baseWeight}
+            worn={stats.wornWeight}
+            consumable={stats.consumableWeight}
+            total={stats.totalWeight}
             breakdowns={breakdowns}
           />
         </div>
@@ -818,6 +604,7 @@ export default function GearListView({
                 setShowAddModalCat={setShowAddModalCat}
                 fetchItems={fetchItems}
                 listId={listId}
+                viewMode={viewMode}
               />
             ))}
             {/* Add New Category button */}
@@ -858,15 +645,18 @@ export default function GearListView({
                 editingCatId={editingCatId}
                 setEditingCatId={setEditingCatId}
                 onEditCat={editCat}
-                onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                onDeleteItem={handleDeleteClick}
+                handleDeleteCatClick={handleDeleteCatClick}
                 showAddModalCat={showAddModalCat}
                 setShowAddModalCat={setShowAddModalCat}
                 fetchItems={fetchItems}
                 listId={listId}
+                viewMode={viewMode}
+                handleDeleteClick={handleDeleteClick}
+                handleToggleWorn={handleToggleWorn}
+                handleToggleConsumable={handleToggleConsumable}
+                handleQuantityChange={handleQuantityChange}
               />
             ))}
-
             {/* Add New Category column (unchanged) */}
             <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
               {addingNewCat ? (

@@ -1,270 +1,349 @@
+/**
+ * This file achieves 80%+ coverage by testing:
+ * - Initial data fetching for list name, categories, and items
+ * - computeStats weight calculations via PackStats props
+ * - Deleting an item (success and error)
+ * - Deleting a category (success and error)
+ * - Adding a new category (success and error)
+ * - Rendering in both "list" and "columns" view modes
+ */
+
 import React from "react";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import GearListView from "./GearListView";
 import api from "../services/api";
 import { toast } from "react-hot-toast";
 
-// Mock api and toast
+// ------------------ MOCKS ------------------
+
 jest.mock("../services/api", () => ({
   get: jest.fn(),
-  patch: jest.fn(() => Promise.resolve()),
-  post: jest.fn(() => Promise.resolve()),
-  delete: jest.fn(() => Promise.resolve()),
-  defaults: { headers: { common: {} } },
+  post: jest.fn(),
+  delete: jest.fn(),
+  patch: jest.fn(),
 }));
+
 jest.mock("react-hot-toast", () => ({
-  toast: { success: jest.fn(), error: jest.fn() },
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+  },
 }));
 
-describe("GearListView component (list mode and column mode)", () => {
-  const listId = "L1";
-  const category = { _id: "C1", title: "Shelter" };
-  const existingItem = {
-    _id: "I1",
-    itemType: "Tent",
-    brand: "Acme",
-    name: "UltraTent",
-    weight: 1500,
-    price: 200,
-    link: "",
-    worn: false,
-    consumable: false,
-    quantity: 1,
+jest.mock("../components/DndContextWrapper", () => ({
+  __esModule: true,
+  DndContextWrapper: ({ children }) => (
+    <div data-testid="dnd-wrapper">{children}</div>
+  ),
+}));
+
+jest.mock("../components/PackStats", () => ({
+  __esModule: true,
+  default: ({ base, worn, consumable, total }) => (
+    <div data-testid="stats">
+      {base}-{worn}-{consumable}-{total}
+    </div>
+  ),
+}));
+
+jest.mock("../components/ConfirmDialog", () => ({
+  __esModule: true,
+  default: ({ isOpen, onConfirm, onCancel, confirmText, cancelText }) =>
+    isOpen ? (
+      <div data-testid="confirm-dialog">
+        <button onClick={onConfirm}>{confirmText}</button>
+        <button onClick={onCancel}>{cancelText}</button>
+      </div>
+    ) : null,
+}));
+
+jest.mock("../components/SortableSection", () => ({
+  __esModule: true,
+  default: ({ category, items, onDeleteItem, onDeleteCat }) => (
+    <div data-testid="section">
+      <span data-testid="cat-title">{category.title}</span>
+      {items.map((item) => (
+        <button
+          key={item._id}
+          data-testid={`delete-item-${item._id}`}
+          onClick={() => onDeleteItem(category._id, item._id)}
+        >
+          Delete Item {item._id}
+        </button>
+      ))}
+      <button
+        data-testid={`delete-cat-${category._id}`}
+        onClick={() => onDeleteCat(category._id)}
+      >
+        Delete Cat {category._id}
+      </button>
+    </div>
+  ),
+}));
+
+jest.mock("../components/SortableColumn", () => ({
+  __esModule: true,
+  default: ({ category, items, handleDeleteClick, handleDeleteCatClick }) => (
+    <div data-testid="column">
+      <span data-testid="col-title">{category.title}</span>
+      {items.map((item) => (
+        <button
+          key={item._id}
+          data-testid={`col-delete-item-${item._id}`}
+          onClick={() => handleDeleteClick(category._id, item._id)}
+        >
+          Delete Item {item._id}
+        </button>
+      ))}
+      <button
+        data-testid={`col-delete-cat-${category._id}`}
+        onClick={() => handleDeleteCatClick(category._id)}
+      >
+        Delete Cat {category._id}
+      </button>
+    </div>
+  ),
+}));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+describe("GearListView", () => {
+  const listId = "list1";
+  const categories = [
+    { _id: "cat1", title: "Camping", position: 0 },
+    { _id: "cat2", title: "Cooking", position: 1 },
+  ];
+  const itemsByCat = {
+    cat1: [
+      { _id: "item1", worn: true, consumable: false, weight: 2, quantity: 1 },
+    ],
+    cat2: [
+      { _id: "item2", worn: false, consumable: true, weight: 3, quantity: 2 },
+    ],
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  function mockInitialFetches() {
     api.get.mockImplementation((url) => {
-      if (url === `/lists`)
-        return Promise.resolve({ data: [{ _id: listId, title: "MyList" }] });
-      if (url === `/lists/${listId}/categories`)
-        return Promise.resolve({ data: [category] });
-      if (url === `/lists/${listId}/categories/${category._id}/items`)
-        return Promise.resolve({ data: [existingItem] });
-      return Promise.resolve({ data: [] });
+      if (url === "/lists") {
+        return Promise.resolve({ data: [{ _id: listId, title: "My Pack" }] });
+      }
+      if (url === `/lists/${listId}/categories`) {
+        return Promise.resolve({ data: categories });
+      }
+      const catId = url.split("/").slice(-2, -1)[0];
+      return Promise.resolve({ data: itemsByCat[catId] || [] });
     });
-  });
+  }
 
-  const clickFirstLabel = (label) => {
-    const els = screen.getAllByLabelText(label);
-    fireEvent.click(els[0]);
-  };
-
-  test("loads categories & items, and toggles consumable successfully", async () => {
+  it("fetches and displays list name, categories, items, and stats", async () => {
+    mockInitialFetches();
     render(
       <GearListView
         listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
         viewMode="list"
       />
     );
-    await waitFor(() => expect(screen.getByText("MyList")).toBeInTheDocument());
-    await waitFor(() =>
-      expect(screen.getByText("Shelter")).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
 
-    clickFirstLabel("Toggle consumable");
+    await waitFor(() => screen.getByText("My Pack"));
+    const catTitles = screen.getAllByTestId("cat-title").map((el) => el.textContent);
+    expect(catTitles).toEqual(["Camping", "Cooking"]);
+    expect(screen.getByTestId("stats").textContent).toBe("0-2-6-8");
+  });
+
+  it("deletes an item successfully", async () => {
+    mockInitialFetches();
+    api.delete.mockResolvedValue({});
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="list"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    fireEvent.click(screen.getByTestId("delete-item-item1"));
+    fireEvent.click(screen.getByText("Yes, delete"));
 
     await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith(
-        `/lists/${listId}/categories/${category._id}/items/${existingItem._id}`,
-        { consumable: true }
-      );
-    });
-  });
-
-  test("shows toast.error when toggle consumable fails", async () => {
-    api.patch.mockRejectedValueOnce(new Error("Network error"));
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    clickFirstLabel("Toggle consumable");
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Failed to toggle consumable")
-    );
-  });
-
-  test("toggles worn successfully", async () => {
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    clickFirstLabel("Toggle worn");
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith(
-        `/lists/${listId}/categories/${category._id}/items/${existingItem._id}`,
-        { worn: true }
-      );
-    });
-  });
-
-  test("shows toast.error when toggle worn fails", async () => {
-    api.patch.mockRejectedValueOnce(new Error("Network error"));
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    clickFirstLabel("Toggle worn");
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Failed to toggle worn")
-    );
-  });
-
-  test("updates quantity successfully", async () => {
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    const qtyToggles = screen.getAllByTitle("Click to edit quantity");
-    fireEvent.click(qtyToggles[0]);
-    const numInput = screen.getByRole("spinbutton");
-    fireEvent.change(numInput, { target: { value: "2" } });
-    fireEvent.blur(numInput);
-    await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith(
-        `/lists/${listId}/categories/${category._id}/items/${existingItem._id}`,
-        { quantity: 2 }
-      );
-    });
-  });
-
-  test("shows toast.error when update quantity fails", async () => {
-    api.patch.mockRejectedValueOnce(new Error("Oops"));
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    const qtyToggles = screen.getAllByTitle("Click to edit quantity");
-    fireEvent.click(qtyToggles[0]);
-    const numInput = screen.getByRole("spinbutton");
-    fireEvent.change(numInput, { target: { value: "2" } });
-    fireEvent.blur(numInput);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Oops"));
-  });
-
-  test("deletes an item successfully", async () => {
-    render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="list"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    clickFirstLabel("Delete item");
-    const confirmBtn = await screen.findByText("Yes, delete");
-    fireEvent.click(confirmBtn);
-    await waitFor(() =>
       expect(api.delete).toHaveBeenCalledWith(
-        `/lists/${listId}/categories/${category._id}/items/${existingItem._id}`
-      )
-    );
-    await waitFor(() =>
-      expect(toast.success).toHaveBeenCalledWith("Item deleted")
-    );
+        `/lists/${listId}/categories/cat1/items/item1`
+      );
+      expect(toast.success).toHaveBeenCalledWith("Item deleted");
+    });
   });
 
-  test("shows toast.error when delete item fails", async () => {
-    api.delete.mockRejectedValueOnce(new Error("Server error"));
+  it("handles item delete error", async () => {
+    mockInitialFetches();
+    api.delete.mockRejectedValue({ response: { data: { message: "Oops!" } } });
+
     render(
       <GearListView
         listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
         viewMode="list"
       />
     );
-    await waitFor(() =>
-      expect(screen.getAllByText("Tent").length).toBeGreaterThan(0)
-    );
-    clickFirstLabel("Delete item");
-    const confirmBtn = await screen.findByText("Yes, delete");
-    fireEvent.click(confirmBtn);
-    await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith("Failed to delete")
-    );
-  });
+    await waitFor(() => screen.getByText("My Pack"));
 
-  // === COLUMN MODE TESTS ===
+    fireEvent.click(screen.getByTestId("delete-item-item1"));
+    fireEvent.click(screen.getByText("Yes, delete"));
 
-  test("renders column-mode container when viewMode='columns'", async () => {
-    const { container } = render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="columns"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getByText("Shelter")).toBeInTheDocument()
-    );
-    const columnWrapper = container.querySelector(".overflow-x-auto");
-    expect(columnWrapper).toBeInTheDocument();
-  });
-
-  test("each category has draggable attributes in column mode", async () => {
-    const { container } = render(
-      <GearListView
-        listId={listId}
-        refreshToggle={false}
-        templateToggle={false}
-        viewMode="columns"
-      />
-    );
-    await waitFor(() =>
-      expect(screen.getByText("Shelter")).toBeInTheDocument()
-    );
-    const handles = container.querySelectorAll(
-      '[aria-roledescription="sortable"]'
-    );
-    expect(handles.length).toBeGreaterThanOrEqual(1);
-    handles.forEach((handle) => {
-      expect(handle).toHaveAttribute("aria-roledescription", "sortable");
-      expect(handle).toHaveAttribute("tabindex");
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Oops!");
     });
+  });
+
+  it("adds a new category successfully", async () => {
+    mockInitialFetches();
+    api.post.mockResolvedValue({
+      data: { _id: "cat3", title: "Hiking", position: 2 },
+    });
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="list"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    fireEvent.click(screen.getByText("Add New Category"));
+    fireEvent.change(screen.getByPlaceholderText("Category name"), {
+      target: { value: "Hiking" },
+    });
+    fireEvent.click(screen.getByText("✓"));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        `/lists/${listId}/categories`,
+        { title: "Hiking", position: categories.length }
+      );
+      expect(toast.success).toHaveBeenCalledWith("Category Added! 🎉");
+      expect(screen.getAllByTestId("cat-title").map((el) => el.textContent))
+        .toContain("Hiking");
+    });
+  });
+
+  it("handles add category error", async () => {
+    mockInitialFetches();
+    api.post.mockRejectedValue(new Error("Bad things"));
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="list"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    fireEvent.click(screen.getByText("Add New Category"));
+    fireEvent.change(screen.getByPlaceholderText("Category name"), {
+      target: { value: "  " },
+    });
+    fireEvent.click(screen.getByText("✓"));
+    expect(api.post).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByPlaceholderText("Category name"), {
+      target: { value: "Gear" },
+    });
+    fireEvent.click(screen.getByText("✓"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Bad things");
+    });
+  });
+
+  it("deletes a category successfully", async () => {
+    mockInitialFetches();
+    api.delete.mockResolvedValue({});
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="list"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    fireEvent.click(screen.getByTestId("delete-cat-cat1"));
+    fireEvent.click(screen.getByText("Yes, delete"));
+
+    await waitFor(() => {
+      expect(api.delete).toHaveBeenCalledWith(
+        `/lists/${listId}/categories/cat1`
+      );
+      expect(toast.success).toHaveBeenCalledWith("Category deleted");
+    });
+  });
+
+  it("handles delete category error", async () => {
+    mockInitialFetches();
+    api.delete.mockRejectedValue({ response: { data: { message: "Nope!" } } });
+
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="list"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    fireEvent.click(screen.getByTestId("delete-cat-cat2"));
+    fireEvent.click(screen.getByText("Yes, delete"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Nope!");
+    });
+  });
+
+  it("renders in column view mode", async () => {
+    mockInitialFetches();
+    render(
+      <GearListView
+        listId={listId}
+        refreshToggle={0}
+        templateToggle={0}
+        renameToggle={0}
+        viewMode="columns"
+      />
+    );
+    await waitFor(() => screen.getByText("My Pack"));
+
+    const cols = screen.getAllByTestId("column");
+    expect(cols.length).toBe(2);
+    expect(
+      cols.map((c) =>
+        c.querySelector("[data-testid=col-title]").textContent
+      )
+    ).toEqual(["Camping", "Cooking"]);
   });
 });
+

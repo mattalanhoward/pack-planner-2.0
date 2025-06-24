@@ -1,164 +1,206 @@
-import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import SortableItem from "./SortableItem";
+/**
+ * __tests__/SortableItem.test.jsx
+ *
+ * Tests for the SortableItem component:
+ * - Renders item details in list and column modes
+ * - Toggles worn and consumable states (success)
+ * - Rolls back on API error and calls fetchItems
+ * - Calls onToggleWorn and onToggleConsumable with new values
+ * - Inline quantity editing: entering edit mode, committing value, and rollback on error
+ * - Delete button calls onDelete
+ */
 
-const dummyItem = {
-  _id: "123",
-  itemType: "Tent",
-  brand: "Acme",
-  name: "UltraTent",
-  weight: 1500,
-  price: 120,
-  link: "https://example.com",
-  worn: false,
-  consumable: true,
-  quantity: 2,
-};
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import SortableItem from '../components/SortableItem';
+import api from '../services/api';
+import { toast } from 'react-hot-toast';
+import * as dnd from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
-describe("SortableItem component", () => {
-  const mockOnToggleConsumable = jest.fn();
-  const mockOnToggleWorn = jest.fn();
-  const mockOnQuantityChange = jest.fn();
-  const mockOnDelete = jest.fn();
+// Stub axios to prevent ESM issues
+jest.mock('axios', () => ({
+  __esModule: true,
+  default: { create: jest.fn(() => ({ patch: jest.fn() })) }
+}));
+
+// Mock our API service
+jest.mock('../services/api', () => ({
+  __esModule: true,
+  default: { patch: jest.fn() }
+}));
+
+// Stub toast
+jest.mock('react-hot-toast', () => ({
+  __esModule: true,
+  toast: { error: jest.fn() }
+}));
+
+// Stub DnD-kit useSortable
+jest.mock('@dnd-kit/sortable', () => ({
+  __esModule: true,
+  useSortable: jest.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: () => {},
+    transform: null,
+    transition: null,
+  })),
+}));
+
+// Stub CSS utilities
+jest.mock('@dnd-kit/utilities', () => ({
+  __esModule: true,
+  CSS: { Transform: { toString: () => '' } },
+}));
+
+// Stub icons
+jest.mock('react-icons/fa', () => ({
+  __esModule: true,
+FaGripVertical: () => <span data-testid="grip" />,
+ FaUtensils: ({ onClick }) => <span data-testid="utensils" onClick={onClick} />,
+ FaTshirt: ({ onClick }) => <span data-testid="tshirt" onClick={onClick} />,
+ FaTrash: ({ onClick }) => <span data-testid="trash" onClick={onClick} />,
+ FaEllipsisH: () => <span data-testid="ellipsis" />,
+}));
+
+beforeEach(() => {
+  api.patch.mockClear();
+  toast.error.mockClear();
+  dnd.useSortable.mockClear();
+});
+
+describe('SortableItem', () => {
+  const listId = 'list1';
+  const catId = 'cat1';
+  const item = {
+    _id: 'item1',
+    itemType: 'Type',
+    brand: 'Brand',
+    name: 'Name',
+    weight: 10,
+    price: 5,
+    link: 'https://link',
+    quantity: 2,
+    worn: false,
+    consumable: false,
+  };
+  let onToggleWorn, onToggleConsumable, onDelete, fetchItems, onQuantityChange;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    onToggleWorn = jest.fn();
+    onToggleConsumable = jest.fn();
+    onDelete = jest.fn();
+    fetchItems = jest.fn();
+    onQuantityChange = jest.fn();
   });
 
-  test("renders item details correctly in list mode", () => {
+  function renderComponent(isListMode = true) {
     render(
       <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={true}
+        item={item}
+        listId={listId}
+        catId={catId}
+        onToggleConsumable={onToggleConsumable}
+        onToggleWorn={onToggleWorn}
+        onDelete={onDelete}
+        isListMode={isListMode}
+        fetchItems={fetchItems}
+        onQuantityChange={onQuantityChange}
       />
     );
+  }
 
-    // Brand appears twice (mobile & desktop)
-    const brands = screen.getAllByText(/Acme/);
-    expect(brands).toHaveLength(2);
-
-    // Name appears twice
-    const names = screen.getAllByText(/UltraTent/);
-    expect(names).toHaveLength(2);
-
-    // Weight appears twice
-    const weights = screen.getAllByText(/1500g/);
-    expect(weights).toHaveLength(2);
-
-    // Price appears twice
-    const prices = screen.getAllByText("€120");
-    expect(prices).toHaveLength(2);
+  it('renders in list mode with correct details', () => {
+    renderComponent(true);
+    expect(screen.getAllByText('Brand')).toHaveLength(2);
+    expect(screen.getAllByText('Name')).toHaveLength(2);
+    expect(screen.getAllByText('10g')).toHaveLength(2);
+    expect(screen.getAllByText(/€5/)).toHaveLength(2);
+    expect(screen.getAllByText('2')).toHaveLength(2);
+    expect(screen.getAllByTestId('trash')).toHaveLength(2);
+    expect(screen.getAllByTestId('utensils')).toHaveLength(2);
+    expect(screen.getAllByTestId('tshirt')).toHaveLength(2);
   });
 
-  test("renders item details correctly in column mode", () => {
-    render(
-      <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={false}
-      />
-    );
-
-    // Brand and name appear once
-    expect(screen.getByText(/Acme/)).toBeInTheDocument();
-    expect(screen.getByText(/UltraTent/)).toBeInTheDocument();
-
-    // Link around name
-    const nameLink = screen.getByRole("link", { name: /UltraTent/ });
-    expect(nameLink).toHaveAttribute("href", dummyItem.link);
-
-    // Weight appears
-    expect(screen.getByText(/1500g/)).toBeInTheDocument();
-
-    // Price appears
-    expect(screen.getByText("€120")).toBeInTheDocument();
+  it('renders in column mode', () => {
+    renderComponent(false);
+    expect(screen.getAllByText('Brand')).toHaveLength(1);
+    expect(screen.getAllByText('Name')).toHaveLength(1);
+    expect(screen.getAllByText('10g')).toHaveLength(1);
+    expect(screen.getAllByText(/€5/)).toHaveLength(1);
+    expect(screen.getAllByText('2')).toHaveLength(1);
   });
 
-  test("clicking consumable icon calls onToggleConsumable", () => {
-    render(
-      <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={false}
-      />
+  it('toggles worn state successfully', async () => {
+    api.patch.mockResolvedValueOnce({});
+    renderComponent();
+    fireEvent.click(screen.getAllByTestId('tshirt')[0]);
+    expect(onToggleWorn).toHaveBeenCalledWith(catId, item._id, true);
+    expect(api.patch).toHaveBeenCalledWith(
+      `/lists/${listId}/categories/${catId}/items/${item._id}`,
+      { worn: true }
     );
-
-    const utensilIcon = screen.getByTitle("Toggle consumable");
-    fireEvent.click(utensilIcon);
-    expect(mockOnToggleConsumable).toHaveBeenCalledWith("catA", "123");
   });
 
-  test("clicking worn icon calls onToggleWorn", () => {
-    render(
-      <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={false}
-      />
-    );
-
-    const tshirtIcon = screen.getByTitle("Toggle worn");
-    fireEvent.click(tshirtIcon);
-    expect(mockOnToggleWorn).toHaveBeenCalledWith("catA", "123");
+  it('rolls back worn state on error', async () => {
+    api.patch.mockRejectedValueOnce(new Error('fail'));
+    renderComponent();
+    fireEvent.click(screen.getAllByTestId('tshirt')[0]);
+    await waitFor(() => expect(fetchItems).toHaveBeenCalledWith(catId));
+    expect(toast.error).toHaveBeenCalledWith('fail');
   });
 
-  test("changing quantity via inline edit calls onQuantityChange", () => {
-    render(
-      <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={false}
-      />
+  it('toggles consumable state successfully', async () => {
+    api.patch.mockResolvedValueOnce({});
+    renderComponent();
+    fireEvent.click(screen.getAllByTestId('utensils')[0]);
+    expect(onToggleConsumable).toHaveBeenCalledWith(catId, item._id, true);
+    expect(api.patch).toHaveBeenCalledWith(
+      `/lists/${listId}/categories/${catId}/items/${item._id}`,
+      { consumable: true }
     );
+  });
 
-    // Enter edit mode by clicking the displayed quantity
-    const qtySpan = screen.getByText("2");
+  it('rolls back consumable state on error', async () => {
+    api.patch.mockRejectedValueOnce(new Error('break'));
+    renderComponent();
+    fireEvent.click(screen.getAllByTestId('utensils')[0]);
+    await waitFor(() => expect(fetchItems).toHaveBeenCalledWith(catId));
+    expect(toast.error).toHaveBeenCalledWith('break');
+  });
+
+  it('edits quantity and commits new value', async () => {
+    api.patch.mockResolvedValueOnce({});
+    renderComponent();
+    const qtySpan = screen.getAllByText('2')[0];
     fireEvent.click(qtySpan);
-
-    // Should render a number input
-    const input = screen.getByRole("spinbutton");
-    fireEvent.change(input, { target: { value: "5" } });
+    const input = screen.getByDisplayValue('2');
+    fireEvent.change(input, { target: { value: '3' } });
     fireEvent.blur(input);
 
-    expect(mockOnQuantityChange).toHaveBeenCalledWith("catA", "123", 5);
+    await waitFor(() => {
+      expect(onQuantityChange).toHaveBeenCalledWith(catId, item._id, 3);
+      expect(api.patch).toHaveBeenCalledWith(
+        `/lists/${listId}/categories/${catId}/items/${item._id}`,
+        { quantity: 3 }
+      );
+    });
   });
 
-  test("clicking delete icon calls onDelete", () => {
-    render(
-      <SortableItem
-        item={dummyItem}
-        catId="catA"
-        onToggleConsumable={mockOnToggleConsumable}
-        onToggleWorn={mockOnToggleWorn}
-        onQuantityChange={mockOnQuantityChange}
-        onDelete={mockOnDelete}
-        isListMode={false}
-      />
-    );
+  it('rolls back quantity on error', async () => {
+    api.patch.mockRejectedValueOnce(new Error('oops'));
+    renderComponent();
+    const qtySpan = screen.getAllByText('2')[0];
+    fireEvent.click(qtySpan);
+    const input = screen.getByDisplayValue('2');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('oops'));
+  });
 
-    const deleteBtn = screen.getByTitle("Delete item");
-    fireEvent.click(deleteBtn);
-    expect(mockOnDelete).toHaveBeenCalledWith("catA", "123");
+  it('calls onDelete when trash clicked', () => {
+    renderComponent();
+    fireEvent.click(screen.getAllByTestId('trash')[0]);
+    expect(onDelete).toHaveBeenCalledWith(catId, item._id);
   });
 });

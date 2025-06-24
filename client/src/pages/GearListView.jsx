@@ -27,7 +27,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import SortableItem from "../components/SortableItem";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn"; // (or wherever you placed that inline component)
-import PackStats from "../components/StatWithDetails";
+import PackStats from "../components/PackStats";
 
 export default function GearListView({
   listId,

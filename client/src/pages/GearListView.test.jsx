@@ -157,7 +157,9 @@ describe("GearListView", () => {
     await waitFor(() => screen.getByText("My Pack"));
     const catTitles = screen.getAllByTestId("cat-title").map((el) => el.textContent);
     expect(catTitles).toEqual(["Camping", "Cooking"]);
+    await waitFor(() => {
     expect(screen.getByTestId("stats").textContent).toBe("0-2-6-8");
+    });
   });
 
   it("deletes an item successfully", async () => {

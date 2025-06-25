@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -27,19 +27,20 @@ export default function SortableItem({
   const [consumableLocal, setConsumableLocal] = useState(item.consumable);
 
   const itemKey = `item-${catId}-${item._id}`;
-// make sure useSortable() never comes back undefined
- const sortable = useSortable({
-   id: itemKey,
-   data: { catId, itemId: item._id },
- }) || {};
+  // make sure useSortable() never comes back undefined
+  const sortable =
+    useSortable({
+      id: itemKey,
+      data: { catId, itemId: item._id },
+    }) || {};
 
- const {
-   attributes = {},
-   listeners = {},
-   setNodeRef = () => {},
-   transform = null,
-   transition = null,
- } = sortable;
+  const {
+    attributes = {},
+    listeners = {},
+    setNodeRef = () => {},
+    transform = null,
+    transition = null,
+  } = sortable;
 
   // → handleWornClick
   const handleWornClick = () => {
@@ -100,34 +101,34 @@ export default function SortableItem({
     }, [qty]);
 
     // → commit inside QuantityInline
-const commit = () => {
-  const n = parseInt(value, 10);
+    const commit = () => {
+      const n = parseInt(value, 10);
 
-  // only proceed if the value is a valid positive integer
-  if (!isNaN(n) && n > 0) {
-    const newQty = n;
+      // only proceed if the value is a valid positive integer
+      if (!isNaN(n) && n > 0) {
+        const newQty = n;
 
-    // optimistically update local state & parent only if it really changed
-    if (newQty !== localQty) {
-      setLocalQty(newQty);
-      onQuantityChange?.(catId, itemId, newQty);
-    }
+        // optimistically update local state & parent only if it really changed
+        if (newQty !== localQty) {
+          setLocalQty(newQty);
+          onQuantityChange?.(catId, itemId, newQty);
+        }
 
-    // always try to persist, so that we can catch & roll back on error
-    api
-      .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
-        quantity: newQty,
-      })
-      .catch((err) => {
-        // rollback on error
-        setLocalQty(qty);
-        fetchItems(catId);
-        toast.error(err.message || "Failed to update quantity");
-      });
-  }
+        // always try to persist, so that we can catch & roll back on error
+        api
+          .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
+            quantity: newQty,
+          })
+          .catch((err) => {
+            // rollback on error
+            setLocalQty(qty);
+            fetchItems(catId);
+            toast.error(err.message || "Failed to update quantity");
+          });
+      }
 
-  setEditing(false);
-}
+      setEditing(false);
+    };
 
     if (editing) {
       return (
@@ -159,15 +160,15 @@ const commit = () => {
     transform: CSS.Transform.toString(transform),
     transition,
   };
-
+  // LIST MODE
   if (isListMode) {
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="bg-sand px-3 py-2 rounded shadow mb-2"
+        className="bg-sand px-3 sm:px-1 py-2 rounded shadow mb-2"
       >
-        {/* Mobile: two rows */}
+        {/* LIST MODE MOBILE / TOUCH DEVICES : TWO ROWS */}
         <div className="flex flex-col sm:hidden">
           <div className="relative flex items-center justify-between">
             {/* Drag handle for non-touch */}
@@ -230,6 +231,14 @@ const commit = () => {
                 wornLocal ? "text-blue-600" : "opacity-30"
               }`}
             />
+            <QuantityInline
+              qty={item.quantity}
+              onChange={(n) => onQuantityChange(catId, item._id, n)}
+              catId={catId}
+              listId={listId}
+              itemId={item._id}
+              fetchItems={fetchItems}
+            />
             {item.price != null &&
               (item.link ? (
                 <a
@@ -243,15 +252,7 @@ const commit = () => {
               ) : (
                 <span className="text-gray-600">€{item.price}</span>
               ))}
-            <QuantityInline
-              qty={item.quantity}
-              onChange={(n) => onQuantityChange(catId, item._id, n)}
-              catId={catId}
-              listId={listId}
-              itemId={item._id}
-              fetchItems={fetchItems}
-            />
-            
+
             <FaTrash
               title="Delete item"
               aria-label="Delete item"
@@ -262,75 +263,71 @@ const commit = () => {
           </div>
         </div>
 
-        {/* Desktop: one row */}
-        <div className="hidden sm:flex items-center justify-between text-sm">
-          <div className="flex items-center">
-            {/* Drag handle for non-touch */}
-            <div
-              className="cursor-grab mr-2 hide-on-touch"
-              {...attributes}
-              {...listeners}
-            >
-              <FaGripVertical />
-            </div>
-
-            <div className="font-semibold text-gray-800 truncate mr-4">
-              {item.itemType || "—"}
-            </div>
-            <div className="truncate text-sm text-gray-700 flex-1">
-              {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full"
-                >
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
-                </a>
-              ) : (
-                <>
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
-                </>
-              )}
-            </div>
+        {/* DESKTOP GRID LIST */}
+        <div className="hidden sm:grid grid-cols-[32px,96px,1fr,48px,32px,32px,48px,32px,32px,32px] gap-x-2 items-center text-sm">
+          {/* 1) Drag-handle */}
+          <div
+            className="cursor-grab hide-on-touch justify-self-center"
+            {...attributes}
+            {...listeners}
+          >
+            <FaGripVertical />
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">
-              {item.weight != null ? `${item.weight}g` : ""}
-            </span>
+
+          {/* 2) Item type */}
+          <div className="font-semibold text-gray-800 truncate">
+            {item.itemType || "—"}
+          </div>
+
+          {/* 3) Name/link */}
+          <div className="truncate text-gray-700">
+            {item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block w-full"
+              >
+                {item.brand && <span className="mr-1">{item.brand}</span>}
+                {item.name}
+              </a>
+            ) : (
+              <>
+                {item.brand && <span className="mr-1">{item.brand}</span>}
+                {item.name}
+              </>
+            )}
+          </div>
+
+          {/* 4) Weight */}
+          <div className="text-gray-600 justify-self-end">
+            {item.weight != null ? `${item.weight}g` : ""}
+          </div>
+
+          {/* 5) Consumable toggle */}
+          <div className="justify-self-center">
             <FaUtensils
               title="Toggle consumable"
-              data-testid="utensils"
-              aria-label="Toggle consumable"
               onClick={handleConsumableClick}
               className={`cursor-pointer ${
                 consumableLocal ? "text-green-600" : "opacity-30"
               }`}
             />
+          </div>
+
+          {/* 6) Worn toggle */}
+          <div className="justify-self-center">
             <FaTshirt
               title="Toggle worn"
-              aria-label="Toggle worn"
-              data-testid="tshirt"
               onClick={handleWornClick}
               className={`cursor-pointer ${
                 wornLocal ? "text-blue-600" : "opacity-30"
               }`}
             />
-            {item.price != null &&
-              (item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600"
-                >
-                  €{item.price}
-                </a>
-              ) : (
-                <span className="text-gray-600">€{item.price}</span>
-              ))}
+          </div>
+
+          {/* 7) Quantity */}
+          <div className="justify-self-center">
             <QuantityInline
               qty={item.quantity}
               onChange={(n) => onQuantityChange(catId, item._id, n)}
@@ -339,21 +336,43 @@ const commit = () => {
               itemId={item._id}
               fetchItems={fetchItems}
             />
-            <FaTrash
-              title="Delete item"
-              aria-label="Delete item"
-              data-testid="trash"
-              onClick={() => onDelete(catId, item._id)}
-              className="text-red-500 hover:text-red-700"
-            />
-            {/* Ellipsis for touch */}
+          </div>
+
+          {/* 8) Price */}
+          <div className="text-gray-600 justify-self-end">
+            {item.price != null &&
+              (item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block"
+                >
+                  €{item.price}
+                </a>
+              ) : (
+                <span>€{item.price}</span>
+              ))}
+          </div>
+
+          {/* 9) Ellipsis */}
+          <div className="justify-self-center">
             <a
               href="#"
-              className="show-on-touch text-gray-500 hover:text-gray-700 mr-2"
               title="See details"
+              className="text-gray-500 hover:text-gray-700"
             >
               <FaEllipsisH />
             </a>
+          </div>
+
+          {/* 10) Delete */}
+          <div className="justify-self-center">
+            <FaTrash
+              title="Delete item"
+              onClick={() => onDelete(catId, item._id)}
+              className="text-red-500 hover:text-red-700 cursor-pointer"
+            />
           </div>
         </div>
       </div>
@@ -374,12 +393,13 @@ const commit = () => {
           {...attributes}
           {...listeners}
         >
+          {/* DESKTOP COLUMN MODE: 3 ROWS */}
           <FaGripVertical />
         </div>
-        {/* Ellipsis for touch */}
+        {/* Ellipsis */}
         <a
           href="#"
-          className="show-on-touch absolute right-0 text-gray-500 hover:text-gray-700"
+          className="absolute right-0 text-gray-500 hover:text-gray-700"
           title="See details"
         >
           <FaEllipsisH />
@@ -431,6 +451,14 @@ const commit = () => {
               wornLocal ? "text-blue-600" : "opacity-30"
             }`}
           />
+          <QuantityInline
+            qty={item.quantity}
+            onChange={(n) => onQuantityChange(catId, item._id, n)}
+            catId={catId}
+            listId={listId}
+            itemId={item._id}
+            fetchItems={fetchItems}
+          />
           {item.price != null &&
             (item.link ? (
               <a
@@ -444,14 +472,6 @@ const commit = () => {
             ) : (
               <span className="text-gray-600">€{item.price}</span>
             ))}
-          <QuantityInline
-            qty={item.quantity}
-            onChange={(n) => onQuantityChange(catId, item._id, n)}
-            catId={catId}
-            listId={listId}
-            itemId={item._id}
-            fetchItems={fetchItems}
-          />
           <FaTrash
             title="Delete item"
             aria-label="Delete item"

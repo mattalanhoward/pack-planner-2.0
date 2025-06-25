@@ -1,74 +1,100 @@
 // src/App.test.jsx
 
-// 1) MOCK './services/api' so that import.meta.env is never evaluated
-jest.mock("./services/api", () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
-  defaults: { headers: { common: {} } },
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import App from './App';
+import useAuth from './hooks/useAuth';
+
+// Suppress React Router Future Flag warnings in tests
+beforeAll(() => {
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+});
+
+// Mock API import to avoid import.meta in tests
+jest.mock('./services/api', () => ({
+  __esModule: true,
+  default: {},
 }));
 
-// 2) STUB OUT Login and Dashboard (and GearListView) so they don’t import api or useAuth themselves
-jest.mock("./pages/Login", () => () => (
-  <div data-testid="login-page">Login Page</div>
-));
-jest.mock("./pages/Dashboard", () => () => (
-  <div data-testid="dashboard-page">Dashboard Page</div>
-));
-jest.mock("./pages/GearListView", () => () => (
-  <div data-testid="mock-gearlistview" />
-));
+// Mock authentication hook and page components
+jest.mock('./hooks/useAuth');
+jest.mock('./pages/Login', () => () => <div data-testid="login-page" />);
+jest.mock('./pages/Dashboard', () => () => <div data-testid="dashboard-page" />);
+jest.mock('./pages/GearListView', () => () => <div data-testid="gearlist-page" />);
 
-// 3) MOCK useAuth before importing App
-jest.mock("./hooks/useAuth");
-import useAuth from "./hooks/useAuth";
-
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import App from "./App";
-
-describe("App routing (PrivateRoute)", () => {
+describe('App routing', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  test("redirects to /login when not authenticated", () => {
+  it('renders Login at /login regardless of auth', () => {
     useAuth.mockReturnValue({ isAuthenticated: false });
-
     render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
+      <MemoryRouter initialEntries={['/login']}>
         <App />
       </MemoryRouter>
     );
-
-    expect(screen.getByTestId("login-page")).toBeInTheDocument();
-    expect(screen.queryByTestId("dashboard-page")).not.toBeInTheDocument();
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
   });
 
-  test("renders Dashboard when authenticated", () => {
+  it('redirects to login when accessing /dashboard unauthenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false });
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+  });
+
+  it('renders Dashboard at /dashboard when authenticated', () => {
     useAuth.mockReturnValue({ isAuthenticated: true });
-
     render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
+      <MemoryRouter initialEntries={['/dashboard']}>
         <App />
       </MemoryRouter>
     );
-
-    expect(screen.getByTestId("dashboard-page")).toBeInTheDocument();
-    expect(screen.queryByTestId("login-page")).not.toBeInTheDocument();
+    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
   });
 
-  test("renders Login when navigating to /login", () => {
+  it('redirects to login when accessing /lists/:id unauthenticated', () => {
     useAuth.mockReturnValue({ isAuthenticated: false });
-
     render(
-      <MemoryRouter initialEntries={["/login"]}>
+      <MemoryRouter initialEntries={['/lists/123']}>
         <App />
       </MemoryRouter>
     );
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+  });
 
-    expect(screen.getByTestId("login-page")).toBeInTheDocument();
+  it('renders GearListView at /lists/:id when authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true });
+    render(
+      <MemoryRouter initialEntries={['/lists/abc']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('gearlist-page')).toBeInTheDocument();
+  });
+
+  it('wildcard route redirects to /dashboard then to login if unauthenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false });
+    render(
+      <MemoryRouter initialEntries={['/nope']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+  });
+
+  it('wildcard route redirects to /dashboard when authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true });
+    render(
+      <MemoryRouter initialEntries={['/nothing-here']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
   });
 });

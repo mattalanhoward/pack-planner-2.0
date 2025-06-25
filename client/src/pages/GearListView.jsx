@@ -30,6 +30,7 @@ export default function GearListView({
   renameToggle,
   viewMode, // "columns" or "list"
 }) {
+  
   const [listName, setListName] = useState("");
   const [categories, setCategories] = useState([]);
   const [itemsMap, setItemsMap] = useState({});

@@ -1,57 +1,85 @@
 // src/pages/Dashboard.test.jsx
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import useAuth from '../hooks/useAuth';
+import Dashboard from './Dashboard';
 
-// 1) MOCK '../services/api' so that any import of api.js never tries to parse import.meta.env
-jest.mock("../services/api", () => ({
-  get: jest.fn(),
-  post: jest.fn(),
-  patch: jest.fn(),
-  delete: jest.fn(),
-  defaults: { headers: { common: {} } },
-}));
-
-// 2) MOCK useAuth before importing Dashboard
-jest.mock("../hooks/useAuth");
-import useAuth from "../hooks/useAuth";
-
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import Dashboard from "./Dashboard";
-
-// 3) MOCK child components that Dashboard renders
-jest.mock("../components/TopBar", () => () => (
-  <div data-testid="mock-topbar">TopBar</div>
+jest.mock('../hooks/useAuth', () => jest.fn());
+jest.mock('../components/TopBar', () => props => (
+  <div data-testid="topbar-mock">
+    <button data-testid="viewmode-btn" onClick={() => props.setViewMode('list')}>
+      SwitchView
+    </button>
+  </div>
 ));
-jest.mock("../components/Sidebar", () => () => (
-  <div data-testid="mock-sidebar">Sidebar</div>
+jest.mock('../components/Sidebar', () => props => (
+  <div data-testid="sidebar-mock">
+    <button data-testid="rename-btn" onClick={props.onListRenamed}>Rename</button>
+    <button data-testid="select-btn" onClick={() => props.onSelectList('list-1')}>Select</button>
+    <button data-testid="add-btn" onClick={props.onItemAdded}>Add</button>
+    <button data-testid="template-btn" onClick={props.onTemplateEdited}>Template</button>
+  </div>
 ));
-jest.mock("./GearListView", () => () => (
-  <div data-testid="mock-gearlistview">GearListView</div>
+jest.mock('./GearListView', () => props => (
+  <div data-testid="gearlist-mock">
+    <span>listId: {props.listId}</span>
+    <span>rename: {String(props.renameToggle)}</span>
+    <span>refresh: {String(props.refreshToggle)}</span>
+    <span>template: {String(props.templateToggle)}</span>
+    <span>viewMode: {props.viewMode}</span>
+  </div>
 ));
 
-describe("Dashboard component", () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+describe('Dashboard', () => {
+  beforeEach(() => {
+    useAuth.mockClear();
   });
 
-  test("renders nothing when not authenticated", () => {
-    // Provide the mock return value for useAuth
+  it('renders nothing when not authenticated', () => {
     useAuth.mockReturnValue({ isAuthenticated: false, logout: jest.fn() });
-
     const { container } = render(<Dashboard />);
-    expect(container).toBeEmptyDOMElement();
+    expect(container.firstChild).toBeNull();
   });
 
-  test("renders TopBar & Sidebar when authenticated, no list selected", () => {
+  it('renders TopBar and Sidebar when authenticated', () => {
     useAuth.mockReturnValue({ isAuthenticated: true, logout: jest.fn() });
+    render(<Dashboard />);
+    expect(screen.getByTestId('topbar-mock')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-mock')).toBeInTheDocument();
+  });
 
+  it('shows placeholder message when no list selected', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, logout: jest.fn() });
+    render(<Dashboard />);
+    expect(screen.getByText('Select a gear list to begin.')).toBeInTheDocument();
+  });
+
+  it('renders GearListView when a list is selected and toggles props correctly', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, logout: jest.fn() });
     render(<Dashboard />);
 
-    expect(screen.getByTestId("mock-topbar")).toBeInTheDocument();
-    expect(screen.getByTestId("mock-sidebar")).toBeInTheDocument();
-    // When no list is selected initially, GearListView should not appear
-    expect(screen.queryByTestId("mock-gearlistview")).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/select a gear list to begin/i)
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('select-btn'));
+    expect(screen.getByTestId('gearlist-mock')).toBeInTheDocument();
+    expect(screen.getByText('listId: list-1')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('rename-btn'));
+    expect(screen.getByText('rename: true')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('rename-btn'));
+    expect(screen.getByText('rename: false')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('add-btn'));
+    expect(screen.getByText('refresh: true')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('template-btn'));
+    expect(screen.getByText('template: true')).toBeInTheDocument();
+  });
+
+  it('allows changing view mode via TopBar', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, logout: jest.fn() });
+    render(<Dashboard />);
+
+    fireEvent.click(screen.getByTestId('viewmode-btn'));
+    fireEvent.click(screen.getByTestId('select-btn'));
+    expect(screen.getByText('viewMode: list')).toBeInTheDocument();
   });
 });

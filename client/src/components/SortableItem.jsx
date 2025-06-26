@@ -177,22 +177,10 @@ export default function SortableItem({
               {item.itemType || "—"}
             </div>
             <div className="truncate text-gray-700 flex-1 overflow-hidden">
-              {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full"
-                >
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
-                </a>
-              ) : (
-                <>
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
-                </>
-              )}
+              <>
+                {item.brand && <span className="mr-1">{item.brand}</span>}
+                {item.name}
+              </>
             </div>
           </div>
 

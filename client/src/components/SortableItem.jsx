@@ -168,55 +168,70 @@ export default function SortableItem({
         style={style}
         className="bg-sand px-3 sm:px-1 py-2 rounded shadow mb-2"
       >
-        {/* LIST MODE MOBILE / TOUCH DEVICES : TWO ROWS */}
-        <div className="flex flex-col sm:hidden">
-          <div className="relative flex items-center justify-between">
-            {/* Drag handle for non-touch */}
-            <div
-              className="cursor-grab mr-2 hide-on-touch"
-              {...attributes}
-              {...listeners}
-            >
-              <FaGripVertical />
+        {/* MOBILE GRID: TWO ROWS */}
+        <div className="sm:hidden grid grid-rows-[auto_auto] gap-y-1 gap-x-2 text-sm">
+          {/* ROW 1 (spans both cols) */}
+          <div className="row-start-1 col-span-2 flex items-center justify-between space-x-2 overflow-hidden">
+            {/* Left side: type + brand/name */}
+            <div className="flex items-center space-x-1 overflow-hidden">
+              <div className="font-semibold text-gray-800 flex-shrink-0">
+                {item.itemType || "—"}
+              </div>
+              <div className="truncate text-gray-700 flex-1 overflow-hidden">
+                {item.link ? (
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block w-full"
+                  >
+                    {item.brand && <span className="mr-1">{item.brand}</span>}
+                    {item.name}
+                  </a>
+                ) : (
+                  <>
+                    {item.brand && <span className="mr-1">{item.brand}</span>}
+                    {item.name}
+                  </>
+                )}
+              </div>
             </div>
-            {/* Ellipsis for touch */}
-            <a
-              href="#"
-              className="show-on-touch absolute right-0 text-lg text-gray-400"
-              title="See details"
+
+            {/* Right side: trash can*/}
+            <button
+              type="button"
+              title="Delete item"
+              aria-label="Delete item"
+              data-testid="trash"
+              onClick={() => onDelete(catId, item._id)}
+              className="text-red-500 hover:text-red-700 focus:outline-none"
             >
-              <FaEllipsisH />
-            </a>
-            <div className="font-semibold text-gray-800 truncate sm:mx-2 flex-1">
-              {item.itemType || "—"}
-            </div>
-            <div className="truncate text-sm text-gray-700 flex-1">
-              {item.link ? (
+              <FaTrash />
+            </button>
+          </div>
+
+          {/* ROW 2, COL 1: Weight & Price */}
+          <div className="row-start-2 col-start-1 flex items-center space-x-2 text-gray-600">
+            <span>{item.weight != null ? `${item.weight}g` : ""}</span>
+            {item.price != null &&
+              (item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block w-full"
+                  className="inline-block"
                 >
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
+                  €{item.price}
                 </a>
               ) : (
-                <>
-                  {item.brand && <span className="mr-1">{item.brand}</span>}
-                  {item.name}
-                </>
-              )}
-            </div>
+                <span>€{item.price}</span>
+              ))}
           </div>
-          <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
-            <span className="text-gray-600">
-              {item.weight != null ? `${item.weight}g` : ""}
-            </span>
+
+          {/* ROW 2, COL 2: Toggles, Qty & Ellipses */}
+          <div className="row-start-2 col-start-2 justify-self-end flex items-center space-x-4">
             <FaUtensils
               title="Toggle consumable"
-              data-testid="utensils"
-              aria-label="Toggle consumable"
               onClick={handleConsumableClick}
               className={`cursor-pointer ${
                 consumableLocal ? "text-green-600" : "opacity-30"
@@ -224,8 +239,6 @@ export default function SortableItem({
             />
             <FaTshirt
               title="Toggle worn"
-              aria-label="Toggle worn"
-              data-testid="tshirt"
               onClick={handleWornClick}
               className={`cursor-pointer ${
                 wornLocal ? "text-blue-600" : "opacity-30"
@@ -239,32 +252,18 @@ export default function SortableItem({
               itemId={item._id}
               fetchItems={fetchItems}
             />
-            {item.price != null &&
-              (item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600"
-                >
-                  €{item.price}
-                </a>
-              ) : (
-                <span className="text-gray-600">€{item.price}</span>
-              ))}
-
-            <FaTrash
-              title="Delete item"
-              aria-label="Delete item"
-              data-testid="trash"
-              onClick={() => onDelete(catId, item._id)}
-              className="text-red-500 hover:text-red-700"
-            />
+            <a
+              href="#"
+              title="See details"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaEllipsisH />
+            </a>
           </div>
         </div>
 
-        {/* DESKTOP GRID LIST */}
-        <div className="hidden sm:grid grid-cols-[32px,96px,1fr,48px,32px,32px,48px,32px,32px,32px] gap-x-2 items-center text-sm">
+        {/* DESKTOP LIST MODE*/}
+        <div className="hidden sm:grid grid-cols-[32px,96px,1fr,32px,32px,32px,32px,32px,32px,32px] gap-x-2 items-center text-sm">
           {/* 1) Drag-handle */}
           <div
             className="cursor-grab hide-on-touch justify-self-center"
@@ -368,11 +367,16 @@ export default function SortableItem({
 
           {/* 10) Delete */}
           <div className="justify-self-center">
-            <FaTrash
+            <button
+              type="button"
               title="Delete item"
+              aria-label="Delete item"
+              data-testid="trash"
               onClick={() => onDelete(catId, item._id)}
-              className="text-red-500 hover:text-red-700 cursor-pointer"
-            />
+              className="text-red-500 hover:text-red-700 focus:outline-none"
+            >
+              <FaTrash />
+            </button>
           </div>
         </div>
       </div>
@@ -472,13 +476,16 @@ export default function SortableItem({
             ) : (
               <span className="text-gray-600">€{item.price}</span>
             ))}
-          <FaTrash
+          <button
+            type="button"
             title="Delete item"
             aria-label="Delete item"
             data-testid="trash"
             onClick={() => onDelete(catId, item._id)}
-            className="hover:text-red-700 text-red-500"
-          />
+            className="text-red-500 hover:text-red-700 focus:outline-none"
+          >
+            <FaTrash />
+          </button>
         </div>
       </div>
     </div>

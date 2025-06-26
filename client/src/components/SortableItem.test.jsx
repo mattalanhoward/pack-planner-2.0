@@ -10,34 +10,34 @@
  * - Delete button calls onDelete
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import SortableItem from '../components/SortableItem';
-import api from '../services/api';
-import { toast } from 'react-hot-toast';
-import * as dnd from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import SortableItem from "../components/SortableItem";
+import api from "../services/api";
+import { toast } from "react-hot-toast";
+import * as dnd from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Stub axios to prevent ESM issues
-jest.mock('axios', () => ({
+jest.mock("axios", () => ({
   __esModule: true,
-  default: { create: jest.fn(() => ({ patch: jest.fn() })) }
+  default: { create: jest.fn(() => ({ patch: jest.fn() })) },
 }));
 
 // Mock our API service
-jest.mock('../services/api', () => ({
+jest.mock("../services/api", () => ({
   __esModule: true,
-  default: { patch: jest.fn() }
+  default: { patch: jest.fn() },
 }));
 
 // Stub toast
-jest.mock('react-hot-toast', () => ({
+jest.mock("react-hot-toast", () => ({
   __esModule: true,
-  toast: { error: jest.fn() }
+  toast: { error: jest.fn() },
 }));
 
 // Stub DnD-kit useSortable
-jest.mock('@dnd-kit/sortable', () => ({
+jest.mock("@dnd-kit/sortable", () => ({
   __esModule: true,
   useSortable: jest.fn(() => ({
     attributes: {},
@@ -49,19 +49,21 @@ jest.mock('@dnd-kit/sortable', () => ({
 }));
 
 // Stub CSS utilities
-jest.mock('@dnd-kit/utilities', () => ({
+jest.mock("@dnd-kit/utilities", () => ({
   __esModule: true,
-  CSS: { Transform: { toString: () => '' } },
+  CSS: { Transform: { toString: () => "" } },
 }));
 
 // Stub icons
-jest.mock('react-icons/fa', () => ({
+jest.mock("react-icons/fa", () => ({
   __esModule: true,
-FaGripVertical: () => <span data-testid="grip" />,
- FaUtensils: ({ onClick }) => <span data-testid="utensils" onClick={onClick} />,
- FaTshirt: ({ onClick }) => <span data-testid="tshirt" onClick={onClick} />,
- FaTrash: ({ onClick }) => <span data-testid="trash" onClick={onClick} />,
- FaEllipsisH: () => <span data-testid="ellipsis" />,
+  FaGripVertical: () => <span data-testid="grip" />,
+  FaUtensils: ({ onClick }) => (
+    <span data-testid="utensils" onClick={onClick} />
+  ),
+  FaTshirt: ({ onClick }) => <span data-testid="tshirt" onClick={onClick} />,
+  FaTrash: ({ onClick }) => <span data-testid="trash" onClick={onClick} />,
+  FaEllipsisH: () => <span data-testid="ellipsis" />,
 }));
 
 beforeEach(() => {
@@ -70,17 +72,17 @@ beforeEach(() => {
   dnd.useSortable.mockClear();
 });
 
-describe('SortableItem', () => {
-  const listId = 'list1';
-  const catId = 'cat1';
+describe("SortableItem", () => {
+  const listId = "list1";
+  const catId = "cat1";
   const item = {
-    _id: 'item1',
-    itemType: 'Type',
-    brand: 'Brand',
-    name: 'Name',
+    _id: "item1",
+    itemType: "Type",
+    brand: "Brand",
+    name: "Name",
     weight: 10,
     price: 5,
-    link: 'https://link',
+    link: "https://link",
     quantity: 2,
     worn: false,
     consumable: false,
@@ -111,31 +113,33 @@ describe('SortableItem', () => {
     );
   }
 
-  it('renders in list mode with correct details', () => {
+  it("renders in list mode with correct details", () => {
     renderComponent(true);
-    expect(screen.getAllByText('Brand')).toHaveLength(2);
-    expect(screen.getAllByText('Name')).toHaveLength(2);
-    expect(screen.getAllByText('10g')).toHaveLength(2);
+    expect(screen.getAllByText("Brand")).toHaveLength(2);
+    expect(screen.getAllByText("Name")).toHaveLength(2);
+    expect(screen.getAllByText("10g")).toHaveLength(2);
     expect(screen.getAllByText(/€5/)).toHaveLength(2);
-    expect(screen.getAllByText('2')).toHaveLength(2);
-    expect(screen.getAllByTestId('trash')).toHaveLength(2);
-    expect(screen.getAllByTestId('utensils')).toHaveLength(2);
-    expect(screen.getAllByTestId('tshirt')).toHaveLength(2);
+    expect(screen.getAllByText("2")).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", { name: /delete item/i })
+    ).toHaveLength(2);
+    expect(screen.getAllByTestId("utensils")).toHaveLength(2);
+    expect(screen.getAllByTestId("tshirt")).toHaveLength(2);
   });
 
-  it('renders in column mode', () => {
+  it("renders in column mode", () => {
     renderComponent(false);
-    expect(screen.getAllByText('Brand')).toHaveLength(1);
-    expect(screen.getAllByText('Name')).toHaveLength(1);
-    expect(screen.getAllByText('10g')).toHaveLength(1);
+    expect(screen.getAllByText("Brand")).toHaveLength(1);
+    expect(screen.getAllByText("Name")).toHaveLength(1);
+    expect(screen.getAllByText("10g")).toHaveLength(1);
     expect(screen.getAllByText(/€5/)).toHaveLength(1);
-    expect(screen.getAllByText('2')).toHaveLength(1);
+    expect(screen.getAllByText("2")).toHaveLength(1);
   });
 
-  it('toggles worn state successfully', async () => {
+  it("toggles worn state successfully", async () => {
     api.patch.mockResolvedValueOnce({});
     renderComponent();
-    fireEvent.click(screen.getAllByTestId('tshirt')[0]);
+    fireEvent.click(screen.getAllByTestId("tshirt")[0]);
     expect(onToggleWorn).toHaveBeenCalledWith(catId, item._id, true);
     expect(api.patch).toHaveBeenCalledWith(
       `/lists/${listId}/categories/${catId}/items/${item._id}`,
@@ -143,18 +147,18 @@ describe('SortableItem', () => {
     );
   });
 
-  it('rolls back worn state on error', async () => {
-    api.patch.mockRejectedValueOnce(new Error('fail'));
+  it("rolls back worn state on error", async () => {
+    api.patch.mockRejectedValueOnce(new Error("fail"));
     renderComponent();
-    fireEvent.click(screen.getAllByTestId('tshirt')[0]);
+    fireEvent.click(screen.getAllByTestId("tshirt")[0]);
     await waitFor(() => expect(fetchItems).toHaveBeenCalledWith(catId));
-    expect(toast.error).toHaveBeenCalledWith('fail');
+    expect(toast.error).toHaveBeenCalledWith("fail");
   });
 
-  it('toggles consumable state successfully', async () => {
+  it("toggles consumable state successfully", async () => {
     api.patch.mockResolvedValueOnce({});
     renderComponent();
-    fireEvent.click(screen.getAllByTestId('utensils')[0]);
+    fireEvent.click(screen.getAllByTestId("utensils")[0]);
     expect(onToggleConsumable).toHaveBeenCalledWith(catId, item._id, true);
     expect(api.patch).toHaveBeenCalledWith(
       `/lists/${listId}/categories/${catId}/items/${item._id}`,
@@ -162,21 +166,21 @@ describe('SortableItem', () => {
     );
   });
 
-  it('rolls back consumable state on error', async () => {
-    api.patch.mockRejectedValueOnce(new Error('break'));
+  it("rolls back consumable state on error", async () => {
+    api.patch.mockRejectedValueOnce(new Error("break"));
     renderComponent();
-    fireEvent.click(screen.getAllByTestId('utensils')[0]);
+    fireEvent.click(screen.getAllByTestId("utensils")[0]);
     await waitFor(() => expect(fetchItems).toHaveBeenCalledWith(catId));
-    expect(toast.error).toHaveBeenCalledWith('break');
+    expect(toast.error).toHaveBeenCalledWith("break");
   });
 
-  it('edits quantity and commits new value', async () => {
+  it("edits quantity and commits new value", async () => {
     api.patch.mockResolvedValueOnce({});
     renderComponent();
-    const qtySpan = screen.getAllByText('2')[0];
+    const qtySpan = screen.getAllByText("2")[0];
     fireEvent.click(qtySpan);
-    const input = screen.getByDisplayValue('2');
-    fireEvent.change(input, { target: { value: '3' } });
+    const input = screen.getByDisplayValue("2");
+    fireEvent.change(input, { target: { value: "3" } });
     fireEvent.blur(input);
 
     await waitFor(() => {
@@ -188,19 +192,19 @@ describe('SortableItem', () => {
     });
   });
 
-  it('rolls back quantity on error', async () => {
-    api.patch.mockRejectedValueOnce(new Error('oops'));
+  it("rolls back quantity on error", async () => {
+    api.patch.mockRejectedValueOnce(new Error("oops"));
     renderComponent();
-    const qtySpan = screen.getAllByText('2')[0];
+    const qtySpan = screen.getAllByText("2")[0];
     fireEvent.click(qtySpan);
-    const input = screen.getByDisplayValue('2');
-    fireEvent.keyDown(input, { key: 'Enter' });
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('oops'));
+    const input = screen.getByDisplayValue("2");
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("oops"));
   });
 
-  it('calls onDelete when trash clicked', () => {
+  it("calls onDelete when trash clicked", () => {
     renderComponent();
-    fireEvent.click(screen.getAllByTestId('trash')[0]);
+    fireEvent.click(screen.getAllByTestId("trash")[0]);
     expect(onDelete).toHaveBeenCalledWith(catId, item._id);
   });
 });

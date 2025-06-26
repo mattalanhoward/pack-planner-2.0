@@ -17,16 +17,16 @@ export default function SortableSection({
   editingCatId,
   setEditingCatId,
   onEditCat,
-  onDeleteItem,
   onDeleteCategory,
-  onToggleWorn,
-  onToggleConsumable,
-  onQuantityChange,
   showAddModalCat,
   setShowAddModalCat,
   fetchItems,
   listId,
   viewMode,
+  handleDeleteClick,
+  handleToggleWorn,
+  handleToggleConsumable,
+  handleQuantityChange,
 }) {
   const filtered = useMemo(
     () => items.filter((i) => `item-${category._id}-${i._id}` !== activeId),
@@ -37,9 +37,8 @@ export default function SortableSection({
 
   const [localTitle, setLocalTitle] = useState(category.title);
 
-  const totalWeight = (items || []).reduce((sum, i) => {
+  const totalWeight = items.reduce((sum, i) => {
     const qty = i.quantity || 1;
-    // If worn, we only carry qty−1 units; otherwise all units:
     const countable = i.worn ? Math.max(0, qty - 1) : qty;
     return sum + (i.weight || 0) * countable;
   }, 0);
@@ -108,15 +107,15 @@ export default function SortableSection({
           {filtered.map((item) => (
             <SortableItem
               key={item._id}
+              fetchItems={fetchItems}
+              listId={listId}
               item={item}
               catId={catId}
-              listId={listId}
+              onDelete={handleDeleteClick}
               isListMode={viewMode === "list"}
-              onDelete={onDeleteItem}
-              onToggleWorn={onToggleWorn}
-              onToggleConsumable={onToggleConsumable}
-              onQuantityChange={onQuantityChange}
-              fetchItems={fetchItems}
+              onToggleWorn={handleToggleWorn}
+              onToggleConsumable={handleToggleConsumable}
+              onQuantityChange={handleQuantityChange}
             />
           ))}
         </div>

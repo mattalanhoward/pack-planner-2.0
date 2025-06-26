@@ -1,6 +1,12 @@
 // src/components/PreviewCard.jsx
 import React from "react";
-import { FaGripVertical, FaUtensils, FaTshirt, FaTrash } from "react-icons/fa";
+import {
+  FaGripVertical,
+  FaUtensils,
+  FaTshirt,
+  FaTrash,
+  FaEllipsisH,
+} from "react-icons/fa";
 
 export default function PreviewCard({ item, viewMode, isPreview }) {
   const ghostStyles = isPreview
@@ -49,43 +55,75 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
           </div>
         </div>
 
-        {/* Desktop layout: one-row grid */}
+        {/* Preview Card – Desktop only */}
         <div
           style={ghostStyles}
-          className="bg-sand px-3 py-2 rounded shadow mb-2 hidden sm:grid items-center gap-2
-                     grid-cols-[32px_150px_minmax(0,1fr)_64px_32px_32px_64px_64px_32px]"
+          className="
+    hidden sm:grid
+    bg-sand px-3 py-2 rounded shadow mb-2
+    items-center gap-x-2 text-sm
+    grid-cols-[32px,96px,1fr,48px,32px,32px,48px,32px,32px,32px]
+  "
         >
-          <div className="cursor-grab">
+          {/* 1) Drag handle */}
+          <div className="cursor-grab justify-self-center">
             <FaGripVertical />
           </div>
+
+          {/* 2) Item type (150px) */}
           <div className="font-semibold text-gray-800 truncate">
             {item.itemType || "—"}
           </div>
-          <div className="truncate text-sm text-gray-700">
+
+          {/* 3) Brand / Name (fluid) */}
+          <div className="truncate text-gray-700">
             {item.brand && <span className="mr-1">{item.brand}</span>}
             {item.name}
           </div>
-          <div className="text-center text-sm text-gray-600">
+
+          {/* 4) Weight (64px) */}
+          <div className="text-gray-600 justify-self-end">
             {item.weight != null ? `${item.weight}g` : ""}
           </div>
-          <div className="text-center">
+
+          {/* 5) Consumable (32px) */}
+          <div className="justify-self-center">
             <FaUtensils
-              className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
+              className={item.consumable ? "text-green-600" : "opacity-30"}
             />
           </div>
-          <div className="text-center">
-            <FaTshirt
-              className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
-            />
+
+          {/* 6) Worn (32px) */}
+          <div className="justify-self-center">
+            <FaTshirt className={item.worn ? "text-blue-600" : "opacity-30"} />
           </div>
-          <div className="text-center text-sm text-gray-600">
-            {item.price != null ? `€${item.price}` : ""}
+
+          {/* 7) Quantity (56px) */}
+          <div className="text-center justify-self-center">
+            <span className="border rounded px-2 py-0.5 bg-sand">
+              {item.quantity}
+            </span>
           </div>
-          <div className="text-center">
-            <span className="border rounded p-1 bg-sand">{item.quantity}</span>
+
+          {/* 8) Price (64px) */}
+          <div className="text-gray-600 justify-self-end">
+            {item.price != null && `€${item.price}`}
           </div>
-          <div className="text-center">
-            <FaTrash className="text-red-500 hover:text-red-700" />
+
+          {/* 9) Ellipsis (32px) */}
+          <div className="justify-self-center">
+            <a
+              href="#"
+              title="See details"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaEllipsisH />
+            </a>
+          </div>
+
+          {/* 10) Delete (32px) */}
+          <div className="justify-self-center">
+            <FaTrash className="text-red-500 hover:text-red-700 cursor-pointer" />
           </div>
         </div>
       </>

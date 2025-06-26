@@ -26,10 +26,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
-    // take item.link (e.g. "https://smartwool.com") and strip protocol
-    const rawLink = item.link || "";
-    const stripped = rawLink.replace(/^https?:\/\//i, "");
-
     if (!item) return;
     setForm({
       category: item.category || "",
@@ -39,7 +35,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
       description: item.description || "",
       weight: item.weight || "",
       price: item.price || "",
-      link: stripped || "",
+      link: item.link || "",
     });
     setWorn(item.worn);
     setConsumable(item.consumable);

@@ -412,11 +412,23 @@ export default function SortableItem({
 
           {/* Row 2: Brand - Name */}
           <div className="grid grid-cols-[auto_1fr] items-center">
-            {item.brand && (
+            {item.link ? (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block w-full"
+              >
+                <span className="font-medium text-sm text-gray-700 mr-1">
+                  {item.brand}
+                </span>
+              </a>
+            ) : (
               <span className="font-medium text-sm text-gray-700 mr-1">
                 {item.brand}
               </span>
             )}
+
             <div className="truncate text-sm text-gray-700">
               {item.link ? (
                 <a
@@ -455,7 +467,7 @@ export default function SortableItem({
                 ))}
             </div>
             {/* Right group */}
-            <div className="grid grid-cols-[16px_16px_16px_16px] items-center justify-end gap-x-3">
+            <div className="grid grid-cols-[16px_16px_auto_16px] items-center justify-end gap-x-3">
               {" "}
               <FaUtensils
                 title="Toggle consumable"

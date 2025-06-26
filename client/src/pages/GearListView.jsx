@@ -67,6 +67,11 @@ export default function GearListView({
     })();
   }, [listId, refreshToggle, templateToggle]);
 
+  // Reset itemsMap any time we switch to a different list
+  useEffect(() => {
+    setItemsMap({});
+  }, [listId]);
+
   // — load items —
   useEffect(() => {
     categories.forEach((cat) => fetchItems(cat._id));

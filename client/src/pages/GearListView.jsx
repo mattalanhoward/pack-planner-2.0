@@ -628,6 +628,7 @@ export default function GearListView({
                 viewMode={viewMode}
                 handleQuantityChange={handleQuantityChange}
                 handleToggleWorn={handleToggleWorn}
+                handleToggleConsumable={handleToggleConsumable}
               />
             ))}
             {/* Add New Category button */}

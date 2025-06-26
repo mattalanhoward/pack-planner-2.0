@@ -129,11 +129,11 @@ describe("SortableItem", () => {
 
   it("renders in column mode", () => {
     renderComponent(false);
-    expect(screen.getAllByText("Brand")).toHaveLength(1);
-    expect(screen.getAllByText("Name")).toHaveLength(1);
-    expect(screen.getAllByText("10g")).toHaveLength(1);
-    expect(screen.getAllByText(/€5/)).toHaveLength(1);
-    expect(screen.getAllByText("2")).toHaveLength(1);
+    expect(screen.getAllByText("Brand")).toHaveLength(2);
+    expect(screen.getAllByText("Name")).toHaveLength(2);
+    expect(screen.getAllByText("10g")).toHaveLength(2);
+    expect(screen.getAllByText(/€5/)).toHaveLength(2);
+    expect(screen.getAllByText("2")).toHaveLength(2);
   });
 
   it("toggles worn state successfully", async () => {

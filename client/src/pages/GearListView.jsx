@@ -30,7 +30,6 @@ export default function GearListView({
   renameToggle,
   viewMode, // "columns" or "list"
 }) {
-  
   const [listName, setListName] = useState("");
   const [categories, setCategories] = useState([]);
   const [itemsMap, setItemsMap] = useState({});
@@ -173,14 +172,35 @@ export default function GearListView({
     }));
   }, []);
 
-  const handleQuantityChange = useCallback((catId, itemId, newQty) => {
-    setItemsMap((m) => ({
-      ...m,
-      [catId]: m[catId].map((i) =>
-        i._id === itemId ? { ...i, quantity: newQty } : i
-      ),
-    }));
-  }, []);
+  const handleQuantityChange = useCallback(
+    async (catId, itemId, newQty) => {
+      // 1) Optimistic update
+      setItemsMap((m) => ({
+        ...m,
+        [catId]: m[catId].map((i) =>
+          i._id === itemId ? { ...i, quantity: newQty } : i
+        ),
+      }));
+
+      try {
+        // 2) Patch the server
+        await api.patch(
+          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          {
+            quantity: newQty,
+          }
+        );
+
+        // 3) Re-fetch the full list so totalWeight (and any other derived data) is correct
+        await fetchItems(catId);
+      } catch (err) {
+        // 4) Rollback on error
+        toast.error(err.message || "Failed to update quantity");
+        fetchItems(catId);
+      }
+    },
+    [fetchItems, listId]
+  );
 
   const handleDeleteClick = (catId, itemId) => {
     // Open the dialog, storing which catId/itemId is about to be deleted
@@ -606,6 +626,8 @@ export default function GearListView({
                 fetchItems={fetchItems}
                 listId={listId}
                 viewMode={viewMode}
+                handleQuantityChange={handleQuantityChange}
+                handleToggleWorn={handleToggleWorn}
               />
             ))}
             {/* Add New Category button */}

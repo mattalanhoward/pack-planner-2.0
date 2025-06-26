@@ -455,7 +455,7 @@ export default function SortableItem({
                 ))}
             </div>
             {/* Right group */}
-            <div className="grid grid-cols-[16px_16px_16px_16px] items-center justify-end gap-x-3">
+            <div className="grid grid-cols-[16px_16px_auto_16px] items-center justify-end gap-x-3">
               {" "}
               <FaUtensils
                 title="Toggle consumable"

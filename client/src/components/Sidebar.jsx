@@ -98,7 +98,10 @@ export default function Sidebar({
       setEditingTitle("");
       await fetchLists();
       if (currentListId === id) {
+        // ✅ re‐select the renamed list
+        localStorage.setItem("lastListId", id);
         onSelectList(id);
+        // then refresh its detail pane:
         onRefresh();
       }
       toast.success("List renamed!");
@@ -279,8 +282,14 @@ export default function Sidebar({
                       <>
                         <button
                           onClick={() => {
-                            localStorage.setItem("lastListId", l._id);
+                            // 1) Select the new list
                             onSelectList(l._id);
+                            // 2) Persist or clear storage
+                            if (l._id) {
+                              localStorage.setItem("lastListId", l._id);
+                            } else {
+                              localStorage.removeItem("lastListId");
+                            }
                           }}
                           className={`flex-1 text-left p-2 rounded-lg ${
                             l._id === currentListId

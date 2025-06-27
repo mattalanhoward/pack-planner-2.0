@@ -40,6 +40,7 @@ export default function Register() {
             onChange={(e) => setTrailname(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 
@@ -51,6 +52,7 @@ export default function Register() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 
@@ -62,6 +64,7 @@ export default function Register() {
             onChange={(e) => setPassword(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 

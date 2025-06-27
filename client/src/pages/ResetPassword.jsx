@@ -57,6 +57,7 @@ export default function ResetPassword() {
             onChange={(e) => setNewPassword(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 
@@ -68,6 +69,7 @@ export default function ResetPassword() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 

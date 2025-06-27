@@ -37,6 +37,7 @@ export default function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="mt-1 block w-full border p-2 rounded"
+            disabled={loading}
           />
         </label>
 

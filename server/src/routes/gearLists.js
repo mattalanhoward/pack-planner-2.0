@@ -1,4 +1,5 @@
 // server/src/routes/gearLists.js
+const mongoose = require("mongoose");
 const express = require("express");
 const auth = require("../middleware/auth");
 const GearList = require("../models/gearList");
@@ -36,30 +37,33 @@ router.post("/:listId/share", async (req, res) => {
   res.json({ token });
 });
 
-/**
- * GET /api/lists/:listId/full
- * Returns the list, its categories, and its items in one shot.
- */
+// GET /api/lists/:listId/full
 router.get("/:listId/full", async (req, res) => {
-  const { listId } = req.params;
+  try {
+    const { listId } = req.params;
 
-  // 1) ensure the user owns this list
-  const list = await GearList.findOne({ _id: listId, owner: req.userId });
-  if (!list) {
-    return res.status(404).json({ error: "List not found" });
+    // 1) ensure this is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(listId)) {
+      return res.status(400).json({ error: "Invalid list ID." });
+    }
+
+    // 2) ensure the user owns this list
+    const list = await GearList.findOne({ _id: listId, owner: req.userId });
+    if (!list) {
+      return res.status(404).json({ error: "List not found" });
+    }
+
+    // 3) fetch categories and items
+    const [categories, items] = await Promise.all([
+      Category.find({ gearList: listId }).sort({ position: 1 }),
+      Item.find({ gearList: listId }).sort({ category: 1, position: 1 }),
+    ]);
+
+    return res.json({ list, categories, items });
+  } catch (err) {
+    console.error("Error in GET /lists/:listId/full →", err.message);
+    return res.status(500).json({ error: "Server error." });
   }
-
-  // 2) fetch categories and items in parallel
-  const [categories, items] = await Promise.all([
-    // 1) categories in ascending position
-    Category.find({ gearList: listId }).sort({ position: 1 }),
-
-    // 2) items sorted by category → position
-    Item.find({ gearList: listId }).sort({ category: 1, position: 1 }),
-  ]);
-
-  // 3) send them all back
-  res.json({ list, categories, items });
 });
 
 // GET /api/lists — only this user’s lists
@@ -123,12 +127,21 @@ router.delete("/:listId", async (req, res) => {
       _id: req.params.listId,
       owner: req.userId,
     });
-    if (!deleted) return res.status(404).json({ message: "List not found." });
-    await Category.deleteMany({ gearList: req.params.listId });
-    res.json({ message: "List deleted." });
+    if (!deleted) {
+      return res.status(404).json({ message: "List not found." });
+    }
+
+    // cascade-delete everything tied to that list
+    await Promise.all([
+      Category.deleteMany({ gearList: req.params.listId }),
+      Item.deleteMany({ gearList: req.params.listId }),
+      Share.deleteMany({ list: req.params.listId }),
+    ]);
+
+    return res.json({ message: "List and all related data deleted." });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("Error deleting list:", err.message);
+    return res.status(500).json({ message: "Server error deleting list." });
   }
 });
 

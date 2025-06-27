@@ -39,7 +39,11 @@ export default function Dashboard() {
 
   // ─── Redirect logic ───
   useEffect(() => {
-    if (lists.length === 0) return;
+    // if there are no lists at all, stay on the "root" path (no listId)
+    if (lists.length === 0) {
+      navigate("/lists", { replace: true });
+      return;
+    }
 
     const ids = lists.map((l) => l._id);
 
@@ -111,11 +115,7 @@ export default function Dashboard() {
   }, [fetchFullData, listId]);
 
   // ─── If auth, lists or fullData not loaded yet ───
-  if (
-    !isAuthenticated ||
-    lists.length === 0 ||
-    (listId && fullData.list === null)
-  ) {
+  if (!isAuthenticated || (listId && fullData.list === null)) {
     return null;
   }
   return (
@@ -133,7 +133,11 @@ export default function Dashboard() {
           currentListId={listId}
           categories={fullData?.categories || []}
           onSelectList={(id) => {
-            localStorage.setItem("lastListId", id);
+            if (id) {
+              localStorage.setItem("lastListId", id);
+            } else {
+              localStorage.removeItem("lastListId");
+            }
             navigate(`/lists/${id}`);
           }}
           onRefresh={fetchFullData}

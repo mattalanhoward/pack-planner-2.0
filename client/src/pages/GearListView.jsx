@@ -25,14 +25,13 @@ import SortableSection from "../components/SortableSection";
 
 export default function GearListView({
   listId,
-  refreshToggle,
-  templateToggle,
-  renameToggle,
-  viewMode, // "columns" or "list"
+  viewMode,
+  list, // the GearList object from Dashboard
+  categories, // array of Category
+  items, // array of all items
+  onRequestFullRefresh,
+  onReorderCategories,
 }) {
-  const [listName, setListName] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [itemsMap, setItemsMap] = useState({});
   const [editingCatId, setEditingCatId] = useState(null);
   const [addingNewCat, setAddingNewCat] = useState(false);
   const [newCatName, setNewCatName] = useState("");
@@ -47,35 +46,17 @@ export default function GearListView({
   });
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
+  const [itemsMap, setItemsMap] = useState({});
 
-  // — fetch list title —
+  // NEW: auto-group every time `items` changes
   useEffect(() => {
-    if (!listId) return;
-    (async () => {
-      const { data } = await api.get("/lists");
-      const found = data.find((l) => l._id === listId);
-      setListName(found?.title || "");
-    })();
-  }, [listId, renameToggle]);
-
-  // — load categories —
-  useEffect(() => {
-    if (!listId) return;
-    (async () => {
-      const { data } = await api.get(`/lists/${listId}/categories`);
-      setCategories(data);
-    })();
-  }, [listId, refreshToggle, templateToggle]);
-
-  // Reset itemsMap any time we switch to a different list
-  useEffect(() => {
-    setItemsMap({});
-  }, [listId]);
-
-  // — load items —
-  useEffect(() => {
-    categories.forEach((cat) => fetchItems(cat._id));
-  }, [categories, refreshToggle, templateToggle]);
+    const map = {};
+    items.forEach((it) => {
+      map[it.category] = map[it.category] || [];
+      map[it.category].push(it);
+    });
+    setItemsMap(map);
+  }, [items]);
 
   const fetchItems = async (catId) => {
     const { data } = await api.get(
@@ -85,41 +66,6 @@ export default function GearListView({
   };
 
   const stats = React.useMemo(() => computeStats(itemsMap), [itemsMap]);
-
-  // - Calculate total weights -
-  // This is done after all items are loaded, so we can calculate totals correctly.
-  // flatten into one array (or empty array if nothing’s loaded yet)
-  const all = Object.values(itemsMap).flat();
-
-  // sum up “worn” items
-  const wornWeight = all
-    .filter((i) => i.worn)
-    .reduce((sum, i) => {
-      const qty = i.quantity || 1;
-      const w = i.weight || 0;
-      return sum + w * qty;
-    }, 0);
-
-  // sum up “consumable” items
-  const consumableWeight = all
-    .filter((i) => i.consumable)
-    .reduce((sum, i) => {
-      const qty = i.quantity || 1;
-      const w = i.weight || 0;
-      return sum + w * qty;
-    }, 0);
-
-  // sum up “base” (neither worn nor consumable)
-  const baseWeight = all
-    .filter((i) => !i.worn && !i.consumable)
-    .reduce((sum, i) => {
-      const qty = i.quantity || 1;
-      const w = i.weight || 0;
-      return sum + w * qty;
-    }, 0);
-
-  // grand total
-  const totalWeight = wornWeight + consumableWeight + baseWeight;
 
   // flatten ALL items into one array
   const allItems = Object.values(itemsMap).flat();
@@ -239,12 +185,12 @@ export default function GearListView({
     if (!title) return;
 
     try {
-      const { data } = await api.post(`/lists/${listId}/categories`, {
+      await api.post(`/lists/${listId}/categories`, {
         title,
         position: categories.length,
       });
-      setCategories((c) => [...c, data]);
-      setNewCatName("");
+      // pull it down again
+      await onRequestFullRefresh();
       setAddingNewCat(false);
       toast.success("Category Added! 🎉");
     } catch (err) {
@@ -264,15 +210,13 @@ export default function GearListView({
     const catId = pendingDeleteCatId;
     try {
       await api.delete(`/lists/${listId}/categories/${catId}`);
-      // Remove from local state:
-      setCategories((c) => c.filter((x) => x._id !== catId));
-      setItemsMap((m) => {
-        const copy = { ...m };
-        delete copy[catId];
-        return copy;
-      });
+
+      // re-sync our entire `fullData` (including categories & items)
+      await onRequestFullRefresh();
+
       toast.success("Category deleted");
     } catch (err) {
+      console.error(err);
       toast.error(err.response?.data?.message || "Failed to delete");
     } finally {
       setConfirmCatOpen(false);
@@ -293,10 +237,9 @@ export default function GearListView({
       return;
     }
     try {
-      const { data } = await api.patch(`/lists/${listId}/categories/${id}`, {
-        title: newTitle,
-      });
-      setCategories((cats) => cats.map((c) => (c._id === id ? data : c)));
+      await api.patch(`/lists/${listId}/categories/${id}`, { title: newTitle });
+      // re-pull the entire payload (list, cats, items)
+      await onRequestFullRefresh();
       setEditingCatId(null);
       toast.success("Category renamed");
     } catch (err) {
@@ -305,7 +248,6 @@ export default function GearListView({
   };
 
   const handleDragEnd = async ({ active, over }) => {
-    // if dropped outside any valid drop target, do nothing
     if (!over) return;
 
     // ─── CATEGORY REORDER ───
@@ -315,24 +257,13 @@ export default function GearListView({
       );
       const newIndex = categories.findIndex((c) => `cat-${c._id}` === over.id);
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        // Build the new ordered array
         const reordered = arrayMove(categories, oldIndex, newIndex).map(
           (catObj, idx) => ({ ...catObj, position: idx })
         );
-        // update UI immediately
-        setCategories(reordered);
 
-        // persist positions
-        const oldPositions = Object.fromEntries(
-          categories.map((c) => [c._id, c.position])
-        );
-        for (let i = 0; i < reordered.length; i++) {
-          const { _id, position } = reordered[i];
-          if (oldPositions[_id] !== position) {
-            await api.patch(`/lists/${listId}/categories/${_id}/position`, {
-              position,
-            });
-          }
-        }
+        // Delegate to Dashboard: optimistic UI + persist
+        await onReorderCategories(categories, reordered);
       }
       return;
     }
@@ -351,12 +282,11 @@ export default function GearListView({
           const reordered = arrayMove(oldArray, oldIndex, newIndex).map(
             (it, idx) => ({ ...it, position: idx })
           );
-          setItemsMap((m) => ({
-            ...m,
-            [sourceCatId]: reordered,
-          }));
 
-          // persist item positions
+          // update UI immediately
+          setItemsMap((m) => ({ ...m, [sourceCatId]: reordered }));
+
+          // persist each item’s new position
           for (let i = 0; i < reordered.length; i++) {
             const it = reordered[i];
             if (
@@ -537,8 +467,6 @@ export default function GearListView({
   };
 
   const bgstyle = {
-    // transform: CSS.Transform.toString(transform),
-    // transition,
     backgroundImage: `url(${sierraNevadaBg})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
@@ -553,7 +481,7 @@ export default function GearListView({
         }
       >
         <div className="flex items-center space-x-4">
-          <h2 className="hide-on-touch text-xl text-sunset">{listName}</h2>
+          <h2 className="hide-on-touch text-xl text-sunset">{list.title}</h2>
           <PackStats
             base={stats.baseWeight}
             worn={stats.wornWeight}
@@ -621,19 +549,25 @@ export default function GearListView({
                 key={cat._id}
                 category={cat}
                 items={itemsMap[cat._id] || []}
+                /* editing a category */
                 editingCatId={editingCatId}
                 setEditingCatId={setEditingCatId}
-                onEditCat={editCat}
-                onDeleteCat={() => handleDeleteCatClick(cat._id)}
-                onDeleteItem={handleDeleteClick}
+                onEditCat={(newTitle) => editCat(cat._id, newTitle)}
+                /* delete a category */
+                onDeleteCategory={handleDeleteCatClick}
+                /* “Add Item” modal */
                 showAddModalCat={showAddModalCat}
                 setShowAddModalCat={setShowAddModalCat}
+                /* re-loading an individual category */
                 fetchItems={fetchItems}
                 listId={listId}
+                /* item-level actions */
+                onDeleteItem={handleDeleteClick}
+                onToggleWorn={handleToggleWorn}
+                onToggleConsumable={handleToggleConsumable}
+                onQuantityChange={handleQuantityChange}
+                /* layout */
                 viewMode={viewMode}
-                handleQuantityChange={handleQuantityChange}
-                handleToggleWorn={handleToggleWorn}
-                handleToggleConsumable={handleToggleConsumable}
               />
             ))}
             {/* Add New Category button */}
@@ -671,19 +605,25 @@ export default function GearListView({
                 key={cat._id}
                 category={cat}
                 items={itemsMap[cat._id] || []}
+                /* editing a category */
                 editingCatId={editingCatId}
                 setEditingCatId={setEditingCatId}
-                onEditCat={editCat}
-                handleDeleteCatClick={handleDeleteCatClick}
+                onEditCat={(newTitle) => editCat(cat._id, newTitle)}
+                /* delete a category */
+                onDeleteCategory={handleDeleteCatClick}
+                /* “Add Item” modal */
                 showAddModalCat={showAddModalCat}
                 setShowAddModalCat={setShowAddModalCat}
+                /* re-loading an individual category */
                 fetchItems={fetchItems}
                 listId={listId}
+                /* item-level actions */
+                onDeleteItem={handleDeleteClick}
+                onToggleWorn={handleToggleWorn}
+                onToggleConsumable={handleToggleConsumable}
+                onQuantityChange={handleQuantityChange}
+                /* layout */
                 viewMode={viewMode}
-                handleDeleteClick={handleDeleteClick}
-                handleToggleWorn={handleToggleWorn}
-                handleToggleConsumable={handleToggleConsumable}
-                handleQuantityChange={handleQuantityChange}
               />
             ))}
             {/* Add New Category column (unchanged) */}

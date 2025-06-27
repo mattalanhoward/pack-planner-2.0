@@ -33,6 +33,7 @@ app.use("/api/lists", gearListRoutes);
 app.use("/api/lists/:listId/categories", categoriesRoutes);
 app.use("/api/lists/:listId/categories/:catId/items", gearItemRoutes);
 app.use("/api/global/items", globalItemsRoutes);
+app.use("/api/lists", gearListRoutes);
 
 // Make sure you read the URI exactly from process.env:
 const mongoURI = process.env.MONGO_URI;

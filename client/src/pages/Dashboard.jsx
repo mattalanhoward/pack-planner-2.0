@@ -1,57 +1,158 @@
-import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import GearListView from "./GearListView";
+// src/pages/Dashboard.jsx
+import React, { useState, useEffect, useCallback } from "react";
+import api from "../services/api";
+import { useParams, useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import TopBar from "../components/TopBar";
+import Sidebar from "../components/Sidebar";
+import GearListView from "./GearListView";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
-  const { isAuthenticated, logout } = useAuth();
-  const [currentListId, setCurrentListId] = useState(null);
-  const [refreshToggle, setRefreshToggle] = useState(false);
-  const [templateToggle, setTemplateToggle] = useState(false);
-  const [viewMode, setViewMode] = useState("columns");
-  const [currentListTitle, setCurrentListTitle] = useState("");
-  const [renameToggle, setRenameToggle] = useState(false);
-  const handleItemAdded = () => setRefreshToggle((t) => !t);
-  const handleTemplateEdited = () => setTemplateToggle((t) => !t);
+  const { isAuthenticated } = useAuth();
+  const { listId } = useParams(); // from /lists/:listId
+  const navigate = useNavigate();
 
-  if (!isAuthenticated) return null;
+  // ─── Single‐source‐of‐truth for our `/full` payload ───
+  const [fullData, setFullData] = useState({
+    list: null,
+    categories: [],
+    items: [],
+  });
 
-  const handleListRenamed = () => {
-    setRenameToggle((t) => !t);
-  };
+  // ─── Lists state & fetchLists fn ───
+  const [lists, setLists] = useState([]);
+  const fetchLists = useCallback(async () => {
+    try {
+      const { data } = await api.get("/lists");
+      setLists(data);
+    } catch (err) {
+      console.error("Failed to fetch lists", err);
+      toast.error("Could not load your gear lists");
+    }
+  }, []);
 
+  // load lists on mount
+  useEffect(() => {
+    fetchLists();
+  }, [fetchLists]);
+
+  // ─── Redirect logic ───
+  useEffect(() => {
+    if (lists.length === 0) return;
+
+    const ids = lists.map((l) => l._id);
+
+    // 1) if URL has a valid listId, do nothing
+    if (listId && ids.includes(listId)) return;
+
+    // 2) try lastListId from localStorage
+    const stored = localStorage.getItem("lastListId");
+    if (stored && ids.includes(stored)) {
+      navigate(`/lists/${stored}`, { replace: true });
+      return;
+    }
+
+    // 3) fallback to first list
+    navigate(`/lists/${ids[0]}`, { replace: true });
+  }, [lists, listId, navigate]);
+
+  // ─── viewMode persistence ───
+  const [viewMode, setViewMode] = useState(
+    () => localStorage.getItem("viewMode") || "columns"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("viewMode", viewMode);
+  }, [viewMode]);
+
+  // fetch /api/lists/:listId/full
+  const fetchFullData = useCallback(async () => {
+    if (!listId) return;
+    try {
+      const { data } = await api.get(`/lists/${listId}/full`);
+      setFullData({
+        list: data.list,
+        categories: data.categories,
+        items: data.items,
+      });
+    } catch (err) {
+      console.error("Failed to fetch full data", err);
+      toast.error("Could not load this gear list");
+    }
+  }, [listId]);
+
+  // — New: Optimistic reorder + persist for categories
+  const onReorderCategories = useCallback(
+    async (oldCats, reorderedCats) => {
+      // 1) Immediately update UI
+      setFullData((f) => ({ ...f, categories: reorderedCats }));
+
+      // 2) Persist only changed positions
+      const oldPosMap = Object.fromEntries(
+        oldCats.map((c) => [c._id, c.position])
+      );
+
+      for (let i = 0; i < reorderedCats.length; i++) {
+        const { _id, position } = reorderedCats[i];
+        if (oldPosMap[_id] !== position) {
+          await api.patch(`/lists/${listId}/categories/${_id}/position`, {
+            position,
+          });
+        }
+      }
+    },
+    [listId]
+  );
+
+  // load on mount—and whenever listId changes
+  useEffect(() => {
+    fetchFullData();
+  }, [fetchFullData, listId]);
+
+  // ─── If auth, lists or fullData not loaded yet ───
+  if (
+    !isAuthenticated ||
+    lists.length === 0 ||
+    (listId && fullData.list === null)
+  ) {
+    return null;
+  }
   return (
     <div className="flex flex-col h-d-screen overflow-hidden">
-      {/* TopBar */}
       <TopBar
         title="PackPlanner"
         viewMode={viewMode}
         setViewMode={setViewMode}
       />
+
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          onListRenamed={handleListRenamed}
-          currentListId={currentListId}
+          lists={lists} // up-to-date list array
+          fetchLists={fetchLists} // allows Sidebar to re-load after mutating
+          currentListId={listId}
+          categories={fullData?.categories || []}
           onSelectList={(id) => {
-            setCurrentListId(id);
+            localStorage.setItem("lastListId", id);
+            navigate(`/lists/${id}`);
           }}
-          onItemAdded={handleItemAdded}
-          onTemplateEdited={handleTemplateEdited}
+          onRefresh={fetchFullData}
         />
 
         <main className="flex-1 overflow-hidden">
-          {currentListId ? (
+          {listId ? (
             <GearListView
-              listId={currentListId}
-              renameToggle={renameToggle}
-              refreshToggle={refreshToggle}
-              templateToggle={templateToggle}
-              viewMode={viewMode} // ← pass it down
+              listId={listId}
+              viewMode={viewMode}
+              categories={fullData.categories}
+              onRefresh={fetchFullData}
+              onReorderCategories={onReorderCategories}
+              list={fullData.list}
+              items={fullData.items}
             />
           ) : (
             <div className="h-full flex items-center justify-center text-pine text-lg">
-              Select a gear list to begin.
+              Create a gear list to begin.
             </div>
           )}
         </main>

@@ -23,10 +23,10 @@ export default function SortableSection({
   fetchItems,
   listId,
   viewMode,
-  handleDeleteClick,
-  handleToggleWorn,
-  handleToggleConsumable,
-  handleQuantityChange,
+  onDeleteItem,
+  onToggleWorn,
+  onToggleConsumable,
+  onQuantityChange,
 }) {
   const filtered = useMemo(
     () => items.filter((i) => `item-${category._id}-${i._id}` !== activeId),
@@ -106,16 +106,16 @@ export default function SortableSection({
         <div>
           {filtered.map((item) => (
             <SortableItem
-              key={item._id}
+              key={`cat-${catId}-item-${item._id}`}
+              item={item}
               fetchItems={fetchItems}
               listId={listId}
-              item={item}
               catId={catId}
-              onDelete={handleDeleteClick}
               isListMode={viewMode === "list"}
-              onToggleWorn={handleToggleWorn}
-              onToggleConsumable={handleToggleConsumable}
-              onQuantityChange={handleQuantityChange}
+              onDelete={onDeleteItem}
+              onToggleWorn={onToggleWorn}
+              onToggleConsumable={onToggleConsumable}
+              onQuantityChange={onQuantityChange}
             />
           ))}
         </div>

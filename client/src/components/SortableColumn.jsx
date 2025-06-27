@@ -16,16 +16,16 @@ export default function SortableColumn({
   editingCatId,
   setEditingCatId,
   onEditCat,
-  handleDeleteCatClick,
+  onDeleteCategory,
   showAddModalCat,
   setShowAddModalCat,
   fetchItems,
   listId,
   viewMode,
-  handleDeleteClick,
-  handleToggleWorn,
-  handleToggleConsumable,
-  handleQuantityChange,
+  onDeleteItem,
+  onToggleWorn,
+  onToggleConsumable,
+  onQuantityChange,
 }) {
   const scrollRef = useScrollPreserver(items);
   const catId = category._id;
@@ -78,7 +78,7 @@ export default function SortableColumn({
             </h3>
             <span className="pr-3 text-sunset">{totalWeight} g</span>
             <FaTrash
-              onClick={() => handleDeleteCatClick(catId)}
+              onClick={() => onDeleteCategory(catId)}
               className="cursor-pointer text-ember"
             />
           </>
@@ -92,16 +92,16 @@ export default function SortableColumn({
         <div ref={scrollRef} className="overflow-y-auto mb-2 space-y-2">
           {items.map((item) => (
             <SortableItem
-              key={item._id}
+              key={`cat-${catId}-item-${item._id}`}
+              item={item}
               fetchItems={fetchItems}
               listId={listId}
-              item={item}
               catId={catId}
-              onDelete={handleDeleteClick}
               isListMode={viewMode === "list"}
-              onToggleWorn={handleToggleWorn}
-              onToggleConsumable={handleToggleConsumable}
-              onQuantityChange={handleQuantityChange}
+              onDelete={onDeleteItem}
+              onToggleWorn={onToggleWorn}
+              onToggleConsumable={onToggleConsumable}
+              onQuantityChange={onQuantityChange}
             />
           ))}
         </div>

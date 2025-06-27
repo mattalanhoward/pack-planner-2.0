@@ -19,9 +19,7 @@ export default function Sidebar({
   currentListId,
   categories, // ← now coming in as a prop
   onSelectList,
-  onListRenamed,
-  onItemAdded,
-  onTemplateEdited,
+  onRefresh,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -101,7 +99,7 @@ export default function Sidebar({
       await fetchLists();
       if (currentListId === id) {
         onSelectList(id);
-        onListRenamed(id, title);
+        onRefresh();
       }
       toast.success("List renamed!");
     } catch (err) {
@@ -165,7 +163,7 @@ export default function Sidebar({
         quantity: item.quantity,
         position: 0,
       });
-      onItemAdded();
+      onRefresh();
     } catch (err) {
       console.error("Error adding item to list:", err);
       toast.error("Failed to add item into your list.");
@@ -182,7 +180,7 @@ export default function Sidebar({
     try {
       await api.delete(`/global/items/${id}`);
       fetchGlobalItems();
-      onTemplateEdited();
+      onRefresh();
       toast.success("Catalog item deleted");
     } catch (err) {
       console.error("Error deleting catalog item:", err);
@@ -368,7 +366,7 @@ export default function Sidebar({
                   onCreated={() => {
                     setShowCreateModal(false);
                     fetchGlobalItems();
-                    onTemplateEdited();
+                    onRefresh();
                   }}
                 />
               )}
@@ -380,7 +378,7 @@ export default function Sidebar({
                   onSaved={() => {
                     fetchGlobalItems();
                     setEditingGlobalItem(null);
-                    onTemplateEdited();
+                    onRefresh();
                   }}
                 />
               )}

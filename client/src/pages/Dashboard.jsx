@@ -6,6 +6,7 @@ import useAuth from "../hooks/useAuth";
 import TopBar from "../components/TopBar";
 import Sidebar from "../components/Sidebar";
 import GearListView from "./GearListView";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
   const { isAuthenticated } = useAuth();
@@ -27,6 +28,7 @@ export default function Dashboard() {
       setLists(data);
     } catch (err) {
       console.error("Failed to fetch lists", err);
+      toast.error("Could not load your gear lists");
     }
   }, []);
 
@@ -64,11 +66,6 @@ export default function Dashboard() {
     localStorage.setItem("viewMode", viewMode);
   }, [viewMode]);
 
-  // ─── GearListView toggles ───
-  const [refreshToggle, setRefreshToggle] = useState(false);
-  const [templateToggle, setTemplateToggle] = useState(false);
-  const [renameToggle, setRenameToggle] = useState(false);
-
   // fetch /api/lists/:listId/full
   const fetchFullData = useCallback(async () => {
     if (!listId) return;
@@ -81,6 +78,7 @@ export default function Dashboard() {
       });
     } catch (err) {
       console.error("Failed to fetch full data", err);
+      toast.error("Could not load this gear list");
     }
   }, [listId]);
 
@@ -103,21 +101,14 @@ export default function Dashboard() {
           });
         }
       }
-
-      // 3) (Optional) re-fetch to reconcile any other changes
-      // await fetchFullData();
     },
-    [listId, fetchFullData]
+    [listId]
   );
 
-  // load on mount—and whenever listId or any of your toggles change
+  // load on mount—and whenever listId changes
   useEffect(() => {
     fetchFullData();
-  }, [fetchFullData, refreshToggle, templateToggle, renameToggle]);
-
-  const handleItemAdded = () => setRefreshToggle((t) => !t);
-  const handleTemplateEdited = () => setTemplateToggle((t) => !t);
-  const handleListRenamed = () => setRenameToggle((t) => !t);
+  }, [fetchFullData, listId]);
 
   // ─── If auth, lists or fullData not loaded yet ───
   if (
@@ -145,9 +136,7 @@ export default function Dashboard() {
             localStorage.setItem("lastListId", id);
             navigate(`/lists/${id}`);
           }}
-          onListRenamed={handleListRenamed}
-          onItemAdded={handleItemAdded}
-          onTemplateEdited={handleTemplateEdited}
+          onRefresh={fetchFullData}
         />
 
         <main className="flex-1 overflow-hidden">
@@ -156,7 +145,7 @@ export default function Dashboard() {
               listId={listId}
               viewMode={viewMode}
               categories={fullData.categories}
-              onRequestFullRefresh={fetchFullData}
+              onRefresh={fetchFullData}
               onReorderCategories={onReorderCategories}
               list={fullData.list}
               items={fullData.items}

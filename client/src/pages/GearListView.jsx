@@ -29,7 +29,7 @@ export default function GearListView({
   list, // the GearList object from Dashboard
   categories, // array of Category
   items, // array of all items
-  onRequestFullRefresh,
+  onRefresh,
   onReorderCategories,
 }) {
   const [editingCatId, setEditingCatId] = useState(null);
@@ -190,7 +190,7 @@ export default function GearListView({
         position: categories.length,
       });
       // pull it down again
-      await onRequestFullRefresh();
+      await onRefresh();
       setAddingNewCat(false);
       toast.success("Category Added! 🎉");
     } catch (err) {
@@ -212,7 +212,7 @@ export default function GearListView({
       await api.delete(`/lists/${listId}/categories/${catId}`);
 
       // re-sync our entire `fullData` (including categories & items)
-      await onRequestFullRefresh();
+      await onRefresh();
 
       toast.success("Category deleted");
     } catch (err) {
@@ -239,7 +239,7 @@ export default function GearListView({
     try {
       await api.patch(`/lists/${listId}/categories/${id}`, { title: newTitle });
       // re-pull the entire payload (list, cats, items)
-      await onRequestFullRefresh();
+      await onRefresh();
       setEditingCatId(null);
       toast.success("Category renamed");
     } catch (err) {

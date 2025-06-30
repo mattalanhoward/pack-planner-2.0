@@ -119,7 +119,7 @@ export default function Dashboard() {
     return null;
   }
   return (
-    <div className="flex flex-col h-d-screen overflow-hidden">
+    <div className="flex flex-col h-d-screen overflow-hidden bg-sand/50 text-pine">
       <TopBar
         title="PackPlanner"
         viewMode={viewMode}

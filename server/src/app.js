@@ -18,9 +18,17 @@ const app = express();
 // CLIENT_URL="https://packplanner.netlify.app" on Render.
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
+const whitelist = ["http://localhost:5173", "https://packplanner.netlify.app"];
+
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+      // allow requests with no origin (e.g. mobile clients, curl)
+      if (!origin || whitelist.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );

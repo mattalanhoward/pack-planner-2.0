@@ -5,7 +5,7 @@ export default function Landing() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero */}
-      <header className="flex-1 bg-gradient-to-r from-blue-600 to-teal-500 text-white flex flex-col items-center justify-center px-4">
+      <header className="flex-1 bg-gradient-to-r from-blue-600 to-teal-500 text-white flex flex-col items-center justify-center p-10">
         <h1 className="text-4xl md:text-6xl font-bold mb-4 text-center">
           Organize your gear, never forget a strap again
         </h1>

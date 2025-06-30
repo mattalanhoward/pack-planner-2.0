@@ -14,14 +14,15 @@ export default function Login() {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate("/lists");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      {" "}
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 rounded shadow-md w-full max-w-sm"
@@ -56,6 +57,15 @@ export default function Login() {
           {loading ? "Logging in…" : "Log In"}
         </button>
       </form>
+      <div className="mt-4 text-center">
+        <a href="/forgot-password" className="text-blue-600 hover:underline">
+          Forgot password?
+        </a>
+        <span className="mx-2">|</span>
+        <a href="/register" className="text-blue-600 hover:underline">
+          Create an account
+        </a>
+      </div>
     </div>
   );
 }

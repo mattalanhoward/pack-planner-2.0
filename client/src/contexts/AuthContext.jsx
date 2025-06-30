@@ -7,7 +7,7 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
-
+  const isAuthenticated = Boolean(token);
   useEffect(() => {
     if (token) {
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -17,6 +17,12 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("token");
     }
   }, [token]);
+
+  const verifyEmail = async (token) => {
+    const { data } = await api.post("/auth/verify-email", { token });
+    setToken(data.token);
+    return data;
+  };
 
   const login = async (email, password) => {
     setLoading(true);
@@ -33,7 +39,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ login, logout, loading, isAuthenticated: Boolean(token) }}
+      value={{ login, logout, verifyEmail, loading, isAuthenticated }}
     >
       {children}
     </AuthContext.Provider>

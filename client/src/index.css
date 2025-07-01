@@ -50,3 +50,10 @@ a {
   background: var(--teal-400);
   margin: 0.5rem 0;
 }
+
+/* Add your custom utility here: */
+@layer utilities {
+  .drawer-transition {
+    @apply transition-transform duration-300 ease-in-out;
+  }
+}

@@ -69,7 +69,7 @@ export default function SortableSection({
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={() => {
               setEditingCatId(null);
-              onEditCat(catId, localTitle);
+              onEditCat(localTitle);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {

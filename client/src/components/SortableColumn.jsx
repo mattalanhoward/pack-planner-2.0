@@ -60,7 +60,7 @@ export default function SortableColumn({
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={() => {
               setEditingCatId(null);
-              onEditCat(catId, localTitle);
+              onEditCat(localTitle);
             }}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             className="flex-1 border border-pine rounded p-1 bg-sand"

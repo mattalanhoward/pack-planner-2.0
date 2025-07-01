@@ -573,27 +573,28 @@ export default function GearListView({
             {/* Add New Category button */}
             <div className="px-4 mt-4">
               {addingNewCat ? (
-                <div className="flex items-center bg-sand p-3 rounded-lg space-x-2">
-                  <input
-                    autoFocus
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="Category name"
-                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
-                  />
-                  <button onClick={cancelAddCat} className="text-ember">
-                    ×
-                  </button>
-                  <button onClick={confirmAddCat} className="text-teal">
-                    ✓
-                  </button>
-                </div>
+                <input
+                  autoFocus
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="New category (Enter to save, Escape to cancel)"
+                  className="w-full p-2 border-b-2 border-sunset focus:outline-none bg-sand text-pine rounded"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") confirmAddCat();
+                    if (e.key === "Escape") cancelAddCat();
+                  }}
+                  onBlur={() => {
+                    if (newCatName.trim()) confirmAddCat();
+                    else cancelAddCat();
+                  }}
+                />
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
+                  className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
                 >
-                  <FaPlus className="mr-2" /> Add New Category
+                  <FaPlus />
+                  <span className="text-xs">New Category</span>
                 </button>
               )}
             </div>
@@ -626,28 +627,30 @@ export default function GearListView({
                 viewMode={viewMode}
               />
             ))}
-            {/* Add New Category column (unchanged) */}
-            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full">
+            {/* Add New Category column */}
+            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full px-4">
               {addingNewCat ? (
-                <div className="bg-sand/20 rounded-lg p-3 flex items-center space-x-2">
+                <div className="py-3">
                   <input
                     autoFocus
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="Category name"
-                    className="flex-1 border border-pine rounded p-2 bg-sand text-pine"
+                    placeholder="New category (Enter to save, Escape to cancel)"
+                    className="w-full p-2 border-b-2 border-sunset focus:outline-none bg-sand text-pine rounded"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") confirmAddCat();
+                      if (e.key === "Escape") cancelAddCat();
+                    }}
+                    onBlur={() => {
+                      if (newCatName.trim()) confirmAddCat();
+                      else cancelAddCat();
+                    }}
                   />
-                  <button onClick={cancelAddCat} className="text-ember p-1">
-                    ×
-                  </button>
-                  <button onClick={confirmAddCat} className="text-teal p-1">
-                    ✓
-                  </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="mx-2 h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border border-pine rounded flex items-center justify-center space-x-2 text-pine hover:bg-sand/20"
+                  className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
                 >
                   <FaPlus />
                   <span className="text-xs">New Category</span>

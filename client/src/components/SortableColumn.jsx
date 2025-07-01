@@ -109,7 +109,7 @@ export default function SortableColumn({
 
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border rounded flex items-center justify-center"
+        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

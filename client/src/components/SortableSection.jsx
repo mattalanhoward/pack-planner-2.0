@@ -122,9 +122,10 @@ export default function SortableSection({
       </SortableContext>
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
+        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
       >
-        <FaPlus className="mr-2" /> Add Item
+        <FaPlus />
+        <span className="text-xs">Add Item</span>
       </button>
       {showAddModalCat === catId && (
         <AddGearItemModal

@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useScrollPreserver } from "../hooks/useScrollPreserver";
@@ -60,7 +60,7 @@ export default function SortableColumn({
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={() => {
               setEditingCatId(null);
-              onEditCat(catId, localTitle);
+              onEditCat(localTitle);
             }}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             className="flex-1 border border-pine rounded p-1 bg-sand"
@@ -77,7 +77,7 @@ export default function SortableColumn({
               {category.title}
             </h3>
             <span className="pr-3 text-sunset">{totalWeight} g</span>
-            <FaTrash
+            <FaTimes
               onClick={() => onDeleteCategory(catId)}
               className="cursor-pointer text-ember"
             />
@@ -109,7 +109,7 @@ export default function SortableColumn({
 
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90h-12 p-3 w-full border rounded flex items-center justify-center"
+        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

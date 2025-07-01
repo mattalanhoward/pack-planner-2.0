@@ -1,6 +1,6 @@
 // ─────────── PreviewColumn.jsx (define inside this file) ───────────
-import React from 'react';
-import { FaGripVertical, FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import React from "react";
+import { FaGripVertical, FaEdit, FaTimes, FaPlus } from "react-icons/fa";
 
 // We only need a visual skeleton: title + icons + blank items placeholder
 export default function PreviewColumn({ category, items }) {
@@ -11,16 +11,14 @@ export default function PreviewColumn({ category, items }) {
         bg-sand/20 rounded-lg p-3 flex flex-col h-full
         opacity-75
       "
-      style={{ pointerEvents: 'none' }}
+      style={{ pointerEvents: "none" }}
     >
       {/* Header row: grip icon + title */}
       <div className="flex items-center mb-2">
         <FaGripVertical className="mr-2 text-pine" />
-        <h3 className="flex-1 font-semibold text-pine">
-          {category.title}
-        </h3>
-        <FaEdit className="opacity-0" />  {/* invisible placeholders */}
-        <FaTrash className="opacity-0" />
+        <h3 className="flex-1 font-semibold text-pine">{category.title}</h3>
+        <FaEdit className="opacity-0" /> {/* invisible placeholders */}
+        <FaTimes className="opacity-0" />
       </div>
 
       {/* “Ghost” list of items (just blanks) */}

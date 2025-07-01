@@ -21,6 +21,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [worn, setWorn] = useState(false);
   const [consumable, setConsumable] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -115,14 +116,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           <h2 className="text-lg sm:text-xl font-semibold text-pine">
             Edit Global Item
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="text-ember hover:text-ember/80 text-xl sm:text-2xl"
-          >
-            <FaTimes />
-          </button>
         </div>
         {/* Optional error message */}
         {error && <div className="text-ember mb-2">{error}</div>}
@@ -240,33 +233,67 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Consumable
           </label>
         </div>
-        {/* Cancel / Save buttons */}
-        <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
+        <div className="mt-4 flex justify-between items-center">
+          {/* Delete button */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => setDeleteConfirmOpen(true)}
             disabled={saving}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-sand rounded hover:bg-sand/90 text-pine text-sm sm:text-base"
+            className="px-4 py-2 bg-ember text-sand text-sm font-semibold rounded-md shadow hover:bg-ember/80 focus:outline-none focus:ring-2 focus:ring-ember transition"
           >
-            Cancel
+            Delete Item
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-teal text-white rounded hover:bg-teal-700 text-sm sm:text-base"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+
+          {/* Cancel / Save */}
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-sand rounded hover:bg-sand/90 text-pine text-sm sm:text-base"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 rounded bg-teal text-white hover:bg-teal/80"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
         </div>
-        + {/* ConfirmDialog copied from GearListView pattern */}
+        {/* Confirm delete dialog */}
         <ConfirmDialog
           isOpen={confirmOpen}
           title="Apply changes to every instance?"
-          message="This will update *all* items of this type."
           confirmText="Yes, update all"
           cancelText="Cancel"
           onConfirm={handleConfirm}
           onCancel={handleCancelConfirm}
+        />
+        {/* ── Confirm delete dialog ── */}
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          title="Delete this Gear Item?"
+          message="This will remove it from your catalog and all of your gear list."
+          confirmText="Delete Item"
+          cancelText="Cancel"
+          onConfirm={async () => {
+            // close the delete dialog
+            setDeleteConfirmOpen(false);
+            try {
+              // perform the API delete
+              await api.delete(`/global/items/${item._id}`);
+              toast.success("Item deleted");
+              // re-fetch & close modal
+              onSaved();
+              onClose();
+            } catch (err) {
+              toast.error(err.response?.data?.message || "Delete failed");
+            }
+          }}
+          onCancel={() => setDeleteConfirmOpen(false)}
         />
       </form>
     </div>

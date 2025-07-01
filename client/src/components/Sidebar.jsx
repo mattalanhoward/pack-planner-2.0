@@ -5,8 +5,8 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaPlus,
-  FaEdit,
-  FaTrash,
+  FaEllipsisH,
+  FaTimes,
 } from "react-icons/fa";
 import GlobalItemModal from "./GlobalItemModal";
 import GlobalItemEditModal from "./GlobalItemEditModal";
@@ -36,10 +36,6 @@ export default function Sidebar({
   // delete list dialog
   const [confirmListOpen, setConfirmListOpen] = useState(false);
   const [pendingDeleteListId, setPendingDeleteListId] = useState(null);
-
-  // delete catalog‐item dialog
-  const [confirmGlobalOpen, setConfirmGlobalOpen] = useState(false);
-  const [pendingDeleteGlobalId, setPendingDeleteGlobalId] = useState(null);
 
   // ─── fetch catalog items ───
   const fetchGlobalItems = async () => {
@@ -173,32 +169,6 @@ export default function Sidebar({
     }
   };
 
-  const handleDeleteGlobalClick = (id) => {
-    setPendingDeleteGlobalId(id);
-    setConfirmGlobalOpen(true);
-  };
-
-  const actuallyDeleteGlobalItem = async () => {
-    const id = pendingDeleteGlobalId;
-    try {
-      await api.delete(`/global/items/${id}`);
-      fetchGlobalItems();
-      onRefresh();
-      toast.success("Catalog item deleted");
-    } catch (err) {
-      console.error("Error deleting catalog item:", err);
-      toast.error(err.response?.data?.message || "Failed to delete");
-    } finally {
-      setConfirmGlobalOpen(false);
-      setPendingDeleteGlobalId(null);
-    }
-  };
-
-  const cancelDeleteGlobal = () => {
-    setConfirmGlobalOpen(false);
-    setPendingDeleteGlobalId(null);
-  };
-
   // === UI rendering helpers ===
 
   const sortedLists = useMemo(
@@ -272,9 +242,9 @@ export default function Sidebar({
                 <button
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 px-4 bg-sunset text-pine rounded-lg shadow hover:bg-sunset/80"
+                  className="ml-2 p-1 text-sunset hover:text-sunset/80"
                 >
-                  Create
+                  <FaPlus />
                 </button>
               </div>
 
@@ -314,11 +284,11 @@ export default function Sidebar({
                         >
                           {l.title}
                         </button>
-                        <FaEdit
+                        <FaEllipsisH
                           onClick={() => startEditList(l._id, l.title)}
                           className="ml-2 cursor-pointer text-sunset"
                         />
-                        <FaTrash
+                        <FaTimes
                           onClick={() => handleDeleteListClick(l._id)}
                           className="ml-2 cursor-pointer text-ember"
                         />
@@ -363,14 +333,7 @@ export default function Sidebar({
                         title="Edit global template"
                         className="hover:text-sand/80 text-sand rounded-lg"
                       >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteGlobalClick(item._id)}
-                        title="Delete global template"
-                        className="text-ember hover:text-ember/80"
-                      >
-                        <FaTrash />
+                        <FaEllipsisH />
                       </button>
                     </div>
                   </li>
@@ -421,30 +384,11 @@ export default function Sidebar({
               }” Gear List?`
             : "Delete this list?"
         }
-        message="This action cannot be undone."
+        message="This will completely remove the gear list"
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={actuallyDeleteList}
         onCancel={cancelDeleteList}
-      />
-
-      {/* Delete Global‐item Confirm */}
-      <ConfirmDialog
-        isOpen={confirmGlobalOpen}
-        title={
-          pendingDeleteGlobalId
-            ? `Delete ${
-                items.find((i) => i._id === pendingDeleteGlobalId)?.brand || ""
-              } ${
-                items.find((i) => i._id === pendingDeleteGlobalId)?.name || ""
-              }?`
-            : "Delete this catalog item?"
-        }
-        message="This will remove the item from your master catalog."
-        confirmText="Delete Item"
-        cancelText="Cancel"
-        onConfirm={actuallyDeleteGlobalItem}
-        onCancel={cancelDeleteGlobal}
       />
     </div>
   );

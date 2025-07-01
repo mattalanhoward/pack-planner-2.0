@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 
@@ -69,7 +69,7 @@ export default function SortableSection({
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={() => {
               setEditingCatId(null);
-              onEditCat(catId, localTitle);
+              onEditCat(localTitle);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -90,7 +90,7 @@ export default function SortableSection({
               <span>{category.title}</span>
             </h3>
             <span className="pr-3 text-sunset">{totalWeight} g</span>
-            <FaTrash
+            <FaTimes
               aria-label="Delete category"
               title="Delete category"
               onClick={() => onDeleteCategory(catId)}
@@ -122,9 +122,10 @@ export default function SortableSection({
       </SortableContext>
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="mt-2 px-4 py-2 bg-sand/70 text-gray-800 hover:bg-sand/90 rounded flex items-center"
+        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
       >
-        <FaPlus className="mr-2" /> Add Item
+        <FaPlus />
+        <span className="text-xs">Add Item</span>
       </button>
       {showAddModalCat === catId && (
         <AddGearItemModal

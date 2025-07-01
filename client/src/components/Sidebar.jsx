@@ -224,12 +224,25 @@ export default function Sidebar({
     );
   }, [items, searchQuery]);
 
-  const widthClass = collapsed ? "w-5" : "w-80";
+  const widthClass = collapsed ? "w-5" : "w-full sm:w-80";
+  const overlay = !collapsed
+    ? // on mobile: take it out of the flow and cover
+      "fixed top-16 left-0 right-0 bottom-0 z-50 \
+      sm:static sm:inset-auto sm:z-auto"
+    : // when collapsed (or on desktop) nothing special
+      "";
 
   return (
-    <div className="h-full flex overflow-visible">
+    <div className={`h-full flex overflow-visible ${overlay}`}>
       <div
-        className={`relative bg-teal text-sand transition-all duration-300 ${widthClass}`}
+        className={`
+          relative
+          bg-teal text-sand
+          ${widthClass}
+          /* never shrink smaller than w-5 (1.25rem) */
+          min-w-[1.25rem]
+          transition-[width] duration-300 ease-in-out
+        `}
       >
         {/* collapse toggle */}
         <button
@@ -246,7 +259,9 @@ export default function Sidebar({
           <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists section */}
             <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
-              <h2 className="font-bold mb-2 text-sunset">Gear Lists</h2>
+              <h2 className="font-bold mb-2 text-sunset truncate">
+                Gear Lists
+              </h2>
               <div className="flex mb-3">
                 <input
                   className="flex-1 rounded-lg p-2 bg-sand text-pine border-pine"
@@ -291,7 +306,7 @@ export default function Sidebar({
                               localStorage.removeItem("lastListId");
                             }
                           }}
-                          className={`flex-1 text-left p-2 rounded-lg ${
+                          className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
                             l._id === currentListId
                               ? "bg-sunset text-sand"
                               : "hover:bg-sunset hover:text-pine"
@@ -317,7 +332,7 @@ export default function Sidebar({
             {/* Catalog / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
               <div className="flex justify-between items-center mb-2 text-sunset">
-                <h2 className="font-bold">Catalog</h2>
+                <h2 className="font-bold truncate">Catalog</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="p-1"

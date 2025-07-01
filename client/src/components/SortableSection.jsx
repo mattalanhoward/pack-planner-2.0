@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 
@@ -90,7 +90,7 @@ export default function SortableSection({
               <span>{category.title}</span>
             </h3>
             <span className="pr-3 text-sunset">{totalWeight} g</span>
-            <FaTrash
+            <FaTimes
               aria-label="Delete category"
               title="Delete category"
               onClick={() => onDeleteCategory(catId)}

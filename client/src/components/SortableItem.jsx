@@ -9,6 +9,7 @@ import {
   FaUtensils,
   FaTshirt,
   FaTrash,
+  FaTimes,
   FaEllipsisH,
 } from "react-icons/fa";
 
@@ -191,9 +192,9 @@ export default function SortableItem({
             aria-label="Delete item"
             data-testid="trash"
             onClick={() => onDelete(catId, item._id)}
-            className="text-red-500 hover:text-red-700 focus:outline-none"
+            className="inline-flex items-center justify-center text-ember hover:text-ember-700 focus:outline-none"
           >
-            <FaTrash />
+            <FaTimes />
           </button>
         </div>
 
@@ -355,16 +356,22 @@ export default function SortableItem({
           </div>
 
           {/* 10) Delete */}
-          <div className="justify-self-center">
+          <div className="place-self-center">
+            {" "}
             <button
               type="button"
               title="Delete item"
               aria-label="Delete item"
               data-testid="trash"
               onClick={() => onDelete(catId, item._id)}
-              className="text-red-500 hover:text-red-700 focus:outline-none"
+              className="
+                inline-flex items-center justify-center 
+                h-6 w-6 
+                text-ember hover:text-ember-700
+                focus:outline-none 
+                leading-none"
             >
-              <FaTrash />
+              <FaTimes className="w-4 h-4 align-middle" />
             </button>
           </div>
         </div>
@@ -392,9 +399,9 @@ export default function SortableItem({
               aria-label="Delete item"
               data-testid="trash"
               onClick={() => onDelete(catId, item._id)}
-              className="text-red-500 hover:text-red-700 focus:outline-none"
+              className="inline-flex items-center justify-center text-ember hover:text-ember-700 focus:outline-none"
             >
-              <FaTrash />
+              <FaTimes />
             </button>
           </div>
 

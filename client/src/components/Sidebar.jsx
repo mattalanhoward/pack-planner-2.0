@@ -6,7 +6,7 @@ import {
   FaChevronRight,
   FaPlus,
   FaEllipsisH,
-  FaTrash,
+  FaTimes,
 } from "react-icons/fa";
 import GlobalItemModal from "./GlobalItemModal";
 import GlobalItemEditModal from "./GlobalItemEditModal";
@@ -288,7 +288,7 @@ export default function Sidebar({
                           onClick={() => startEditList(l._id, l.title)}
                           className="ml-2 cursor-pointer text-sunset"
                         />
-                        <FaTrash
+                        <FaTimes
                           onClick={() => handleDeleteListClick(l._id)}
                           className="ml-2 cursor-pointer text-ember"
                         />

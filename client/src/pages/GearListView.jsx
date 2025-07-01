@@ -662,9 +662,8 @@ export default function GearListView({
       </DndContextWrapper>
       <ConfirmDialog
         isOpen={confirmOpen}
-        title="Delete this item?"
-        message="This action cannot be undone."
-        confirmText="Yes, delete"
+        title="Remove this item?"
+        confirmText="Yes, remove"
         cancelText="Cancel"
         onConfirm={actuallyDeleteItem}
         onCancel={cancelDelete}
@@ -672,7 +671,7 @@ export default function GearListView({
       <ConfirmDialog
         isOpen={confirmCatOpen}
         title="Delete this category?"
-        message="Deleting a category will remove all its items. Proceed?"
+        message="Deleting a category will remove all its items."
         confirmText="Yes, delete"
         cancelText="Cancel"
         onConfirm={actuallyDeleteCat}

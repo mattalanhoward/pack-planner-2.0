@@ -5,7 +5,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { FaGripVertical, FaTrash, FaPlus } from "react-icons/fa";
+import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useScrollPreserver } from "../hooks/useScrollPreserver";
@@ -77,7 +77,7 @@ export default function SortableColumn({
               {category.title}
             </h3>
             <span className="pr-3 text-sunset">{totalWeight} g</span>
-            <FaTrash
+            <FaTimes
               onClick={() => onDeleteCategory(catId)}
               className="cursor-pointer text-ember"
             />

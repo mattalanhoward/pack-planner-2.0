@@ -272,9 +272,9 @@ export default function Sidebar({
                 <button
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 px-4 bg-sunset text-pine rounded-lg shadow hover:bg-sunset/80"
+                  className="ml-2 p-1 text-sunset hover:text-sunset/80"
                 >
-                  Create
+                  <FaPlus />
                 </button>
               </div>
 

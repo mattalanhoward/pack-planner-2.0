@@ -54,7 +54,7 @@ export default function SortableSection({
       style={style}
       className="bg-teal/60 rounded-lg p-4 mb-6"
     >
-      <div className="flex items-center mb-3">
+      <div className="flex items-center mb-3 min-w-0">
         <FaGripVertical
           {...attributes}
           {...listeners}
@@ -85,16 +85,18 @@ export default function SortableSection({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
+              className="flex-1 min-w-0 truncate text-sunset cursor-text pr-2"
             >
               <span>{category.title}</span>
             </h3>
-            <span className="pr-3 text-sunset">{totalWeight} g</span>
+            <span className="flex-shrink-0 pr-3 text-sunset">
+              {totalWeight} g
+            </span>
             <FaTimes
               aria-label="Delete category"
               title="Delete category"
               onClick={() => onDeleteCategory(catId)}
-              className="cursor-pointer text-ember"
+              className="flex-shrink-0 cursor-pointer text-ember"
             />
           </>
         )}

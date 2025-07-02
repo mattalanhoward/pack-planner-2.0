@@ -6,6 +6,7 @@ import {
   FaTshirt,
   FaTrash,
   FaEllipsisH,
+  FaTimes,
 } from "react-icons/fa";
 
 export default function PreviewCard({ item, viewMode, isPreview }) {
@@ -25,33 +26,46 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
           style={ghostStyles}
           className="bg-sand px-3 py-2 rounded shadow mb-2 flex flex-col sm:hidden"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between space-x-2">
             <div className="cursor-grab">
               <FaGripVertical />
             </div>
-            <div className="font-semibold text-gray-800 truncate mx-2 flex-1">
+            <div className="font-semibold text-gray-800 truncate flex-1">
               {item.itemType || "—"}
             </div>
             <div className="truncate text-sm text-gray-700 flex-1">
               {item.brand && <span className="mr-1">{item.brand}</span>}
               {item.name}
             </div>
+            {/* DELETE button: same classes as SortableItem */}
+            <button
+              type="button"
+              className="inline-flex items-center justify-center h-6 w-6 text-ember hover:text-ember/80 focus:outline-none"
+            >
+              <FaTimes className="w-4 h-4" />
+            </button>
           </div>
           <div className="flex items-center justify-between mt-2 space-x-2 text-sm">
             <span className="text-gray-600">
-              {item.weight != null ? `${item.weight}g` : ""}
+              {item.weight ? `${item.weight}g` : ""}
             </span>
             <FaUtensils
-              className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
+              className={item.consumable ? "text-green-600" : "opacity-30"}
             />
-            <FaTshirt
-              className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
-            />
+            <FaTshirt className={item.worn ? "text-blue-600" : "opacity-30"} />
             <span className="text-gray-600">
-              {item.price != null ? `€${item.price}` : ""}
+              {item.price ? `€${item.price}` : ""}
             </span>
-            <span className="border rounded p-1 bg-sand">{item.quantity}</span>
-            <FaTrash className="text-red-500 hover:text-red-700" />
+            <span className="border rounded px-2 py-0.5 bg-sand">
+              {item.quantity}
+            </span>
+            {/* ELLIPSIS in second row */}
+            <a
+              href="#"
+              className="inline-flex items-center justify-center h-6 w-6 text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <FaEllipsisH className="w-4 h-4" />
+            </a>
           </div>
         </div>
 
@@ -62,7 +76,7 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
     hidden sm:grid
     bg-sand px-3 py-2 rounded shadow mb-2
     items-center gap-x-2 text-sm
-    grid-cols-[32px,96px,1fr,48px,32px,32px,48px,32px,32px,32px]
+    grid-cols-[32px,96px,1fr,32px,32px,32px,32px,32px,32px,32px]
   "
         >
           {/* 1) Drag handle */}
@@ -99,7 +113,7 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
           </div>
 
           {/* 7) Quantity (56px) */}
-          <div className="text-center justify-self-center">
+          <div className="justify-self-center">
             <span className="border rounded px-2 py-0.5 bg-sand">
               {item.quantity}
             </span>
@@ -122,8 +136,13 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
           </div>
 
           {/* 10) Delete (32px) */}
-          <div className="justify-self-center">
-            <FaTrash className="text-red-500 hover:text-red-700 cursor-pointer" />
+          <div className="place-self-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center h-6 w-6 text-ember hover:text-ember/80 focus:outline-none"
+            >
+              <FaTimes className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </>
@@ -132,40 +151,96 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
 
   // ─────────── COLUMN MODE PREVIEW ───────────
   return (
-    <div
-      style={ghostStyles}
-      className="bg-sand px-3 py-1 rounded shadow mb-2 flex flex-col"
-    >
-      <div className="flex items-center mb-1">
-        <FaGripVertical className="mr-2 cursor-grab text-gray-500" />
-        <div className="text-base font-semibold text-gray-800">
-          {item.itemType || "—"}
+    <>
+      {/* Mobile fallback (optional) */}
+      <div
+        style={ghostStyles}
+        className="bg-sand px-3 py-2 rounded shadow mb-2 flex flex-col sm:hidden"
+      >
+        {/* you can reuse your existing mobile layout here if you want */}
+      </div>
+
+      {/* Desktop – exactly the 3-row grid from SortableItem */}
+      <div
+        style={ghostStyles}
+        className="hidden sm:grid bg-sand px-2 rounded shadow mb-2 grid-rows-[auto_auto_auto]"
+      >
+        {/* Row 1: Drag handle – Type – Delete */}
+        <div className="grid grid-cols-[auto_1fr_auto] items-center">
+          <div className="cursor-grab hide-on-touch">
+            <FaGripVertical />
+          </div>
+          <div className="text-base font-semibold text-gray-800 px-2">
+            {item.itemType || "—"}
+          </div>
+          <button
+            type="button"
+            title="Delete item"
+            aria-label="Delete item"
+            className="inline-flex items-center justify-center h-6 w-6 text-ember hover:text-ember/80 focus:outline-none"
+            onClick={() => {
+              /* you may need to forward onDelete here */
+            }}
+          >
+            <FaTimes className="w-4 h-4" />
+          </button>
         </div>
-      </div>
 
-      <div className="text-sm text-gray-700 mb-1">
-        {item.brand && <span className="mr-1">{item.brand}</span>}
-        {item.name}
-      </div>
-
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600">
-          {item.weight != null ? `${item.weight}g` : ""}
-        </span>
-        <div className="flex items-center space-x-3">
-          <FaUtensils
-            className={`${item.consumable ? "text-green-600" : "opacity-30"}`}
-          />
-          <FaTshirt
-            className={`${item.worn ? "text-blue-600" : "opacity-30"}`}
-          />
-          {item.price != null && (
-            <span className="text-gray-600">€{item.price}</span>
+        {/* Row 2: Brand – Name */}
+        <div className="grid grid-cols-[auto_1fr] items-center">
+          {item.link ? (
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block w-full font-medium text-sm text-gray-700 mr-1"
+            >
+              {item.brand}
+            </a>
+          ) : (
+            <span className="font-medium text-sm text-gray-700 mr-1">
+              {item.brand}
+            </span>
           )}
-          <span className="border rounded p-1 bg-sand">{item.quantity}</span>
-          <FaTrash className="hover:text-red-700 text-red-500" />
+          <div className="truncate text-sm text-gray-700">{item.name}</div>
+        </div>
+
+        {/* Row 3: Weight·Price (left) — Utensils·Worn·Qty·Ellipsis (right) */}
+        <div className="grid grid-cols-[1fr_auto] items-center">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm text-gray-600">
+              {item.weight != null ? `${item.weight}g` : ""}
+            </span>
+            {item.price != null && (
+              <span className="text-sm text-gray-600">€{item.price}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-[16px_16px_auto_16px] items-center justify-end gap-x-3">
+            <FaUtensils
+              title="Toggle consumable"
+              className={`cursor-pointer ${
+                item.consumable ? "text-green-600" : "opacity-30"
+              }`}
+            />
+            <FaTshirt
+              title="Toggle worn"
+              className={`cursor-pointer ${
+                item.worn ? "text-blue-600" : "opacity-30"
+              }`}
+            />
+            <span className="flex items-center justify-center border rounded px-2 py-0.5 bg-sand text-sm">
+              {item.quantity}
+            </span>
+            <a
+              href="#"
+              title="See details"
+              className="inline-flex items-center justify-center h-6 w-6 text-gray-500 hover:text-gray-700 focus:outline-none"
+            >
+              <FaEllipsisH className="w-4 h-4" />
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -72,14 +72,16 @@ export default function SortableColumn({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
+              className="flex-1 min-w-0 truncate text-sunset cursor-text pr-2"
             >
               {category.title}
             </h3>
-            <span className="pr-3 text-sunset">{totalWeight} g</span>
+            <span className="pr-3 text-sunset flex-shrink-0">
+              {totalWeight} g
+            </span>
             <FaTimes
               onClick={() => onDeleteCategory(catId)}
-              className="cursor-pointer text-ember"
+              className="cursor-pointer text-ember flex-shrink-0"
             />
           </>
         )}

@@ -72,14 +72,16 @@ export default function SortableColumn({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className="flex-1 text-sunset cursor-text flex items-baseline justify-between pr-4"
+              className="flex-1 min-w-0 truncate text-sunset cursor-text pr-2"
             >
               {category.title}
             </h3>
-            <span className="pr-3 text-sunset">{totalWeight} g</span>
+            <span className="pr-3 text-sunset flex-shrink-0">
+              {totalWeight} g
+            </span>
             <FaTimes
               onClick={() => onDeleteCategory(catId)}
-              className="cursor-pointer text-ember"
+              className="cursor-pointer text-ember flex-shrink-0"
             />
           </>
         )}
@@ -109,7 +111,7 @@ export default function SortableColumn({
 
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
+        className="h-10 p-2 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

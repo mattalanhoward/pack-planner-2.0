@@ -8,7 +8,6 @@ import {
   FaGripVertical,
   FaUtensils,
   FaTshirt,
-  FaTrash,
   FaTimes,
   FaEllipsisH,
 } from "react-icons/fa";

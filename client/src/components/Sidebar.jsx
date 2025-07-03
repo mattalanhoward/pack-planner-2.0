@@ -197,7 +197,7 @@ export default function Sidebar({
   const widthClass = collapsed ? "w-5" : "w-full sm:w-80";
   const overlay = !collapsed
     ? // on mobile: take it out of the flow and cover
-      "fixed top-16 left-0 right-0 bottom-0 z-50 \
+      "fixed top-12 left-0 right-0 bottom-0 z-50 \
       sm:static sm:inset-auto sm:z-auto"
     : // when collapsed (or on desktop) nothing special
       "";
@@ -218,7 +218,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed((c) => !c)}
           className={
-            `absolute top-4 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
+            `absolute top-3 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
             (collapsed ? "right-0 translate-x-1/2" : "right-4")
           }
         >

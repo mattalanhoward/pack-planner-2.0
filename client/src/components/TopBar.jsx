@@ -1,12 +1,13 @@
 // src/components/TopBar.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { FaStar, FaSignOutAlt, FaToggleOff, FaToggleOn } from "react-icons/fa";
 import logo from "../assets/logo.png";
 
 export default function TopBar({ title, viewMode, setViewMode }) {
   const { logout } = useAuth();
-
+  const navigate = useNavigate();
   function ViewToggle({ viewMode, setViewMode }) {
     return (
       <button
@@ -28,7 +29,7 @@ export default function TopBar({ title, viewMode, setViewMode }) {
   }
 
   return (
-    <header className="bg-sand/50 flex-shrink-0 sticky top-0 z-20 flex items-center justify-between px-6 py-4 shadow">
+    <header className="bg-sand/50 flex-shrink-0 sticky top-0 z-20 flex items-center justify-between px-6 py-2 shadow">
       {/* Left side: logo, title, star */}
       <div className="flex items-center space-x-2">
         <img src={logo} alt="PackPlanner" className="h-8 w-auto" />
@@ -38,7 +39,10 @@ export default function TopBar({ title, viewMode, setViewMode }) {
       <div className="flex items-center space-x-4">
         <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
         <button
-          onClick={logout}
+          onClick={async () => {
+            await logout();
+            navigate("/login");
+          }}
           className="text-sm text-gray-600 hover:text-gray-800"
         >
           <FaSignOutAlt className="inline mr-1" />

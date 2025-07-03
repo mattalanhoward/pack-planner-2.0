@@ -3,6 +3,10 @@ const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
+    refreshTokens: {
+      type: [String],
+      default: [],
+    },
     email: {
       type: String,
       required: true,

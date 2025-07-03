@@ -3,7 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-
+const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/auth");
 const gearListRoutes = require("./routes/gearLists");
 const authMiddleware = require("./middleware/auth");
@@ -33,14 +33,20 @@ app.use(
   })
 );
 
+app.use(cookieParser());
+
 app.use(express.json());
 
 // Mount routers — each must be a function (router)
 app.use("/api/auth", authRoutes);
-app.use("/api/lists", gearListRoutes);
-app.use("/api/lists/:listId/categories", categoriesRoutes);
-app.use("/api/lists/:listId/categories/:catId/items", gearItemRoutes);
-app.use("/api/global/items", globalItemsRoutes);
+app.use("/api/lists", authMiddleware, gearListRoutes);
+app.use("/api/lists/:listId/categories", authMiddleware, categoriesRoutes);
+app.use(
+  "/api/lists/:listId/categories/:catId/items",
+  authMiddleware,
+  gearItemRoutes
+);
+app.use("/api/global/items", authMiddleware, globalItemsRoutes);
 app.use((err, req, res, next) => {
   console.error("🔴 Unhandled server error:", err.stack || err);
   res.status(500).json({ message: "Something went wrong." });

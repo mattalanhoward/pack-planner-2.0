@@ -26,10 +26,6 @@ export default function Sidebar({
   const [editingId, setEditingId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
 
-  // global catalog items & search
-  const [items, setItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingGlobalItem, setEditingGlobalItem] = useState(null);
 
@@ -37,11 +33,22 @@ export default function Sidebar({
   const [confirmListOpen, setConfirmListOpen] = useState(false);
   const [pendingDeleteListId, setPendingDeleteListId] = useState(null);
 
-  // ─── fetch catalog items ───
-  const fetchGlobalItems = async () => {
+  // global catalog items & debounced search
+  const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+
+  // 1) update debouncedSearch 300 ms after user stops typing
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchQuery), 1000);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // 2) fetch whenever debouncedSearch changes
+  const fetchGlobalItems = async (query) => {
     try {
       const { data } = await api.get("/global/items", {
-        params: { search: searchQuery },
+        params: { search: query },
       });
       setItems(data);
     } catch (err) {
@@ -50,8 +57,8 @@ export default function Sidebar({
   };
 
   useEffect(() => {
-    fetchGlobalItems();
-  }, [searchQuery]);
+    fetchGlobalItems(debouncedSearch);
+  }, [debouncedSearch]);
 
   // ─── Auto‐select first list if none is selected ───
   useEffect(() => {
@@ -240,6 +247,7 @@ export default function Sidebar({
                   onChange={(e) => setNewListTitle(e.target.value)}
                 />
                 <button
+                  aria-label="Create list"
                   onClick={createList}
                   disabled={!newListTitle.trim()}
                   className="ml-2 p-1 text-sunset hover:text-sunset/80"

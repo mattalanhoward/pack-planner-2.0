@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import GearListView from "./pages/GearListView";
 import SharedView from "./pages/SharedView";
 import Landing from "./pages/Landing";
+import SettingsPage from "./pages/SettingsPage";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <PrivateRoute>
+            <SettingsPage />
           </PrivateRoute>
         }
       />

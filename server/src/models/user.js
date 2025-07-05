@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
     verifyEmailExpires: Date,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    viewMode: { type: String, enum: ["grid", "list"], default: "grid" },
+    timezone: { type: String, default: "UTC" },
+    locale: { type: String, default: "en-US" },
+    currency: { type: String, default: "USD" },
+    theme: { type: String, default: "desert" },
   },
   {
     timestamps: true,

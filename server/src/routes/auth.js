@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const cookieParser = require("cookie-parser");
 const User = require("../models/user");
-
+const { promisify } = require("util");
 const router = express.Router();
 router.use(cookieParser());
 
@@ -65,7 +65,37 @@ async function sendTokenResponse(res, user, { accessToken, refreshToken }) {
   res.cookie("refreshToken", refreshToken, COOKIE_OPTS).json({ accessToken });
 }
 
+// middleware to verify JWT on the Authorization header
+async function authenticate(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Missing or malformed token." });
+  }
+  const token = auth.split(" ")[1];
+  try {
+    // verify returns the payload { userId, email, iat, exp }
+    const payload = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    // attach userId to req for downstream handlers
+    req.userId = payload.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
+}
+
 // --- Routes ---
+
+// GET /auth/me — returns the current user’s public profile
+router.get("/me", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("email trailname"); // pick only the fields you want to expose
+    if (!user) return res.status(404).json({ message: "User not found." });
+    res.json({ user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Could not retrieve user." });
+  }
+});
 
 // Forgot password
 router.post("/forgot-password", async (req, res) => {
@@ -216,3 +246,4 @@ router.post("/logout", async (req, res) => {
 });
 
 module.exports = router;
+module.exports.authenticate = authenticate;

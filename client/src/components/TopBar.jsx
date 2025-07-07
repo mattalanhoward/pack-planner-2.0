@@ -1,17 +1,17 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { FaSignOutAlt, FaCheck } from "react-icons/fa";
 import logo from "../assets/logo.png";
-import api from "../services/api";
 import ViewToggle from "./ViewToggle";
+import { useUserSettings } from "../contexts/UserSettings";
 
 const themes = [
   { name: "forest", label: "Forest", color: "#163A28" },
   { name: "snow", label: "Snow", color: "#f0f4f8" },
   { name: "alpine", label: "Alpine", color: "#172b4d" },
-  { name: "ocean", label: "Ocean", color: "#1e3a8a" },
+  // { name: "ocean", label: "Ocean", color: "#1e3a8a" },
   { name: "desert", label: "Desert", color: "#E0B251" }, // default
   { name: "light", label: "Light", color: "#ffffff" },
   { name: "dark", label: "Dark", color: "#0f172a" },
@@ -19,33 +19,22 @@ const themes = [
 
 export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useUserSettings();
   const navigate = useNavigate();
-  // Track currently selected theme in component state
-  const [selectedTheme, setSelectedTheme] = useState(user?.theme || "desert");
-  const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const currentLabel = themes.find((t) => t.name === theme)?.label;
 
   if (!user) return null;
 
-  const handleThemeChange = async (theme) => {
-    try {
-      await api.patch("/settings", { theme });
-      setSelectedTheme(theme);
-      setIsThemeOpen(false);
-      // Switch the DaisyUI theme for the whole app:
-      document.documentElement.setAttribute("data-theme", theme);
-    } catch (err) {
-      console.error(err);
-    }
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    // you’ve already wired up server & localStorage in the provider
   };
 
   const initial =
     user.trailname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-white border-b">
-      <div className="bg-pine text-sand p-4">Theming test!</div>
-      <button className="btn btn-primary">Test Button</button>
-
+    <header className="flex items-center justify-between px-4 py-2 bg-neutral border-b">
       <div className="flex items-center space-x-3">
         <img src={logo} alt="Logo" className="h-8" />
         <h1 className="text-xl font-semibold">{title}</h1>
@@ -101,7 +90,8 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               {/* Theme: hover submenu using CSS */}
               <div className="relative group">
                 <div className="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                  Default Theme ({selectedTheme})<span className="ml-2">▶</span>
+                  Default Theme: {currentLabel}
+                  <span className="ml-2">▶</span>
                 </div>
                 <div className="absolute right-full top-0 mt-0 -mr-1 w-40 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 z-50 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto">
                   {themes.map((themeObj) => (
@@ -109,7 +99,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
                       key={themeObj.name}
                       onClick={() => handleThemeChange(themeObj.name)}
                       className={`flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${
-                        themeObj.name === selectedTheme
+                        themeObj.name === theme
                           ? "bg-gray-100 font-semibold"
                           : ""
                       }`}
@@ -119,8 +109,8 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
                         style={{ backgroundColor: themeObj.color }}
                       />
                       {themeObj.label}
-                      {themeObj.name === selectedTheme && (
-                        <FaCheck className="ml-auto text-emerald-500" />
+                      {themeObj.name === theme && (
+                        <FaCheck className="ml-auto text-primary-500" />
                       )}
                     </button>
                   ))}

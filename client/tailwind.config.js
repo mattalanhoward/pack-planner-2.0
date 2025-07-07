@@ -1,17 +1,29 @@
-/** @type {import('tailwindcss').Config} */
-import daisyui from "daisyui";
+function withOpacity(variableName) {
+  return ({ opacityVariable, opacityValue }) => {
+    if (opacityValue !== undefined) {
+      return `rgba(var(${variableName}), ${opacityValue})`;
+    }
+    if (opacityVariable !== undefined) {
+      return `rgba(var(${variableName}), var(${opacityVariable}, 1))`;
+    }
+    return `rgb(var(${variableName}))`;
+  };
+}
 
+// tailwind.config.js
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./index.html"],
+
   theme: {
     extend: {
-      // Generic color tokens (placeholder names, you can rename later)
       colors: {
-        pine: "#163A28", // forest primary
-        teal: "#172b4d", // alpine primary
-        sand: "#fdf7e4", // desert background
-        sunset: "#E0B251", // desert accent
-        ember: "#E76F51", // alpine accent
+        primary: withOpacity("--color-primary-rgb"),
+        secondary: withOpacity("--color-secondary-rgb"),
+        secondaryAlt: withOpacity("--color-secondaryAlt-rgb"),
+        accent: withOpacity("--color-accent-rgb"),
+        neutral: withOpacity("--color-neutral-rgb"),
+        error: withOpacity("--color-error-rgb"),
+        "base-100": withOpacity("--color-base-100-rgb"),
       },
       height: {
         "d-screen": "100dvh",
@@ -19,43 +31,5 @@ export default {
       },
     },
   },
-  plugins: [daisyui],
-  daisyui: {
-    themes: [
-      // Forest theme
-      {
-        forest: {
-          pine: "#283618",
-          teal: "#606c38",
-          sand: "#fefae0",
-          sunset: "#dda15e",
-          ember: "#bc6c25",
-        },
-      },
-      // Desert theme
-      {
-        desert: {
-          pine: "#163A28",
-          teal: "#172b4d",
-          sand: "#fdf7e4",
-          sunset: "#E0B251",
-          ember: "#E76F51",
-        },
-      },
-      // Alpine theme
-      {
-        alpine: {
-          pine: "#445E3B",
-          teal: "#445E3B",
-          sand: "#FFFFFF",
-          sunset: "#BC8353",
-          ember: "#E76F51",
-        },
-      },
-      // Include some built-in themes for testing
-      "light",
-      "dark",
-      "cupcake",
-    ],
-  },
+  plugins: [],
 };

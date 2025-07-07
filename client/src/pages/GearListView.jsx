@@ -481,7 +481,7 @@ export default function GearListView({
         }
       >
         <div className="flex items-center space-x-4">
-          <h2 className="hide-on-touch text-xl text-sunset">{list.title}</h2>
+          <h2 className="hide-on-touch text-xl text-base-100">{list.title}</h2>
           <PackStats
             base={stats.baseWeight}
             worn={stats.wornWeight}
@@ -493,7 +493,7 @@ export default function GearListView({
         {/* make the link a flex container too */}
         <a
           href="#"
-          className="inline-flex items-center justify-center text-l text-sunset hover:text-sunset-dark leading-none"
+          className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
           aria-label="More options"
         >
           <FaEllipsisH />
@@ -578,7 +578,7 @@ export default function GearListView({
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="New category (Enter to save, Escape to cancel)"
-                  className="w-full p-2 border-b-2 border-sunset focus:outline-none bg-sand text-pine rounded"
+                  className="w-full p-2 border-b-2 border-accent focus:outline-none bg-neutral text-primary rounded"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") confirmAddCat();
                     if (e.key === "Escape") cancelAddCat();
@@ -591,7 +591,7 @@ export default function GearListView({
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
+                  className="h-12 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
                 >
                   <FaPlus />
                   <span className="text-xs">New Category</span>
@@ -636,7 +636,7 @@ export default function GearListView({
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
                     placeholder="New category (Enter to save, Escape to cancel)"
-                    className="w-full p-2 border-b-2 border-sunset focus:outline-none bg-sand text-pine rounded"
+                    className="w-full p-2 border-b-2 border-accent focus:outline-none bg-neutral text-primary rounded"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") confirmAddCat();
                       if (e.key === "Escape") cancelAddCat();
@@ -650,7 +650,7 @@ export default function GearListView({
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="h-12 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90 h-12 p-3 w-full border rounded flex items-center justify-center"
+                  className="h-12 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
                 >
                   <FaPlus />
                   <span className="text-xs">New Category</span>

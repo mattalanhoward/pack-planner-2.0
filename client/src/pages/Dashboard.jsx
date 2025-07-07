@@ -121,7 +121,7 @@ export default function Dashboard() {
     return null;
   }
   return (
-    <div className="flex flex-col h-d-screen overflow-hidden bg-sand/50 text-pine">
+    <div className="flex flex-col h-d-screen overflow-hidden bg-neutral/50 text-primary">
       <TopBar
         title="PackPlanner"
         viewMode={viewMode}
@@ -157,7 +157,7 @@ export default function Dashboard() {
               items={fullData.items}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-pine text-lg">
+            <div className="h-full flex items-center justify-center text-primary text-lg">
               Create a gear list to begin.
             </div>
           )}

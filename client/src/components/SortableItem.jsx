@@ -135,7 +135,7 @@ export default function SortableItem({
         <input
           type="number"
           min="1"
-          className="w-12 text-center border rounded p-1 bg-sand"
+          className="w-12 text-center border rounded p-1 bg-neutral"
           value={value}
           autoFocus
           onChange={(e) => setValue(e.target.value)}
@@ -165,7 +165,7 @@ export default function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-sand px-3 sm:px-1 py-2 rounded shadow mb-2"
+      className="bg-base-100 px-3 sm:px-1 py-2 rounded shadow mb-2"
     >
       {/* MOBILE LIST MODE AND COLUMN MODE: TWO ROWS */}
       <div className="sm:hidden grid grid-rows-[auto_auto] gap-y-1 gap-x-2 text-sm">
@@ -173,10 +173,10 @@ export default function SortableItem({
         <div className="row-start-1 col-span-2 flex items-center justify-between space-x-2 overflow-hidden">
           {/* Left side: type + brand/name */}
           <div className="flex items-center space-x-1 overflow-hidden">
-            <div className="font-semibold text-gray-800 flex-shrink-0">
+            <div className="font-semibold text-primary flex-shrink-0">
               {item.itemType || "—"}
             </div>
-            <div className="truncate text-gray-700 flex-1 overflow-hidden">
+            <div className="truncate text-primary flex-1 overflow-hidden">
               <>
                 {item.brand && <span className="mr-1">{item.brand}</span>}
                 {item.name}
@@ -191,14 +191,14 @@ export default function SortableItem({
             aria-label="Delete item"
             data-testid="trash"
             onClick={() => onDelete(catId, item._id)}
-            className="inline-flex items-center justify-center text-ember hover:text-ember-700 focus:outline-none"
+            className="inline-flex items-center justify-center text-secondary hover:text-secondary/50 focus:outline-none"
           >
             <FaTimes />
           </button>
         </div>
 
         {/* ROW 2, COL 1: Weight & Price */}
-        <div className="row-start-2 col-start-1 flex items-center space-x-2 text-gray-600">
+        <div className="row-start-2 col-start-1 flex items-center space-x-2 text-primary">
           <span>{item.weight != null ? `${item.weight}g` : ""}</span>
           {item.price != null &&
             (item.link ? (
@@ -206,7 +206,7 @@ export default function SortableItem({
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block"
+                className="inline-block text-primary"
               >
                 €{item.price}
               </a>
@@ -242,7 +242,7 @@ export default function SortableItem({
           <a
             href="#"
             title="See details"
-            className="text-gray-500 hover:text-gray-700"
+            className="text-secondary hover:text-secondary/50"
           >
             <FaEllipsisH />
           </a>
@@ -255,7 +255,7 @@ export default function SortableItem({
         <div className="hidden sm:grid grid-cols-[32px,96px,1fr,32px,32px,32px,32px,32px,32px,32px] gap-x-2 items-center text-sm">
           {/* 1) Drag-handle */}
           <div
-            className="cursor-grab hide-on-touch justify-self-center"
+            className="cursor-grab hide-on-touch justify-self-center text-secondary"
             {...attributes}
             {...listeners}
           >
@@ -263,18 +263,18 @@ export default function SortableItem({
           </div>
 
           {/* 2) Item type */}
-          <div className="font-semibold text-gray-800 truncate">
+          <div className="font-semibold text-primary truncate">
             {item.itemType || "—"}
           </div>
 
           {/* 3) Name/link */}
-          <div className="truncate text-gray-700">
+          <div className="truncate text-primary">
             {item.link ? (
               <a
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block w-full"
+                className="inline-block w-full text-primary"
               >
                 {item.brand && <span className="mr-1">{item.brand}</span>}
                 {item.name}
@@ -288,7 +288,7 @@ export default function SortableItem({
           </div>
 
           {/* 4) Weight */}
-          <div className="text-gray-600 justify-self-end">
+          <div className="text-primary justify-self-end">
             {item.weight != null ? `${item.weight}g` : ""}
           </div>
 
@@ -327,14 +327,14 @@ export default function SortableItem({
           </div>
 
           {/* 8) Price */}
-          <div className="text-gray-600 justify-self-end">
+          <div className="text-primary justify-self-end">
             {item.price != null &&
               (item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block"
+                  className="inline-block text-primary"
                 >
                   €{item.price}
                 </a>
@@ -348,7 +348,7 @@ export default function SortableItem({
             <a
               href="#"
               title="See details"
-              className="text-gray-500 hover:text-gray-700"
+              className="text-secondary hover:text-secondary/50"
             >
               <FaEllipsisH />
             </a>
@@ -366,7 +366,7 @@ export default function SortableItem({
               className="
                 inline-flex items-center justify-center 
                 h-6 w-6 
-                text-ember hover:text-ember-700
+                text-secondary hover:text-secondary/50
                 focus:outline-none 
                 leading-none"
             >
@@ -377,19 +377,19 @@ export default function SortableItem({
       ) : (
         /* DESKTOP COLUMN MODE 3 ROWS*/
         <div
-          className="hidden sm:grid bg-sand px-2
+          className="hidden sm:grid bg-base-100 px-2
                 grid-rows-[auto_auto_auto]"
         >
           {/* Row 1: Drag - Type - Trash */}
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <div
-              className="cursor-grab hide-on-touch"
+              className="cursor-grab hide-on-touch text-secondary"
               {...attributes}
               {...listeners}
             >
               <FaGripVertical />
             </div>
-            <div className="text-base font-semibold text-gray-800 px-2">
+            <div className="font-semibold text-primary px-2">
               {item.itemType || "—"}
             </div>
             <button
@@ -398,7 +398,7 @@ export default function SortableItem({
               aria-label="Delete item"
               data-testid="trash"
               onClick={() => onDelete(catId, item._id)}
-              className="inline-flex items-center justify-center text-ember hover:text-ember-700 focus:outline-none"
+              className="inline-flex items-center justify-center text-secondary hover:text-secondary/50 focus:outline-none"
             >
               <FaTimes />
             </button>
@@ -411,25 +411,25 @@ export default function SortableItem({
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block w-full"
+                className="inline-block w-full text-primary"
               >
-                <span className="font-medium text-sm text-gray-700 mr-1">
+                <span className="font-medium text-sm text-primary mr-1">
                   {item.brand}
                 </span>
               </a>
             ) : (
-              <span className="font-medium text-sm text-gray-700 mr-1">
+              <span className="font-medium text-sm text-primary mr-1">
                 {item.brand}
               </span>
             )}
 
-            <div className="truncate text-sm text-gray-700">
+            <div className="truncate text-sm text-primary">
               {item.link ? (
                 <a
                   href={item.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block w-full"
+                  className="inline-block w-full text-primary"
                 >
                   {item.name}
                 </a>
@@ -443,7 +443,7 @@ export default function SortableItem({
           <div className="grid grid-cols-[1fr_auto] items-center">
             {/* Left group */}
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-primary">
                 {item.weight != null ? `${item.weight}g` : ""}
               </span>
               {item.price != null &&
@@ -452,12 +452,12 @@ export default function SortableItem({
                     href={item.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-gray-600"
+                    className="text-sm text-primary"
                   >
                     €{item.price}
                   </a>
                 ) : (
-                  <span className="text-sm text-gray-600">€{item.price}</span>
+                  <span className="text-sm text-primary">€{item.price}</span>
                 ))}
             </div>
             {/* Right group */}
@@ -492,7 +492,7 @@ export default function SortableItem({
               <a
                 href="#"
                 title="See details"
-                className="text-gray-500 hover:text-gray-700"
+                className="text-secondary hover:text-secondary/50"
               >
                 <FaEllipsisH />
               </a>

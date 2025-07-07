@@ -40,7 +40,7 @@ export default function CurrencyInput({ value, onChange, label }) {
   return (
     <div>
       {label && (
-        <label className="block text-sm font-medium text-pine mb-1">
+        <label className="block text-sm font-medium text-primary mb-1">
           {label}
         </label>
       )}
@@ -50,7 +50,7 @@ export default function CurrencyInput({ value, onChange, label }) {
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+        className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
         placeholder="0,00 €"
       />
     </div>

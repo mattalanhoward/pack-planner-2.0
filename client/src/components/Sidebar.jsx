@@ -214,7 +214,7 @@ export default function Sidebar({
       <div
         className={`
           relative
-          bg-teal text-sand
+          bg-neutral
           ${widthClass}
           /* never shrink smaller than w-5 (1.25rem) */
           min-w-[1.25rem]
@@ -225,7 +225,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed((c) => !c)}
           className={
-            `absolute top-3 bg-ember text-pine rounded-full p-1 shadow-lg transform ` +
+            `absolute top-3 bg-error text-primary rounded-full p-1 shadow-lg transform ` +
             (collapsed ? "right-0 translate-x-1/2" : "right-4")
           }
         >
@@ -235,13 +235,13 @@ export default function Sidebar({
         {!collapsed && (
           <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists section */}
-            <section className="flex flex-col flex-none h-1/3 p-4 border-b border-sand overflow-hidden">
-              <h2 className="font-bold mb-2 text-sunset truncate">
+            <section className="flex flex-col flex-none h-1/3 p-4 border-b border-base-100 overflow-hidden">
+              <h2 className="font-bold mb-2 text-secondary truncate">
                 Gear Lists
               </h2>
               <div className="flex mb-3">
                 <input
-                  className="flex-1 rounded-lg p-2 bg-sand text-pine border-pine"
+                  className="flex-1 rounded-lg p-2 bg-base-100 text-primary border-primary"
                   placeholder="New list"
                   value={newListTitle}
                   onChange={(e) => setNewListTitle(e.target.value)}
@@ -250,18 +250,18 @@ export default function Sidebar({
                   aria-label="Create list"
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 p-1 text-sunset hover:text-sunset/80"
+                  className="ml-2 p-1 text-secondary hover:text-secondary/80"
                 >
                   <FaPlus />
                 </button>
               </div>
 
-              <ul className="overflow-y-auto flex-1 space-y-1">
+              <ul className="overflow-y-auto flex-1 space-y-1 text-secondary">
                 {sortedLists.map((l) => (
                   <li key={l._id} className="flex items-center">
                     {editingId === l._id ? (
                       <input
-                        className="flex-1 rounded-lg p-2 text-pine border border-pine"
+                        className="flex-1 rounded-lg p-2 text-primary border border-primary"
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
                         onBlur={() => saveEditList(l._id)}
@@ -286,19 +286,19 @@ export default function Sidebar({
                           }}
                           className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
                             l._id === currentListId
-                              ? "bg-sunset text-sand"
-                              : "hover:bg-sunset hover:text-pine"
+                              ? "bg-secondary text-base-100"
+                              : "hover:bg-secondary hover:text-primary"
                           }`}
                         >
                           {l.title}
                         </button>
                         <FaEllipsisH
                           onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-sunset"
+                          className="ml-2 cursor-pointer text-accent"
                         />
                         <FaTimes
                           onClick={() => handleDeleteListClick(l._id)}
-                          className="ml-2 cursor-pointer text-ember"
+                          className="ml-2 cursor-pointer text-error"
                         />
                       </>
                     )}
@@ -309,7 +309,7 @@ export default function Sidebar({
 
             {/* Catalog / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
-              <div className="flex justify-between items-center mb-2 text-sunset">
+              <div className="flex justify-between items-center mb-2 text-secondary">
                 <h2 className="font-bold truncate">Catalog</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -320,7 +320,7 @@ export default function Sidebar({
                 </button>
               </div>
               <input
-                className="w-full rounded-lg p-2 bg-sand text-pine border border-pine mb-3"
+                className="w-full rounded-lg p-2 bg-base-100 text-primary border border-primary mb-3"
                 placeholder="Search catalog"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -330,16 +330,16 @@ export default function Sidebar({
                 {filteredAndSortedItems.map((item) => (
                   <li
                     key={item._id}
-                    className="flex items-center p-2 bg-sand/10 rounded-lg hover:bg-sand/20"
+                    className="flex items-center p-2 bg-base-100/10 rounded-lg hover:bg-base-100/20"
                   >
-                    <span className="flex-1 truncate text-sand">
+                    <span className="flex-1 truncate text-base-100">
                       {item.itemType} – {item.name}
                     </span>
                     <div className="flex items-center space-x-2 ml-4">
                       <button
                         onClick={() => setEditingGlobalItem(item)}
                         title="Edit global template"
-                        className="hover:text-sand/80 text-sand rounded-lg"
+                        className="hover:text-base-100/80 text-base-100 rounded-lg"
                       >
                         <FaEllipsisH />
                       </button>
@@ -347,7 +347,7 @@ export default function Sidebar({
                   </li>
                 ))}
                 {filteredAndSortedItems.length === 0 && (
-                  <li className="text-pine/70 p-2">No catalog items</li>
+                  <li className="text-base-100/70 p-2">No catalog items</li>
                 )}
               </ul>
 

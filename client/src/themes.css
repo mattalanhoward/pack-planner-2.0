@@ -1,0 +1,120 @@
+/* src/themes.css */
+
+/* default “desert” palette */
+:root {
+  --color-primary-rgb: 22, 58, 40;
+  --color-primary-rgb: 68, 84, 111;
+  --color-secondaryAlt-rgb: 224, 178, 81;
+  --color-accent-rgb: 224, 178, 81;
+  --color-neutral-rgb: 23, 43, 77;
+  --color-error-rgb: 231, 111, 81;
+  --color-base-100-rgb: 253, 247, 228;
+}
+
+/* desert theme */
+.theme-desert {
+  --color-primary-rgb: 22, 58, 40;
+  --color-secondary-rgb: 22, 58, 40;
+  --color-secondaryAlt-rgb: 224, 178, 81;
+  --color-accent-rgb: 224, 178, 81;
+  --color-neutral-rgb: 23, 43, 77;
+  --color-error-rgb: 231, 111, 81;
+  --color-base-100-rgb: 253, 247, 228;
+}
+
+/* alpine theme */
+.theme-alpine {
+  --color-primary-rgb: 45 68 83;
+  --color-secondary-rgb: 99 129 142;
+  --color-secondaryAlt-rgb: 188 143 90; /* override Alt here too */
+  --color-accent-rgb: 188 143 90;
+  --color-neutral-rgb: 245 249 250;
+  --color-error-rgb: 231 111 81;
+  --color-base-100-rgb: 245 249 250;
+}
+
+/* forest theme */
+.theme-forest {
+  --color-primary-rgb: 34 59 34;
+  --color-secondary-rgb: 68 94 59;
+  --color-secondaryAlt-rgb: 186 139 75;
+  --color-accent-rgb: 186 139 75;
+  --color-neutral-rgb: 236 243 227;
+  --color-error-rgb: 231 111 81;
+  --color-base-100-rgb: 236 243 227;
+}
+
+/* snow */
+.theme-snow {
+  --color-primary-rgb: 224, 231, 239;
+  --color-secondary-rgb: 207, 216, 220;
+  --color-accent-rgb: 204, 231, 255;
+  --color-neutral-rgb: 255, 255, 255;
+  --color-error-rgb: 201, 214, 227;
+  --color-base-100-rgb: 249, 250, 251;
+}
+
+/* ocean */
+.theme-ocean {
+  --color-primary-rgb: 30, 58, 138;
+  --color-secondary-rgb: 56, 189, 248;
+  --color-accent-rgb: 96, 165, 250;
+  --color-neutral-rgb: 224, 242, 254;
+  --color-error-rgb: 239, 68, 68;
+  --color-base-100-rgb: 224, 242, 254;
+}
+
+/* theme-light */
+.theme-light {
+  --color-primary-rgb: 23, 43, 77; /* Card / Header Text */
+  --color-secondary-rgb: 68, 84, 111; /* Secondary Text */
+  --color-accent-rgb: 12, 102, 228; /* accent (blue-500) */
+  --color-neutral-rgb: 241, 242, 244; /* neutral backgrounds */
+  --color-error-rgb: 239, 68, 68; /* error (red-500) */
+  --color-base-100-rgb: 255, 255, 255; /* Category Background */
+}
+
+/* Trello Light
+rgb(241, 242, 244) Category Background 
+rgb(255, 255, 255) Card Background 
+rgb(23, 43, 77) Card Text 
+rgb(23, 43, 77) Card Header Text
+rgb(255, 255, 255) Dropdown Background 
+rgb(23, 43, 77) Dropdown Text 
+
+rgb(68, 84, 111) + icon / "Add a card"
+rgb(12, 102, 228) Blue Button 
+rgb(255, 255, 255) Blue Button Text  */
+
+/* theme-dark */
+.theme-dark {
+  --color-primary-rgb: 182, 194, 207; /* light text (gray-100) */
+  --color-secondary-rgb: 159, 173, 188; /* secondary text (gray-200) */
+  --color-accent-rgb: 56, 189, 248; /* accent (teal-400) */
+  --color-neutral-rgb: 16, 18, 4; /* neutral surfaces (slate-800) */
+  --color-error-rgb: 239, 68, 68; /* error (red-500) */
+  --color-base-100-rgb: 34, 39, 43; /* base page background (slate-900) */
+}
+
+/*Trello Dark 
+rgb(16, 18, 4) Category Background
+rgb(34, 39, 43) Card Background
+rgb(182, 194, 207) Card Text 
+rgb(182, 194, 207) Card Header Text
+rgb(40, 46, 51) Dropdown Background 
+rgb(182, 194, 207) Dropdown Text 
+rgb(87, 157, 255) Blue Button
+
+Trello Light
+rgb(241, 242, 244) Category Background 
+rgb(255, 255, 255) Card Background 
+rgb(23, 43, 77) Card Text 
+rgb(23, 43, 77) Card Header Text
+rgb(255, 255, 255) Dropdown Background 
+rgb(23, 43, 77) Dropdown Text 
+
+rgb(68, 84, 111) + icon / "Add a card"
+rgb(12, 102, 228) Blue Button 
+rgb(255, 255, 255) Blue Button Text 
+
+*/

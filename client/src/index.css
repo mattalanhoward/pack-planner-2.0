@@ -3,8 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "./App.css";
-
 /* ────────────────────────────────────────────────────────  
    Now override Tailwind’s “a { color: inherit; }” so that
    your links can actually receive their own color classes.
@@ -47,7 +45,7 @@ a {
 [data-reorderable-placeholder] {
   display: block;
   height: 2px;
-  background: var(--teal-400);
+  background: var(--secondary-400);
   margin: 0.5rem 0;
 }
 

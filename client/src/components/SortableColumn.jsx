@@ -9,6 +9,7 @@ import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useScrollPreserver } from "../hooks/useScrollPreserver";
+import { useUserSettings } from "../contexts/UserSettings";
 
 export default function SortableColumn({
   category,
@@ -41,17 +42,22 @@ export default function SortableColumn({
     useSortable({ id: `cat-${catId}` });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
+  const { theme, altTheme } = useUserSettings();
+  const isAlt = theme === altTheme;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-teal/60 rounded-lg p-3 flex flex-col self-start max-h-full"
+      className="snap-center flex-shrink-0 my-0 mx-2 w-80 sm:w-64 bg-neutral rounded-lg p-3 flex flex-col self-start max-h-full"
     >
       <div className="flex items-center mb-2">
         <FaGripVertical
           {...attributes}
           {...listeners}
-          className="hide-on-touch mr-2 cursor-grab text-sunset"
+          className={`hide-on-touch mr-2 cursor-grab ${
+            isAlt ? "text-secondaryAlt" : "text-secondary"
+          }`}
         />
         {editingCatId === catId ? (
           <input
@@ -63,7 +69,7 @@ export default function SortableColumn({
               onEditCat(localTitle);
             }}
             onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-            className="flex-1 border border-pine rounded p-1 bg-sand"
+            className="flex-1 border border-base-100 rounded p-1 bg-base-100"
           />
         ) : (
           <>
@@ -72,16 +78,27 @@ export default function SortableColumn({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className="flex-1 min-w-0 truncate text-sunset cursor-text pr-2"
+              className={
+                `flex-1 min-w-0 truncate pr-2 cursor-text ` +
+                (isAlt ? "text-secondaryAlt" : "text-secondary")
+              }
             >
               {category.title}
             </h3>
-            <span className="pr-3 text-sunset flex-shrink-0">
+            <span
+              className={
+                `pr-3 flex-shrink-0 ` +
+                (isAlt ? "text-secondaryAlt" : "text-secondary")
+              }
+            >
               {totalWeight} g
             </span>
             <FaTimes
               onClick={() => onDeleteCategory(catId)}
-              className="cursor-pointer text-ember flex-shrink-0"
+              className={
+                "cursor-pointer flex-shrink-0 " +
+                (isAlt ? "text-secondaryAlt" : "text-secondary")
+              }
             />
           </>
         )}
@@ -111,7 +128,7 @@ export default function SortableColumn({
 
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-10 p-2 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
+        className="h-10 p-2 w-full border border-base-100 rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

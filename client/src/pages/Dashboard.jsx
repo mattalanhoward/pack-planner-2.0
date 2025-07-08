@@ -32,6 +32,13 @@ export default function Dashboard() {
     }
   }, []);
 
+  // if we’re not logged in, bounce straight back to /login
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   // load lists on mount
   useEffect(() => {
     fetchLists();
@@ -39,16 +46,11 @@ export default function Dashboard() {
 
   // ─── Redirect logic ───
   useEffect(() => {
+    if (listId) return;
     // if there are no lists at all, stay on the "root" path (no listId)
-    if (lists.length === 0) {
-      navigate("/lists", { replace: true });
-      return;
-    }
+    if (lists.length === 0) return;
 
     const ids = lists.map((l) => l._id);
-
-    // 1) if URL has a valid listId, do nothing
-    if (listId && ids.includes(listId)) return;
 
     // 2) try lastListId from localStorage
     const stored = localStorage.getItem("lastListId");
@@ -119,7 +121,7 @@ export default function Dashboard() {
     return null;
   }
   return (
-    <div className="flex flex-col h-d-screen overflow-hidden bg-sand/50 text-pine">
+    <div className="flex flex-col h-d-screen overflow-hidden bg-neutral/50 text-primary">
       <TopBar
         title="PackPlanner"
         viewMode={viewMode}
@@ -155,7 +157,7 @@ export default function Dashboard() {
               items={fullData.items}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-pine text-lg">
+            <div className="h-full flex items-center justify-center text-primary text-lg">
               Create a gear list to begin.
             </div>
           )}

@@ -53,7 +53,7 @@ export default function PackStats({
       raw: total,
       label: "Total",
       items: breakdowns.total,
-      colorClass: "text-sunset",
+      colorClass: "text-accent",
     },
   ];
 

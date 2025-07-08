@@ -8,6 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
+import { useUserSettings } from "../contexts/UserSettings";
 
 // ───────────── SORTABLESECTION (LIST MODE) ─────────────
 export default function SortableSection({
@@ -48,17 +49,20 @@ export default function SortableSection({
     useSortable({ id: `cat-${catId}` });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
+  const { theme, altTheme } = useUserSettings();
+  const isAlt = theme === altTheme;
+
   return (
     <section
       ref={setNodeRef}
       style={style}
-      className="bg-teal/60 rounded-lg p-4 mb-6"
+      className="bg-neutral rounded-lg p-4 mb-6"
     >
       <div className="flex items-center mb-3 min-w-0">
         <FaGripVertical
           {...attributes}
           {...listeners}
-          className="hide-on-touch mr-2 cursor-grab text-sunset"
+          className="hide-on-touch mr-2 cursor-grab text-primaryAlt"
         />
 
         {editingCatId === catId ? (
@@ -76,7 +80,7 @@ export default function SortableSection({
                 e.currentTarget.blur();
               }
             }}
-            className="flex-1 border border-pine rounded p-1 bg-sand"
+            className="flex-1 border border-primary rounded p-1 bg-base-100"
           />
         ) : (
           <>
@@ -85,18 +89,18 @@ export default function SortableSection({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className="flex-1 min-w-0 truncate text-sunset cursor-text pr-2"
+              className="flex-1 min-w-0 truncate pr-2 cursor-text text-primaryAlt"
             >
               <span>{category.title}</span>
             </h3>
-            <span className="flex-shrink-0 pr-3 text-sunset">
+            <span className="pr-3 flex-shrink-0 text-primaryAlt">
               {totalWeight} g
             </span>
             <FaTimes
               aria-label="Delete category"
               title="Delete category"
               onClick={() => onDeleteCategory(catId)}
-              className="flex-shrink-0 cursor-pointer text-ember"
+              className="flex-shrink-0 cursor-pointer text-primaryAlt hover:text-primaryAlt/80"
             />
           </>
         )}
@@ -124,7 +128,7 @@ export default function SortableSection({
       </SortableContext>
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-10 p-3 w-full border border-teal rounded flex items-center justify-center space-x-2 bg-sand/70 text-gray-800 hover:bg-sand/90"
+        className="h-10 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

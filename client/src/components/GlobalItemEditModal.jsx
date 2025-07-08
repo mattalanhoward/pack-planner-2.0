@@ -106,57 +106,57 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSave}
-        className="bg-sand rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
+        className="bg-neutral rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-2 sm:mb-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-pine">
+          <h2 className="text-lg sm:text-xl font-semibold text-primary">
             Edit Global Item
           </h2>
         </div>
         {/* Optional error message */}
-        {error && <div className="text-ember mb-2">{error}</div>}
+        {error && <div className="text-error mb-2">{error}</div>}
         {/* Grid of fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {/* Item Type */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
               Item Type
             </label>
             <input
               name="itemType"
               value={form.itemType}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
               Name<span className="text-red-500">*</span>
             </label>
             <input
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
 
           {/* Brand */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
               Brand
             </label>
             <input
               name="brand"
               value={form.brand}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
 
@@ -174,7 +174,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           {/* Weight + Price (always side-by-side) */}
           <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
             <div className="flex-1">
-              <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+              <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
                 Weight (g)
               </label>
               <input
@@ -183,38 +183,38 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
                 min="0"
                 value={form.weight}
                 onChange={handleChange}
-                className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+              <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
                 Price (€)
               </label>
               <CurrencyInput
                 value={form.price}
                 onChange={(value) => setForm({ ...form, price: value })}
-                className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>
           </div>
 
           {/* Description (full width) */}
           <div className="sm:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-pine mb-0.5">
+            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
               Description
             </label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm"
+              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               rows={1}
             />
           </div>
         </div>
         {/* Worn / Consumable */}
         <div className="flex items-center space-x-4 mt-2">
-          <label className="inline-flex items-center text-xs sm:text-sm text-pine">
+          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
             <input
               type="checkbox"
               checked={worn}
@@ -223,7 +223,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
             Worn
           </label>
-          <label className="inline-flex items-center text-xs sm:text-sm text-pine">
+          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
             <input
               type="checkbox"
               checked={consumable}
@@ -239,7 +239,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             type="button"
             onClick={() => setDeleteConfirmOpen(true)}
             disabled={saving}
-            className="px-4 py-2 bg-ember text-sand text-sm font-semibold rounded-md shadow hover:bg-ember/80 focus:outline-none focus:ring-2 focus:ring-ember transition"
+            className="px-4 py-2 bg-error text-neutral text-sm font-semibold rounded-md shadow hover:bg-error/80 focus:outline-none focus:ring-2 focus:ring-error transition"
           >
             Delete Item
           </button>
@@ -250,14 +250,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-sand rounded hover:bg-sand/90 text-pine text-sm sm:text-base"
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutral rounded hover:bg-neutral/90 text-primary text-sm sm:text-base"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded bg-teal text-white hover:bg-teal/80"
+              className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary/80"
             >
               {saving ? "Saving…" : "Save"}
             </button>

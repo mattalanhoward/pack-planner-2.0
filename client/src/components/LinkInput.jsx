@@ -52,7 +52,7 @@ export default function LinkInput({
     <div>
       <label
         htmlFor={name}
-        className="block text-xs sm:text-sm font-medium text-pine mb-0.5"
+        className="block text-xs sm:text-sm font-medium text-primary mb-0.5"
       >
         {label}
         {required && <span className="text-red-500">*</span>}
@@ -67,12 +67,12 @@ export default function LinkInput({
         onChange={handleChange}
         onBlur={normalizeAndValidate}
         className={
-          "mt-0.5 block w-full border border-pine rounded p-2 text-pine text-sm " +
-          (error ? "border-ember" : "")
+          "mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm " +
+          (error ? "border-error" : "")
         }
       />
 
-      {error && <p className="mt-1 text-ember text-xs">{error}</p>}
+      {error && <p className="mt-1 text-error text-xs">{error}</p>}
     </div>
   );
 }

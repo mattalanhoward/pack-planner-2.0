@@ -1,36 +1,33 @@
-/** @type {import('tailwindcss').Config} */
+function withOpacity(variableName) {
+  return ({ opacityVariable, opacityValue }) => {
+    if (opacityValue !== undefined) {
+      return `rgba(var(${variableName}), ${opacityValue})`;
+    }
+    if (opacityVariable !== undefined) {
+      return `rgba(var(${variableName}), var(${opacityVariable}, 1))`;
+    }
+    return `rgb(var(${variableName}))`;
+  };
+}
+
+// tailwind.config.js
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"], // This should be fine for a standard Vite React app
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./index.html"],
+
   theme: {
-    // extend: {
-    //   colors: {
-    //     pine:   '#445E3B',
-    //     teal:   '#445E3B',
-    //     sand:   '#FFFFFF',
-    //     sunset: '#BC8353',
-    //     ember:   '#E76F51',
-    //   },
-    //   extend: {
-    // colors: {
-    //   pine:   '#283618',
-    //   teal:   '#606c38',
-    //   sand:   '#fefae0',
-    //   sunset: '#dda15e',
-    //   ember:   '#bc6c25',
-    // },
-    //
     extend: {
       colors: {
-        pine: "#163A28",
-        teal: "#172b4d",
-        sand: "#fdf7e4",
-        sunset: "#E0B251",
-        ember: "#E76F51",
+        primary: withOpacity("--color-primary-rgb"),
+        primaryAlt: withOpacity("--color-primaryAlt-rgb"),
+        secondary: withOpacity("--color-secondary-rgb"),
+        secondaryAlt: withOpacity("--color-secondaryAlt-rgb"),
+        accent: withOpacity("--color-accent-rgb"),
+        neutral: withOpacity("--color-neutral-rgb"),
+        error: withOpacity("--color-error-rgb"),
+        "base-100": withOpacity("--color-base-100-rgb"),
       },
       height: {
-        // “dynamic viewport height” → always excludes browser UI
         "d-screen": "100dvh",
-        // “small viewport height” → visible area as soon as any UI is shown
         "s-screen": "100svh",
       },
     },

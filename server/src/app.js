@@ -10,6 +10,7 @@ const authMiddleware = require("./middleware/auth");
 const categoriesRoutes = require("./routes/categories");
 const gearItemRoutes = require("./routes/gearItems");
 const globalItemsRoutes = require("./routes/globalItems");
+const settingsRouter = require("./routes/settings");
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(express.json());
 
 // Mount routers — each must be a function (router)
 app.use("/api/auth", authRoutes);
+app.use("/api/settings", settingsRouter);
 app.use("/api/lists", authMiddleware, gearListRoutes);
 app.use("/api/lists/:listId/categories", authMiddleware, categoriesRoutes);
 app.use(

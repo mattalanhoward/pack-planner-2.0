@@ -137,15 +137,17 @@ export default function AddGearItemModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-pine bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-sand rounded-xl shadow-2xl max-w-lg w-full h-[80vh] p-6 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] p-6 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-pine">Add Gear Item(s)</h2>
+          <h2 className="text-xl font-semibold text-primary">
+            Add Gear Item(s)
+          </h2>
           <button
             onClick={onClose}
             disabled={saving}
-            className="text-ember hover:text-ember/80"
+            className="text-error hover:text-error/80"
           >
             <FaTimes size={20} />
           </button>
@@ -156,9 +158,9 @@ export default function AddGearItemModal({
             placeholder="Search global items…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 border border-pine rounded p-2 text-pine placeholder:text-pine/50 bg-white"
+            className="flex-1 border border-primary rounded p-2 text-primary placeholder:text-primary/50 bg-white"
           />
-          <FaSearch className="ml-2 text-pine" size={20} />
+          <FaSearch className="ml-2 text-primary" size={20} />
         </div>
         {/* Results list */}
         <div className="flex-1 overflow-y-auto">
@@ -169,11 +171,11 @@ export default function AddGearItemModal({
                 return (
                   <li
                     key={item._id}
-                    className={`flex items-center p-2 rounded bg-white mb-1 \
+                    className={`flex items-center p-2 rounded bg-neutral/20 border border-primary/20 rounded-lg hover:bg-base-100/20 mb-1 \
                       ${
                         disabled
                           ? "opacity-50 cursor-default"
-                          : "hover:bg-pine/10 cursor-pointer"
+                          : "hover:bg-primary/10 cursor-pointer"
                       }`}
                   >
                     <input
@@ -181,7 +183,7 @@ export default function AddGearItemModal({
                       checked={selectedIds.has(item._id)}
                       onChange={() => !disabled && toggleCheckbox(item._id)}
                       disabled={disabled}
-                      className="mr-3 h-4 w-4 text-teal border-pine rounded focus:ring-teal"
+                      className="mr-3 h-4 w-4 text-secondary border-primary rounded focus:ring-secondary"
                     />
                     <div
                       className="flex-1 select-none"
@@ -189,10 +191,10 @@ export default function AddGearItemModal({
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-medium text-pine">
+                          <div className="font-medium text-primary">
                             {item.name}
                           </div>
-                          <div className="text-sm text-pine/70">
+                          <div className="text-sm text-primary">
                             {item.brand} — {item.itemType}
                           </div>
                         </div>
@@ -207,7 +209,7 @@ export default function AddGearItemModal({
                 );
               })
             ) : (
-              <li className="p-2 text-pine/70">No items found</li>
+              <li className="p-2 text-primary/80">No items found</li>
             )}
           </ul>
         </div>
@@ -216,17 +218,17 @@ export default function AddGearItemModal({
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 bg-sand text-pine rounded hover:bg-sand/90"
+            className="px-4 py-2 bg-base-100 text-primary rounded"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || selectedIds.size === 0}
-            className={`px-4 py-2 bg-teal text-white rounded flex items-center ${
+            className={`px-4 py-2 bg-primary text-base-100 rounded flex items-center ${
               saving || selectedIds.size === 0
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-teal-700"
+                : "hover:bg-primary/80"
             }`}
           >
             <FaSave className="mr-2" />

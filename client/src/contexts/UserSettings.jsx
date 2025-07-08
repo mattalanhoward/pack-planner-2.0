@@ -1,10 +1,13 @@
 // src/contexts/UserSettings.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import api from "../services/api";
+import useAuth from "../hooks/useAuth";
 
 const SettingsCtx = createContext();
 
 export function SettingsProvider({ children }) {
+  const { isAuthenticated } = useAuth();
+
   // ─── client‐side state ─────────────────────────────────────
   const [weightUnit, setWeightUnit] = useState(
     () => localStorage.getItem("weightUnit") || "g"

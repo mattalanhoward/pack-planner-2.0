@@ -1,34 +1,45 @@
-import React, { Fragment, useState, useEffect } from "react";
-import { Menu, Transition } from "@headlessui/react";
+// src/components/TopBar.jsx
+import React, { Fragment, useState } from "react";
+import { Menu, Transition, Listbox } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { FaSignOutAlt, FaCheck } from "react-icons/fa";
 import logo from "../assets/logo.png";
-import ViewToggle from "./ViewToggle";
 import { useUserSettings } from "../contexts/UserSettings";
+import AccountModal from "./AccountModal";
+import ViewToggle from "./ViewToggle";
 
 const themes = [
   { name: "forest", label: "Forest", color: "#163A28" },
   { name: "snow", label: "Snow", color: "#f0f4f8" },
   { name: "alpine", label: "Alpine", color: "#172b4d" },
-  // { name: "ocean", label: "Ocean", color: "#1e3a8a" },
   { name: "desert", label: "Desert", color: "#E0B251" }, // default
   { name: "light", label: "Light", color: "#ffffff" },
   { name: "dark", label: "Dark", color: "#0f172a" },
 ];
 
 export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useUserSettings();
+  const {
+    weightUnit,
+    setWeightUnit,
+    currency,
+    setCurrency,
+    language,
+    setLanguage,
+    region,
+    setRegion,
+    theme,
+    setTheme,
+  } = useUserSettings();
   const navigate = useNavigate();
-  const currentLabel = themes.find((t) => t.name === theme)?.label;
+
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const currentTheme = themes.find((t) => t.name === theme)?.label || theme;
 
   if (!user) return null;
-
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    // you’ve already wired up server & localStorage in the provider
-  };
 
   const initial =
     user.trailname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "?";
@@ -41,8 +52,6 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
       </div>
 
       <div className="flex items-center space-x-4">
-        <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-
         <Menu as="div" className="relative inline-block text-left">
           <Menu.Button
             className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium uppercase text-gray-700 hover:bg-gray-300 focus:outline-none"
@@ -60,66 +69,135 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className="absolute right-0 mt-2 w-56 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-              {/* ACCOUNT HEADER */}
+            <Menu.Items className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+              {/* 1) ACCOUNT */}
               <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
                 Account
               </div>
-              <div className="px-4 mb-2">
-                <p className="text-sm font-medium text-gray-900">
-                  {user.trailname}
-                </p>
-                <p className="text-sm text-gray-500">{user.email}</p>
+              <div className="px-4 pb-2 text-sm text-gray-700">
+                <div>{user.trailname}</div>
+                <div className="text-gray-500 text-xs">{user.email}</div>
               </div>
-
-              <div className="border-t border-gray-200 my-2" />
-
-              {/* Settings Link */}
               <Menu.Item
                 as="button"
-                onClick={openSettings || (() => navigate("/settings"))}
+                onClick={() => setIsAccountOpen(true)}
                 className={({ active }) =>
                   `${
                     active ? "bg-gray-100" : ""
                   } block w-full text-left px-4 py-2 text-sm text-gray-700`
                 }
               >
-                Settings
+                Manage account…
               </Menu.Item>
+              <div className="border-t border-gray-200 my-2" />
 
-              {/* Theme: hover submenu using CSS */}
-              <div className="relative group">
-                <div className="flex justify-between items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                  Default Theme: {currentLabel}
-                  <span className="ml-2">▶</span>
-                </div>
-                <div className="absolute right-full top-0 mt-0 -mr-1 w-40 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 z-50 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto">
-                  {themes.map((themeObj) => (
-                    <button
-                      key={themeObj.name}
-                      onClick={() => handleThemeChange(themeObj.name)}
-                      className={`flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${
-                        themeObj.name === theme
-                          ? "bg-gray-100 font-semibold"
-                          : ""
-                      }`}
-                    >
-                      <span
-                        className="w-3 h-3 mr-2 rounded-full"
-                        style={{ backgroundColor: themeObj.color }}
-                      />
-                      {themeObj.label}
-                      {themeObj.name === theme && (
-                        <FaCheck className="ml-auto text-primary-500" />
-                      )}
-                    </button>
+              {/* Preferences header */}
+              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                Preferences
+              </div>
+
+              {/* View mode (you probably already moved this) */}
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+                <span>View mode</span>
+                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+              </div>
+
+              {/* Theme */}
+              <div
+                className="px-4 py-2 flex items-center justify-between text-sm text-gray-700"
+                onClick={(e) => e.stopPropagation()} // prevent HeadlessUI from auto-closing
+              >
+                <span>Theme</span>
+                <select
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  className="ml-2 bg-transparent focus:outline-none"
+                >
+                  {themes.map((t) => (
+                    <option key={t.name} value={t.name}>
+                      {t.label}
+                    </option>
                   ))}
-                </div>
+                </select>
+              </div>
+
+              {/* Weight unit */}
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+                <span>Weight unit</span>
+                <select
+                  value={weightUnit}
+                  onChange={(e) => setWeightUnit(e.target.value)}
+                  className="ml-2 bg-transparent focus:outline-none"
+                >
+                  <option value="g">g</option>
+                  <option value="oz">oz</option>
+                </select>
+              </div>
+
+              {/* Currency */}
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+                <span>Currency</span>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="ml-2 bg-transparent focus:outline-none"
+                >
+                  <option value="€">€</option>
+                  <option value="$">$</option>
+                  <option value="£">£</option>
+                </select>
+              </div>
+
+              {/* Language */}
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+                <span>Language</span>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="ml-2 bg-transparent focus:outline-none"
+                >
+                  <option value="en">EN</option>
+                  <option value="de">DE</option>
+                  <option value="fr">FR</option>
+                  <option value="es">ES</option>
+                  <option value="it">IT</option>
+                  <option value="nl">NL</option>
+                </select>
+              </div>
+
+              {/* Region */}
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+                <span>Region</span>
+                <select
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                  className="ml-2 bg-transparent focus:outline-none"
+                >
+                  <option value="eu">EU</option>
+                  <option value="us">USA</option>
+                  <option value="ca">CDN</option>
+                  <option value="gb">GB</option>
+                </select>
               </div>
 
               <div className="border-t border-gray-200 my-2" />
 
-              {/* Logout */}
+              {/* 3) ABOUT */}
+              <Menu.Item
+                as="a"
+                href="/about"
+                className={({ active }) =>
+                  `${
+                    active ? "bg-gray-100" : ""
+                  } block w-full text-left px-4 py-2 text-sm text-gray-700`
+                }
+              >
+                About
+              </Menu.Item>
+
+              <div className="border-t border-gray-200 my-2" />
+
+              {/* 4) LOG OUT */}
               <Menu.Item
                 as="button"
                 onClick={async () => {
@@ -132,12 +210,15 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
                   } block w-full text-left px-4 py-2 text-sm text-gray-700`
                 }
               >
-                <FaSignOutAlt className="inline mr-2" />
                 Log out
               </Menu.Item>
             </Menu.Items>
           </Transition>
         </Menu>
+        <AccountModal
+          isOpen={isAccountOpen}
+          onClose={() => setIsAccountOpen(false)}
+        />
       </div>
     </header>
   );

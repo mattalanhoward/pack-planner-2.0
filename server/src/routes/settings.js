@@ -17,8 +17,18 @@ router.get("/", async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found." });
 
     // Pull only the fields the client needs:
-    const { email, trailname, viewMode, timezone, locale, currency, theme } =
-      user;
+    const {
+      email,
+      trailname,
+      viewMode,
+      timezone,
+      locale,
+      currency,
+      theme,
+      weightUnit,
+      language,
+      region,
+    } = user;
 
     res.json({
       email,
@@ -28,6 +38,9 @@ router.get("/", async (req, res) => {
       locale,
       currency,
       theme: theme || "desert",
+      weightUnit: weightUnit || "g",
+      language: language || "en",
+      region: region || "eu",
     });
   } catch (err) {
     console.error("GET /settings error:", err);
@@ -70,6 +83,9 @@ router.patch("/", async (req, res) => {
       "locale",
       "currency",
       "theme",
+      "weightUnit", // <-- new
+      "language", // <-- new
+      "region", // <-- new
     ];
     editable.forEach((key) => {
       if (updates[key] !== undefined) {

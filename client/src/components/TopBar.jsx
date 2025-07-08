@@ -34,7 +34,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
     user.trailname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-neutral border-b">
+    <header className="flex items-center justify-between px-4 py-2 bg-base-100 border-b">
       <div className="flex items-center space-x-3">
         <img src={logo} alt="Logo" className="h-8" />
         <h1 className="text-xl font-semibold">{title}</h1>

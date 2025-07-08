@@ -481,7 +481,9 @@ export default function GearListView({
         }
       >
         <div className="flex items-center space-x-4">
-          <h2 className="hide-on-touch text-xl text-base-100">{list.title}</h2>
+          <h2 className="hide-on-touch text-xl text-primaryAlt">
+            {list.title}
+          </h2>
           <PackStats
             base={stats.baseWeight}
             worn={stats.wornWeight}

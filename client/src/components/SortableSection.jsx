@@ -62,9 +62,7 @@ export default function SortableSection({
         <FaGripVertical
           {...attributes}
           {...listeners}
-          className={`hide-on-touch mr-2 cursor-grab ${
-            isAlt ? "text-secondaryAlt" : "text-secondary"
-          }`}
+          className="hide-on-touch mr-2 cursor-grab text-primaryAlt"
         />
 
         {editingCatId === catId ? (
@@ -91,29 +89,18 @@ export default function SortableSection({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className={
-                `flex-1 min-w-0 truncate pr-2 cursor-text ` +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
+              className="flex-1 min-w-0 truncate pr-2 cursor-text text-primaryAlt"
             >
               <span>{category.title}</span>
             </h3>
-            <span
-              className={
-                `pr-3 flex-shrink-0 ` +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
-            >
+            <span className="pr-3 flex-shrink-0 text-primaryAlt">
               {totalWeight} g
             </span>
             <FaTimes
               aria-label="Delete category"
               title="Delete category"
               onClick={() => onDeleteCategory(catId)}
-              className={
-                `flex-shrink-0 cursor-pointer ` +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
+              className="flex-shrink-0 cursor-pointer text-primaryAlt hover:text-primaryAlt/80"
             />
           </>
         )}

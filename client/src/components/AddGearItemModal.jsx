@@ -137,8 +137,8 @@ export default function AddGearItemModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-neutral rounded-xl shadow-2xl max-w-lg w-full h-[80vh] p-6 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] p-6 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-primary">
@@ -171,7 +171,7 @@ export default function AddGearItemModal({
                 return (
                   <li
                     key={item._id}
-                    className={`flex items-center p-2 rounded bg-white mb-1 \
+                    className={`flex items-center p-2 rounded bg-neutral/20 border border-primary/20 rounded-lg hover:bg-base-100/20 mb-1 \
                       ${
                         disabled
                           ? "opacity-50 cursor-default"
@@ -194,7 +194,7 @@ export default function AddGearItemModal({
                           <div className="font-medium text-primary">
                             {item.name}
                           </div>
-                          <div className="text-sm text-primary/70">
+                          <div className="text-sm text-primary">
                             {item.brand} — {item.itemType}
                           </div>
                         </div>
@@ -209,7 +209,7 @@ export default function AddGearItemModal({
                 );
               })
             ) : (
-              <li className="p-2 text-primary/70">No items found</li>
+              <li className="p-2 text-primary/80">No items found</li>
             )}
           </ul>
         </div>
@@ -218,17 +218,17 @@ export default function AddGearItemModal({
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 bg-neutral text-primary rounded hover:bg-neutral/90"
+            className="px-4 py-2 bg-base-100 text-primary rounded"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || selectedIds.size === 0}
-            className={`px-4 py-2 bg-secondary text-white rounded flex items-center ${
+            className={`px-4 py-2 bg-primary text-base-100 rounded flex items-center ${
               saving || selectedIds.size === 0
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-secondary-700"
+                : "hover:bg-primary/80"
             }`}
           >
             <FaSave className="mr-2" />

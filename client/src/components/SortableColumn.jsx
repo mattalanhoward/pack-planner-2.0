@@ -55,9 +55,7 @@ export default function SortableColumn({
         <FaGripVertical
           {...attributes}
           {...listeners}
-          className={`hide-on-touch mr-2 cursor-grab ${
-            isAlt ? "text-secondaryAlt" : "text-secondary"
-          }`}
+          className="hide-on-touch mr-2 cursor-grab text-primaryAlt"
         />
         {editingCatId === catId ? (
           <input
@@ -78,27 +76,19 @@ export default function SortableColumn({
                 setEditingCatId(catId);
                 setLocalTitle(category.title);
               }}
-              className={
-                `flex-1 min-w-0 truncate pr-2 cursor-text ` +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
+              className="flex-1 min-w-0 truncate pr-2 cursor-text text-primaryAlt"
             >
               {category.title}
             </h3>
             <span
-              className={
-                `pr-3 flex-shrink-0 ` +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
+              className="
+                pr-3 flex-shrink-0 text-primaryAlt"
             >
               {totalWeight} g
             </span>
             <FaTimes
               onClick={() => onDeleteCategory(catId)}
-              className={
-                "cursor-pointer flex-shrink-0 " +
-                (isAlt ? "text-secondaryAlt" : "text-secondary")
-              }
+              className="cursor-pointer flex-shrink-0 text-primaryAlt hover:text-primaryAlt/80"
             />
           </>
         )}

@@ -191,7 +191,7 @@ export default function SortableItem({
             aria-label="Delete item"
             data-testid="trash"
             onClick={() => onDelete(catId, item._id)}
-            className="inline-flex items-center justify-center text-secondary hover:text-secondary/50 focus:outline-none"
+            className="inline-flex items-center justify-center text-secondary hover:text-secondary/80 focus:outline-none"
           >
             <FaTimes />
           </button>
@@ -366,7 +366,7 @@ export default function SortableItem({
               className="
                 inline-flex items-center justify-center 
                 h-6 w-6 
-                text-secondary hover:text-secondary/50
+                text-secondary hover:text-secondary/80
                 focus:outline-none 
                 leading-none"
             >

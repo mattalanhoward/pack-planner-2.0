@@ -2,98 +2,110 @@
 
 /* default “desert” palette */
 :root {
-  --color-primary-rgb: 22, 58, 40;
-  --color-primary-rgb: 68, 84, 111;
-  --color-secondaryAlt-rgb: 224, 178, 81;
-  --color-accent-rgb: 224, 178, 81;
-  --color-neutral-rgb: 23, 43, 77;
-  --color-error-rgb: 231, 111, 81;
-  --color-base-100-rgb: 253, 247, 228;
+  --color-primary-rgb: 22, 58, 40; /* Forest Green: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 224, 178, 81; /* Mustard Yellow */
+  --color-secondary-rgb: 22, 58, 40; /* Forest Green: Secondary Text */
+  --color-secondaryAlt-rgb: 253, 247, 228; /* Creamy Ivory: Secondary Alternative Text */
+  --color-accent-rgb: 224, 178, 81; /* Mustard Yellow */
+  --color-neutral-rgb: 23, 43, 77; /* Midnight Navy: Blue Category BG */
+  --color-error-rgb: 231, 111, 81; /* Vibrant Coral Red: */
+  --color-base-100-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
 }
 
 /* desert theme */
 .theme-desert {
-  --color-primary-rgb: 22, 58, 40;
-  --color-secondary-rgb: 22, 58, 40;
-  --color-secondaryAlt-rgb: 224, 178, 81;
-  --color-accent-rgb: 224, 178, 81;
-  --color-neutral-rgb: 23, 43, 77;
-  --color-error-rgb: 231, 111, 81;
-  --color-base-100-rgb: 253, 247, 228;
+  --color-primary-rgb: 22, 58, 40; /* Forest Green: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 224, 178, 81; /* Mustard Yellow */
+  --color-secondary-rgb: 22, 58, 40; /* Forest Green: Secondary Text */
+  --color-secondaryAlt-rgb: 253, 247, 228; /* Creamy Ivory: Secondary Alternative Text */
+  --color-accent-rgb: 224, 178, 81; /* Mustard Yellow */
+  --color-neutral-rgb: 23, 43, 77; /* Midnight Navy: Blue Category BG */
+  --color-error-rgb: 231, 111, 81; /* Vibrant Coral Red: */
+  --color-base-100-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
 }
 
-/* alpine theme */
+/* alpine theme v4 */
 .theme-alpine {
-  --color-primary-rgb: 45 68 83;
-  --color-secondary-rgb: 99 129 142;
-  --color-secondaryAlt-rgb: 188 143 90; /* override Alt here too */
-  --color-accent-rgb: 188 143 90;
-  --color-neutral-rgb: 245 249 250;
-  --color-error-rgb: 231 111 81;
-  --color-base-100-rgb: 245 249 250;
+  --color-primary-rgb: 40, 50, 60; /* Charcoal Grey: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 40, 50, 60; /* Charcoal Grey: Same as primary */
+  --color-secondary-rgb: 100, 140, 180; /* Glacier Blue: Secondary Text */
+  --color-secondaryAlt-rgb: 100, 140, 180; /* Glacier Blue: Same as secondary */
+  --color-accent-rgb: 235, 160, 90; /* Sunrise Orange */
+  --color-neutral-rgb: 250, 252, 255; /* Soft Mist: Category BG / Topbar BG */
+  --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
+  --color-base-100-rgb: 245, 242, 238; /* Light Mist: Card Background */
 }
 
-/* forest theme */
+/* forest theme v1 */
 .theme-forest {
-  --color-primary-rgb: 34 59 34;
-  --color-secondary-rgb: 68 94 59;
-  --color-secondaryAlt-rgb: 186 139 75;
-  --color-accent-rgb: 186 139 75;
-  --color-neutral-rgb: 236 243 227;
-  --color-error-rgb: 231 111 81;
-  --color-base-100-rgb: 236 243 227;
+  --color-primary-rgb: 34, 59, 34; /* Dark Pine: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 34, 59, 34; /* Dark Pine: Same as primary */
+  --color-secondary-rgb: 107, 143, 86; /* Moss Green: Secondary Text */
+  --color-secondaryAlt-rgb: 107, 143, 86; /* Moss Green: Secondary Alternative Text */
+  --color-accent-rgb: 200, 176, 126; /* Golden Tan: Accent */
+  --color-neutral-rgb: 241, 239, 232; /* Soft Birch: Category BG / Topbar BG */
+  --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
+  --color-base-100-rgb: 230, 234, 228; /* Pale Leaf: Card Background */
 }
 
-/* snow */
+/* forest theme v2 */
+/* .theme-forest { */
+/*  --color-primary-rgb: 30, 50, 30;           Deep Fir: Card Headings / Category Header Text / Buttons */
+/*  --color-primaryAlt-rgb: 30, 50, 30;        Deep Fir: Same as primary */
+/*  --color-secondary-rgb: 90, 125, 70;        Fern Green: Secondary Text */
+/*  --color-secondaryAlt-rgb: 90, 125, 70;     Fern Green: Secondary Alternative Text */
+/*  --color-accent-rgb: 210, 180, 120;         Warm Bark: Accent */
+/*  --color-neutral-rgb: 255, 255, 255;        Pure White: Category BG / Topbar BG */
+/*  --color-error-rgb: 231, 111, 81;           Coral Red: Error */
+/*  --color-base-100-rgb: 245, 248, 244;       Misty Fog: Card Background */
+/* } */
+
+/* snow theme v5 */
 .theme-snow {
-  --color-primary-rgb: 224, 231, 239;
-  --color-secondary-rgb: 207, 216, 220;
-  --color-accent-rgb: 204, 231, 255;
-  --color-neutral-rgb: 255, 255, 255;
-  --color-error-rgb: 201, 214, 227;
-  --color-base-100-rgb: 249, 250, 251;
+  --color-primary-rgb: 45, 60, 75; /* Slate Blue: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 45, 60, 75; /* Slate Blue: Same as primary */
+  --color-secondary-rgb: 100, 115, 125; /* Mist Gray: Secondary Text */
+  --color-secondaryAlt-rgb: 100, 115, 125; /* Mist Gray: Same as secondary */
+  --color-accent-rgb: 180, 205, 255; /* Ice Blue: Accent */
+  --color-neutral-rgb: 255, 255, 255; /* Pure White: Category BG / Topbar BG */
+  --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
+  --color-base-100-rgb: 245, 248, 250; /* Soft White: Card Background */
 }
 
 /* ocean */
 .theme-ocean {
-  --color-primary-rgb: 30, 58, 138;
-  --color-secondary-rgb: 56, 189, 248;
-  --color-accent-rgb: 96, 165, 250;
-  --color-neutral-rgb: 224, 242, 254;
-  --color-error-rgb: 239, 68, 68;
-  --color-base-100-rgb: 224, 242, 254;
+  --color-primary-rgb: 30, 58, 138; /* Deep navy */
+  --color-primaryAlt-rgb: 30, 58, 138; /* Deep navy */
+  --color-secondary-rgb: 56, 189, 248; /* Bright aqua */
+  --color-secondaryAlt-rgb: 56, 189, 248; /* Bright aqua */
+  --color-accent-rgb: 96, 165, 250; /* Soft azure */
+  --color-neutral-rgb: 224, 242, 254; /* Pale blue */
+  --color-error-rgb: 239, 68, 68; /* Vivid red */
+  --color-base-100-rgb: 224, 242, 254; /* Pale blue */
 }
 
 /* theme-light */
 .theme-light {
-  --color-primary-rgb: 23, 43, 77; /* Card / Header Text */
-  --color-secondary-rgb: 68, 84, 111; /* Secondary Text */
-  --color-accent-rgb: 12, 102, 228; /* accent (blue-500) */
-  --color-neutral-rgb: 241, 242, 244; /* neutral backgrounds */
-  --color-error-rgb: 239, 68, 68; /* error (red-500) */
-  --color-base-100-rgb: 255, 255, 255; /* Category Background */
+  --color-primary-rgb: 23, 43, 77; /* Navy blue: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 23, 43, 77; /* Navy blue: Same as primary */
+  --color-secondary-rgb: 68, 84, 111; /* Steel blue: Secondary Text */
+  --color-secondaryAlt-rgb: 68, 84, 111; /* Steel blue: Same as secondary */
+  --color-accent-rgb: 12, 102, 228; /* Electric blue: accent */
+  --color-neutral-rgb: 241, 242, 244; /* Light gray: Category BG / Topbar BG */
+  --color-error-rgb: 239, 68, 68; /* Vivid red: error */
+  --color-base-100-rgb: 255, 255, 255; /* Pure white: Card Background */
 }
-
-/* Trello Light
-rgb(241, 242, 244) Category Background 
-rgb(255, 255, 255) Card Background 
-rgb(23, 43, 77) Card Text 
-rgb(23, 43, 77) Card Header Text
-rgb(255, 255, 255) Dropdown Background 
-rgb(23, 43, 77) Dropdown Text 
-
-rgb(68, 84, 111) + icon / "Add a card"
-rgb(12, 102, 228) Blue Button 
-rgb(255, 255, 255) Blue Button Text  */
 
 /* theme-dark */
 .theme-dark {
-  --color-primary-rgb: 182, 194, 207; /* light text (gray-100) */
-  --color-secondary-rgb: 159, 173, 188; /* secondary text (gray-200) */
-  --color-accent-rgb: 56, 189, 248; /* accent (teal-400) */
-  --color-neutral-rgb: 16, 18, 4; /* neutral surfaces (slate-800) */
-  --color-error-rgb: 239, 68, 68; /* error (red-500) */
-  --color-base-100-rgb: 34, 39, 43; /* base page background (slate-900) */
+  --color-primary-rgb: 182, 194, 207; /* Dusty blue: Card Headings / Category Header Text / Buttons */
+  --color-primaryAlt-rgb: 182, 194, 207; /* Dusty blue: Same as primary */
+  --color-secondary-rgb: 159, 173, 188; /* Soft blue: Secondary text */
+  --color-secondaryAlt-rgb: 159, 173, 188; /* Soft blue: Same as secondary */
+  --color-accent-rgb: 56, 189, 248; /* Bright cyan: accent */
+  --color-neutral-rgb: 16, 18, 4; /* Pitch black: Category BG */
+  --color-error-rgb: 239, 68, 68; /* Vivid red: error */
+  --color-base-100-rgb: 34, 39, 43; /* Charcoal gray: Card BG */
 }
 
 /*Trello Dark 

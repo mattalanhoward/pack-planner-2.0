@@ -18,6 +18,7 @@ export default {
     extend: {
       colors: {
         primary: withOpacity("--color-primary-rgb"),
+        primaryAlt: withOpacity("--color-primaryAlt-rgb"),
         secondary: withOpacity("--color-secondary-rgb"),
         secondaryAlt: withOpacity("--color-secondaryAlt-rgb"),
         accent: withOpacity("--color-accent-rgb"),

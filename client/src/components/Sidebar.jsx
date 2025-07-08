@@ -12,6 +12,7 @@ import GlobalItemModal from "./GlobalItemModal";
 import GlobalItemEditModal from "./GlobalItemEditModal";
 import { toast } from "react-hot-toast";
 import ConfirmDialog from "./ConfirmDialog";
+import { useUserSettings } from "../contexts/UserSettings";
 
 export default function Sidebar({
   lists,
@@ -236,7 +237,7 @@ export default function Sidebar({
           <div className="h-full flex flex-col overflow-hidden">
             {/* Gear Lists section */}
             <section className="flex flex-col flex-none h-1/3 p-4 border-b border-base-100 overflow-hidden">
-              <h2 className="font-bold mb-2 text-secondary truncate">
+              <h2 className="font-bold mb-2 truncate text-primaryAlt">
                 Gear Lists
               </h2>
               <div className="flex mb-3">
@@ -250,18 +251,18 @@ export default function Sidebar({
                   aria-label="Create list"
                   onClick={createList}
                   disabled={!newListTitle.trim()}
-                  className="ml-2 p-1 text-secondary hover:text-secondary/80"
+                  className="ml-2 p-1 text-primaryAlt hover:text-primaryAlt/80"
                 >
                   <FaPlus />
                 </button>
               </div>
 
-              <ul className="overflow-y-auto flex-1 space-y-1 text-secondary">
+              <ul className="overflow-y-auto flex-1 space-y-1 text-secondaryAlt">
                 {sortedLists.map((l) => (
                   <li key={l._id} className="flex items-center">
                     {editingId === l._id ? (
                       <input
-                        className="flex-1 rounded-lg p-2 text-primary border border-primary"
+                        className="flex-1 rounded-lg p-2 text-primary border border-primary bg-base-100"
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
                         onBlur={() => saveEditList(l._id)}
@@ -286,19 +287,19 @@ export default function Sidebar({
                           }}
                           className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
                             l._id === currentListId
-                              ? "bg-secondary text-base-100"
-                              : "hover:bg-secondary hover:text-primary"
+                              ? "bg-primaryAlt text-base-100"
+                              : "hover:bg-primaryAlt hover:text-neutral"
                           }`}
                         >
                           {l.title}
                         </button>
                         <FaEllipsisH
                           onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-accent"
+                          className="ml-2 cursor-pointer text-primaryAlt hover:text-primaryAlt/80"
                         />
                         <FaTimes
                           onClick={() => handleDeleteListClick(l._id)}
-                          className="ml-2 cursor-pointer text-error"
+                          className="ml-2 cursor-pointer text-error hover:text-error/80"
                         />
                       </>
                     )}
@@ -309,11 +310,11 @@ export default function Sidebar({
 
             {/* Catalog / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
-              <div className="flex justify-between items-center mb-2 text-secondary">
+              <div className="flex justify-between items-center mb-2 text-primaryAlt">
                 <h2 className="font-bold truncate">Catalog</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="p-1"
+                  className="p-1 text-primaryAlt  hover:text-primaryAlt/80"
                   disabled={!currentListId || categories.length === 0}
                 >
                   <FaPlus />
@@ -330,16 +331,16 @@ export default function Sidebar({
                 {filteredAndSortedItems.map((item) => (
                   <li
                     key={item._id}
-                    className="flex items-center p-2 bg-base-100/10 rounded-lg hover:bg-base-100/20"
+                    className="flex items-center p-2 bg-base-100/10 border border-primary/20 rounded-lg hover:bg-base-100/20"
                   >
-                    <span className="flex-1 truncate text-base-100">
+                    <span className="flex-1 truncate text-secondaryAlt">
                       {item.itemType} – {item.name}
                     </span>
                     <div className="flex items-center space-x-2 ml-4">
                       <button
                         onClick={() => setEditingGlobalItem(item)}
                         title="Edit global template"
-                        className="hover:text-base-100/80 text-base-100 rounded-lg"
+                        className="hover:text-base-100/80 text-secondaryAlt hover:text-secondaryAlt/80 rounded-lg"
                       >
                         <FaEllipsisH />
                       </button>

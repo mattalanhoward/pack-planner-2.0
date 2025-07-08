@@ -8,11 +8,8 @@ import {
   FaEllipsisH,
   FaTimes,
 } from "react-icons/fa";
-import { useUserSettings } from "../contexts/UserSettings";
 
 export default function PreviewCard({ item, viewMode, isPreview }) {
-  const { theme, altTheme } = useUserSettings();
-  const isAlt = theme === altTheme;
   const ghostStyles = isPreview
     ? {
         transform: "scale(1.05)",

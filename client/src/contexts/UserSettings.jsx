@@ -56,6 +56,7 @@ export function SettingsProvider({ children }) {
 
   // ─── persist everything to server in one shot ─────────────
   useEffect(() => {
+    if (!isAuthenticated) return;
     const payload = { weightUnit, theme, currency, language, region };
     api
       .patch("/settings", payload)

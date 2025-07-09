@@ -54,7 +54,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
       <div className="flex items-center space-x-4">
         <Menu as="div" className="relative inline-block text-left">
           <Menu.Button
-            className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium uppercase text-gray-700 hover:bg-gray-300 focus:outline-none"
+            className="w-8 h-8 rounded-full bg-primaryAlt flex items-center justify-center text-sm font-medium uppercase text-base-100 hover:bg-primaryAlt/80 focus:outline-none"
             aria-label="Open account menu"
           >
             {initial}
@@ -69,22 +69,22 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+            <Menu.Items className="absolute right-0 mt-2 w-64 bg-base-100 rounded shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
               {/* 1) ACCOUNT */}
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase">
                 Account
               </div>
-              <div className="px-4 pb-2 text-sm text-gray-700">
+              <div className="px-4 pb-2 text-sm text-secondary">
                 <div>{user.trailname}</div>
-                <div className="text-gray-500 text-xs">{user.email}</div>
+                <div className="text-primary text-xs">{user.email}</div>
               </div>
               <Menu.Item
                 as="button"
                 onClick={() => setIsAccountOpen(true)}
                 className={({ active }) =>
                   `${
-                    active ? "bg-gray-100" : ""
-                  } block w-full text-left px-4 py-2 text-sm text-gray-700`
+                    active ? "bg-primaryAlt hover:text-base-100" : ""
+                  } block w-full text-left px-4 py-2 text-sm text-secondary`
                 }
               >
                 Manage account…
@@ -92,19 +92,19 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               <div className="border-t border-gray-200 my-2" />
 
               {/* Preferences header */}
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+              <div className="px-4 py-2 text-xs font-semibold text-primary uppercase">
                 Preferences
               </div>
 
               {/* View mode (you probably already moved this) */}
-              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-secondary">
                 <span>View mode</span>
                 <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
               </div>
 
               {/* Theme */}
               <div
-                className="px-4 py-2 flex items-center justify-between text-sm text-gray-700"
+                className="px-4 py-2 flex items-center justify-between text-sm text-secondary"
                 onClick={(e) => e.stopPropagation()} // prevent HeadlessUI from auto-closing
               >
                 <span>Theme</span>
@@ -122,7 +122,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               </div>
 
               {/* Weight unit */}
-              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-secondary">
                 <span>Weight unit</span>
                 <select
                   value={weightUnit}
@@ -135,7 +135,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               </div>
 
               {/* Currency */}
-              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-secondary">
                 <span>Currency</span>
                 <select
                   value={currency}
@@ -149,7 +149,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               </div>
 
               {/* Language */}
-              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-secondary">
                 <span>Language</span>
                 <select
                   value={language}
@@ -166,7 +166,7 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
               </div>
 
               {/* Region */}
-              <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-700">
+              <div className="px-4 py-2 flex items-center justify-between text-sm text-secondary">
                 <span>Region</span>
                 <select
                   value={region}
@@ -188,8 +188,8 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
                 href="/about"
                 className={({ active }) =>
                   `${
-                    active ? "bg-gray-100" : ""
-                  } block w-full text-left px-4 py-2 text-sm text-gray-700`
+                    active ? "bg-primaryAlt hover:text-base-100" : ""
+                  } block w-full text-left px-4 py-2 text-sm text-secondary`
                 }
               >
                 About
@@ -206,8 +206,8 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
                 }}
                 className={({ active }) =>
                   `${
-                    active ? "bg-gray-100" : ""
-                  } block w-full text-left px-4 py-2 text-sm text-gray-700`
+                    active ? "bg-primaryAlt hover:text-base-100" : ""
+                  } block w-full text-left px-4 py-2 text-sm text-secondary`
                 }
               >
                 Log out

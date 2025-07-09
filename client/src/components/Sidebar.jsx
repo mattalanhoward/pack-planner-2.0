@@ -18,7 +18,7 @@ export default function Sidebar({
   lists,
   fetchLists,
   currentListId,
-  categories, // ← now coming in as a prop
+  categories,
   onSelectList,
   onRefresh,
 }) {
@@ -210,6 +210,10 @@ export default function Sidebar({
     : // when collapsed (or on desktop) nothing special
       "";
 
+  // inside Sidebar.jsx, just above your component fn
+  const isMobile = () =>
+    typeof window !== "undefined" && window.innerWidth < 640;
+
   return (
     <div className={`h-full flex overflow-visible ${overlay}`}>
       <div
@@ -278,7 +282,11 @@ export default function Sidebar({
                           onClick={() => {
                             // 1) Select the new list
                             onSelectList(l._id);
-                            // 2) Persist or clear storage
+                            // 2) if on mobile, collapse sidebar
+                            if (isMobile()) {
+                              setCollapsed(true);
+                            }
+                            // 3) Persist or clear storage
                             if (l._id) {
                               localStorage.setItem("lastListId", l._id);
                             } else {

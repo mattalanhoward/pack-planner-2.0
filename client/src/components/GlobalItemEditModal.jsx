@@ -6,6 +6,8 @@ import { toast } from "react-hot-toast";
 import CurrencyInput from "../components/CurrencyInput";
 import LinkInput from "../components/LinkInput";
 import ConfirmDialog from "./ConfirmDialog";
+import { useUnit } from "../hooks/useUnit";
+import { parseWeight } from "../utils/weight";
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -18,6 +20,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     price: "",
     link: "",
   });
+  const unit = useUnit();
+  const [displayWeight, setDisplayWeight] = useState("");
   const [worn, setWorn] = useState(false);
   const [consumable, setConsumable] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -28,20 +32,41 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
   useEffect(() => {
     if (!item) return;
+    const initialGrams = item.weight ?? "";
     setForm({
       category: item.category || "",
       itemType: item.itemType || "",
       name: item.name || "",
       brand: item.brand || "",
       description: item.description || "",
-      weight: item.weight || "",
+      weight: initialGrams,
       price: item.price || "",
       link: item.link || "",
     });
     setWorn(item.worn);
     setConsumable(item.consumable);
     setQuantity(item.quantity || 1);
-  }, [item]);
+    // Convert the grams → display string in the user’s unit:
+    if (initialGrams !== "") {
+      let disp;
+      switch (unit) {
+        case "kg":
+          disp = (initialGrams / 1000).toFixed(1);
+          break;
+        case "lb":
+          disp = (initialGrams * 0.00220462).toFixed(1);
+          break;
+        case "oz":
+          disp = (initialGrams * 0.035274).toFixed(1);
+          break;
+        default: // "g"
+          disp = Math.round(initialGrams).toString();
+      }
+      setDisplayWeight(disp);
+    } else {
+      setDisplayWeight("");
+    }
+  }, [item, unit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,7 +75,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
 
   const validate = () => {
     if (!form.name.trim()) return "Name is required.";
-    if (Number(form.weight) < 0) return "Weight cannot be negative.";
+    if (parseWeight(displayWeight, unit) < 0)
+      return "Weight cannot be negative.";
     if (Number(form.price) < 0) return "Price cannot be negative.";
     if (form.link && !/^https?:\/\//.test(form.link))
       return "Link must be a valid URL.";
@@ -81,7 +107,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         name: form.name.trim(),
         brand: form.brand.trim(),
         description: form.description.trim(),
-        weight: Number(form.weight),
+        weight: parseWeight(displayWeight, unit),
         price: Number(form.price),
         link: form.link.trim(),
         worn,
@@ -175,14 +201,13 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Weight (g)
+                Weight ({unit})
               </label>
               <input
                 type="number"
-                name="weight"
                 min="0"
-                value={form.weight}
-                onChange={handleChange}
+                value={displayWeight}
+                onChange={(e) => setDisplayWeight(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>

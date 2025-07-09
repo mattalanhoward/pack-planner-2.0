@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   useSortable,
   SortableContext,
@@ -10,6 +10,7 @@ import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useScrollPreserver } from "../hooks/useScrollPreserver";
 import { useUserSettings } from "../contexts/UserSettings";
+import { useWeight } from "../hooks/useWeight";
 
 export default function SortableColumn({
   category,
@@ -32,11 +33,17 @@ export default function SortableColumn({
   const catId = category._id;
   const [localTitle, setLocalTitle] = useState(category.title);
 
-  const totalWeight = items.reduce((sum, i) => {
-    const qty = i.quantity || 1;
-    const countable = i.worn ? Math.max(0, qty - 1) : qty;
-    return sum + (i.weight || 0) * countable;
-  }, 0);
+  // 1️⃣ Compute total in grams (memoized so it only re-runs when `items` changes)
+  const totalWeight = useMemo(() => {
+    return items.reduce((sum, i) => {
+      const qty = i.quantity || 1;
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
+    }, 0);
+  }, [items]);
+
+  // 2️⃣ Convert & format according to the user's unit preference
+  const totalWeightText = useWeight(totalWeight);
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: `cat-${catId}` });
@@ -84,7 +91,7 @@ export default function SortableColumn({
               className="
                 pr-3 flex-shrink-0 text-primaryAlt"
             >
-              {totalWeight} g
+              {totalWeightText}
             </span>
             <FaTimes
               onClick={() => onDeleteCategory(catId)}

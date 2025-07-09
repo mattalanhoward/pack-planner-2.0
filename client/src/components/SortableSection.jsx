@@ -9,6 +9,7 @@ import { FaGripVertical, FaTimes, FaPlus } from "react-icons/fa";
 import SortableItem from "../components/SortableItem";
 import AddGearItemModal from "../components/AddGearItemModal";
 import { useUserSettings } from "../contexts/UserSettings";
+import { useWeight } from "../hooks/useWeight";
 
 // ───────────── SORTABLESECTION (LIST MODE) ─────────────
 export default function SortableSection({
@@ -38,11 +39,17 @@ export default function SortableSection({
 
   const [localTitle, setLocalTitle] = useState(category.title);
 
-  const totalWeight = items.reduce((sum, i) => {
-    const qty = i.quantity || 1;
-    const countable = i.worn ? Math.max(0, qty - 1) : qty;
-    return sum + (i.weight || 0) * countable;
-  }, 0);
+  // 1️⃣ Compute total in grams (memoized so it only re-runs when `items` changes)
+  const totalWeight = useMemo(() => {
+    return items.reduce((sum, i) => {
+      const qty = i.quantity || 1;
+      const countable = i.worn ? Math.max(0, qty - 1) : qty;
+      return sum + (i.weight || 0) * countable;
+    }, 0);
+  }, [items]);
+
+  // 2️⃣ Convert & format according to the user's unit preference
+  const totalWeightText = useWeight(totalWeight);
 
   // useSortable for the category header itself:
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -94,7 +101,7 @@ export default function SortableSection({
               <span>{category.title}</span>
             </h3>
             <span className="pr-3 flex-shrink-0 text-primaryAlt">
-              {totalWeight} g
+              {totalWeightText}
             </span>
             <FaTimes
               aria-label="Delete category"

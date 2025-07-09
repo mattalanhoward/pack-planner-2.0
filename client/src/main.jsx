@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       >
         <SettingsProvider>
           <App />
-          <Toaster position="top-right" />
+          <Toaster position="top-center" />
         </SettingsProvider>
       </BrowserRouter>
     </AuthProvider>

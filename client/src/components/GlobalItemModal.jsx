@@ -6,6 +6,8 @@ import { toast } from "react-hot-toast";
 import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
 import LinkInput from "../components/LinkInput";
+import { useUnit } from "../hooks/useUnit";
+import { parseWeight } from "../utils/weight";
 
 export default function GlobalItemModal({
   categories = [],
@@ -24,6 +26,8 @@ export default function GlobalItemModal({
   const [consumable, setConsumable] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const unit = useUnit();
+  const [displayWeight, setDisplayWeight] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +40,10 @@ export default function GlobalItemModal({
     if (itemType.trim()) payload.itemType = itemType.trim();
     if (brand.trim()) payload.brand = brand.trim();
     if (description.trim()) payload.description = description.trim();
-    if (weight) payload.weight = Number(weight);
+    // convert the user’s entry back into grams once
+    if (displayWeight !== "") {
+      payload.weight = parseWeight(displayWeight, unit);
+    }
     if (price) payload.price = Number(price);
     if (link.trim()) payload.link = link.trim();
     payload.worn = worn;
@@ -145,13 +152,13 @@ export default function GlobalItemModal({
           <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Weight (g)
+                Weight ({unit})
               </label>
               <input
                 type="number"
                 min="0"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+                value={displayWeight}
+                onChange={(e) => setDisplayWeight(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>

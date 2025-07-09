@@ -11,6 +11,7 @@ import {
   FaTimes,
   FaEllipsisH,
 } from "react-icons/fa";
+import { useWeight } from "../hooks/useWeight";
 
 export default function SortableItem({
   item,
@@ -25,7 +26,7 @@ export default function SortableItem({
 }) {
   const [wornLocal, setWornLocal] = useState(item.worn);
   const [consumableLocal, setConsumableLocal] = useState(item.consumable);
-
+  const weightText = useWeight(item.weight);
   const itemKey = `item-${catId}-${item._id}`;
   // make sure useSortable() never comes back undefined
   const sortable =
@@ -199,7 +200,7 @@ export default function SortableItem({
 
         {/* ROW 2, COL 1: Weight & Price */}
         <div className="row-start-2 col-start-1 flex items-center space-x-2 text-primary">
-          <span>{item.weight != null ? `${item.weight}g` : ""}</span>
+          <span>{weightText}</span>
           {item.price != null &&
             (item.link ? (
               <a
@@ -288,9 +289,7 @@ export default function SortableItem({
           </div>
 
           {/* 4) Weight */}
-          <div className="text-primary justify-self-end">
-            {item.weight != null ? `${item.weight}g` : ""}
-          </div>
+          <div className="text-primary justify-self-end">{weightText}</div>
 
           {/* 5) Consumable toggle */}
           <div className="justify-self-center">
@@ -443,9 +442,7 @@ export default function SortableItem({
           <div className="grid grid-cols-[1fr_auto] items-center">
             {/* Left group */}
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-primary">
-                {item.weight != null ? `${item.weight}g` : ""}
-              </span>
+              <span className="text-sm text-primary">{weightText}</span>
               {item.price != null &&
                 (item.link ? (
                   <a

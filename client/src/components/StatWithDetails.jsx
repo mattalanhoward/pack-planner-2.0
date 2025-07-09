@@ -1,6 +1,7 @@
 // src/components/StatWithDetails.jsx
 import React from "react";
 import * as Popover from "@radix-ui/react-popover";
+import { useUnit } from "../hooks/useUnit";
 import { formatWeight } from "../utils/weight";
 
 /**
@@ -13,7 +14,11 @@ export default function StatWithDetails({
   items = [],
   colorClass,
 }) {
-  const displayValue = formatWeight(raw, "auto");
+  // 1️⃣ pull the current unit (e.g. "g", "kg", "lb", "oz", or "auto")
+  const unit = useUnit();
+
+  // 2️⃣ format the total/raw value
+  const displayValue = formatWeight(raw, unit); // :contentReference[oaicite:0]{index=0}
 
   return (
     <Popover.Root>
@@ -50,7 +55,7 @@ export default function StatWithDetails({
                   </span>
                 </div>
                 <span className="ml-2 whitespace-nowrap">
-                  {formatWeight(it.weight * (it.quantity || 1), "auto")}
+                  {formatWeight(it.weight * (it.quantity || 1), unit)}{" "}
                 </span>
               </li>
             ))}

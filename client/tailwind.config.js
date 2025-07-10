@@ -23,8 +23,10 @@ export default {
         secondaryAlt: withOpacity("--color-secondaryAlt-rgb"),
         accent: withOpacity("--color-accent-rgb"),
         neutral: withOpacity("--color-neutral-rgb"),
+        neutralAlt: withOpacity("--color-neutralAlt-rgb"),
         error: withOpacity("--color-error-rgb"),
         "base-100": withOpacity("--color-base-100-rgb"),
+        "base-100Alt": withOpacity("--color-base-100-rgb"),
       },
       height: {
         "d-screen": "100dvh",

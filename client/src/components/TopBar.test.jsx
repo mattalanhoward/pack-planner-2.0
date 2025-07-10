@@ -21,7 +21,7 @@ describe("TopBar component", () => {
     // Provide a dummy setViewMode for the toggle
     const mockSetViewMode = jest.fn();
     render(
-      <TopBar title="My App" viewMode="columns" setViewMode={mockSetViewMode} />
+      <TopBar title="My App" viewMode="column" setViewMode={mockSetViewMode} />
     );
 
     // 2) The title should appear

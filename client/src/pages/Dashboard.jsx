@@ -7,6 +7,7 @@ import TopBar from "../components/TopBar";
 import Sidebar from "../components/Sidebar";
 import GearListView from "./GearListView";
 import { toast } from "react-hot-toast";
+import { useUserSettings } from "../contexts/UserSettings";
 
 export default function Dashboard() {
   const { isAuthenticated } = useAuth();
@@ -64,13 +65,8 @@ export default function Dashboard() {
   }, [lists, listId, navigate]);
 
   // ─── viewMode persistence ───
-  const [viewMode, setViewMode] = useState(
-    () => localStorage.getItem("viewMode") || "columns"
-  );
-
-  useEffect(() => {
-    localStorage.setItem("viewMode", viewMode);
-  }, [viewMode]);
+  // NEW: pull from server-backed Context
+  const { viewMode, setViewMode } = useUserSettings();
 
   // fetch /api/lists/:listId/full
   const fetchFullData = useCallback(async () => {

@@ -1,6 +1,6 @@
 // src/components/TopBar.jsx
 import React, { Fragment, useState } from "react";
-import { Menu, Transition, Listbox } from "@headlessui/react";
+import { Menu, Transition } from "@headlessui/react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { FaSignOutAlt, FaCheck } from "react-icons/fa";
@@ -18,7 +18,7 @@ const themes = [
   { name: "dark", label: "Dark", color: "#0f172a" },
 ];
 
-export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
+export default function TopBar({ title, openSettings }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const { user, logout } = useAuth();
   const {
@@ -32,12 +32,12 @@ export default function TopBar({ title, viewMode, setViewMode, openSettings }) {
     setRegion,
     theme,
     setTheme,
+    viewMode,
+    setViewMode,
   } = useUserSettings();
   const navigate = useNavigate();
 
-  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-  const currentTheme = themes.find((t) => t.name === theme)?.label || theme;
+  // const currentTheme = themes.find((t) => t.name === theme)?.label || theme;
 
   if (!user) return null;
 

@@ -24,6 +24,9 @@ export function SettingsProvider({ children }) {
   const [region, setRegion] = useState(
     () => localStorage.getItem("region") || "eu"
   );
+  const [viewMode, setViewMode] = useState(
+    () => localStorage.getItem("viewMode") || "column"
+  );
 
   // ─── mirror to localStorage & apply DOM side‐effects ───────
   useEffect(() => {
@@ -57,14 +60,18 @@ export function SettingsProvider({ children }) {
     root.classList.add(`theme-${theme}`);
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem("viewMode", viewMode);
+  }, [viewMode]);
+
   // ─── persist everything to server in one shot ─────────────
   useEffect(() => {
     if (!isAuthenticated) return;
-    const payload = { weightUnit, theme, currency, language, region };
+    const payload = { weightUnit, theme, currency, language, region, viewMode };
     api
       .patch("/settings", payload)
       .catch((err) => console.error("Failed to save settings:", err));
-  }, [weightUnit, theme, currency, language, region]);
+  }, [weightUnit, theme, currency, language, region, viewMode]);
 
   return (
     <SettingsCtx.Provider
@@ -79,6 +86,8 @@ export function SettingsProvider({ children }) {
         setLanguage,
         region,
         setRegion,
+        viewMode,
+        setViewMode,
       }}
     >
       {children}

@@ -440,7 +440,7 @@ export default function GearListView({
     }
 
     // 2) If we're in column mode and dragging a category, lock X:
-    if (viewMode === "columns" && active.id.startsWith("cat-")) {
+    if (viewMode === "column" && active.id.startsWith("cat-")) {
       return restrictToHorizontalAxis(args);
     }
 

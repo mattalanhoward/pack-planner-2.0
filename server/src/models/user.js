@@ -29,7 +29,6 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     viewMode: { type: String, enum: ["column", "list"], default: "column" },
-    timezone: { type: String, default: "UTC" },
     locale: { type: String, default: "en-US" },
     currency: { type: String, default: "USD" },
     theme: { type: String, default: "desert" },

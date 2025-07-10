@@ -27,12 +27,12 @@ export default function AddGearItemModal({
     (async () => {
       try {
         // 1) get all categories
-        const { data: cats } = await api.get(`/lists/${listId}/categories`);
+        const { data: cats } = await api.get(`/dashboard/${listId}/categories`);
         // 2) fetch items for each category
         const itemArrays = await Promise.all(
           cats.map((cat) =>
             api
-              .get(`/lists/${listId}/categories/${cat._id}/items`)
+              .get(`/dashboard/${listId}/categories/${cat._id}/items`)
               .then((res) => res.data || [])
           )
         );
@@ -104,20 +104,23 @@ export default function AddGearItemModal({
         Array.from(selectedIds).map((itemId) => {
           const sel = allResults.find((i) => i._id === itemId);
           if (!sel) return Promise.resolve();
-          return api.post(`/lists/${listId}/categories/${categoryId}/items`, {
-            globalItem: sel._id,
-            brand: sel.brand,
-            itemType: sel.itemType,
-            name: sel.name,
-            description: sel.description,
-            weight: sel.weight,
-            price: sel.price,
-            link: sel.link,
-            worn: sel.worn,
-            consumable: sel.consumable,
-            quantity,
-            position: 0,
-          });
+          return api.post(
+            `/dashboard/${listId}/categories/${categoryId}/items`,
+            {
+              globalItem: sel._id,
+              brand: sel.brand,
+              itemType: sel.itemType,
+              name: sel.name,
+              description: sel.description,
+              weight: sel.weight,
+              price: sel.price,
+              link: sel.link,
+              worn: sel.worn,
+              consumable: sel.consumable,
+              quantity,
+              position: 0,
+            }
+          );
         })
       );
       toast.success("Items added successfully");

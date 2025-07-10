@@ -28,7 +28,7 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       {/* “root” of all editable lists */}
       <Route
-        path="/lists"
+        path="/dashboard"
         element={
           <PrivateRoute>
             <Dashboard />
@@ -36,7 +36,7 @@ export default function App() {
         }
       />
       <Route
-        path="/lists/:listId"
+        path="/dashboard/:listId"
         element={
           <PrivateRoute>
             <Dashboard />
@@ -45,7 +45,7 @@ export default function App() {
       />
       {/* Public, read-only shared view */}
       <Route path="/share/:token" element={<SharedView />} />
-      <Route path="*" element={<Navigate to="/lists" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }

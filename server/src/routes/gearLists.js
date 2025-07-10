@@ -12,7 +12,7 @@ const router = express.Router();
 
 /**
  * Public route: resolve a share token back to its listId
- * GET /api/lists/share/:token
+ * GET /api/dashboard/share/:token
  */
 router.get("/share/:token", async (req, res) => {
   const share = await Share.findOne({ token: req.params.token });
@@ -37,7 +37,7 @@ router.post("/:listId/share", async (req, res) => {
   res.json({ token });
 });
 
-// GET /api/lists/:listId/full
+// GET /api/dashboard/:listId/full
 router.get("/:listId/full", async (req, res) => {
   try {
     const { listId } = req.params;
@@ -61,12 +61,12 @@ router.get("/:listId/full", async (req, res) => {
 
     return res.json({ list, categories, items });
   } catch (err) {
-    console.error("Error in GET /lists/:listId/full →", err.message);
+    console.error("Error in GET /dashboard/:listId/full →", err.message);
     return res.status(500).json({ error: "Server error." });
   }
 });
 
-// GET /api/lists — only this user’s lists
+// GET /api/dashboard — only this user’s lists
 router.get("/", async (req, res) => {
   try {
     const lists = await GearList.find({ owner: req.userId });
@@ -77,7 +77,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST /api/lists — create a new gear list + one sample category
+// POST /api/dashboard — create a new gear list + one sample category
 router.post("/", async (req, res) => {
   try {
     const { title } = req.body;
@@ -102,7 +102,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// PATCH /api/lists/:listId — rename a list
+// PATCH /api/dashboard/:listId — rename a list
 router.patch("/:listId", async (req, res) => {
   try {
     const { title } = req.body;
@@ -120,7 +120,7 @@ router.patch("/:listId", async (req, res) => {
   }
 });
 
-// DELETE /api/lists/:listId — delete a list and its categories
+// DELETE /api/dashboard/:listId — delete a list and its categories
 router.delete("/:listId", async (req, res) => {
   try {
     const deleted = await GearList.findOneAndDelete({

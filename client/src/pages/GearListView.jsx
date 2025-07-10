@@ -60,7 +60,7 @@ export default function GearListView({
 
   const fetchItems = async (catId) => {
     const { data } = await api.get(
-      `/lists/${listId}/categories/${catId}/items`
+      `/dashboard/${listId}/categories/${catId}/items`
     );
     setItemsMap((m) => ({ ...m, [catId]: data }));
   };
@@ -136,7 +136,7 @@ export default function GearListView({
       try {
         // 2) Patch the server
         await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          `/dashboard/${listId}/categories/${catId}/items/${itemId}`,
           {
             quantity: newQty,
           }
@@ -162,7 +162,9 @@ export default function GearListView({
   const actuallyDeleteItem = async () => {
     const { catId, itemId } = pendingDelete;
     try {
-      await api.delete(`/lists/${listId}/categories/${catId}/items/${itemId}`);
+      await api.delete(
+        `/dashboard/${listId}/categories/${catId}/items/${itemId}`
+      );
       fetchItems(catId);
       toast.success("Item deleted");
     } catch (err) {
@@ -185,7 +187,7 @@ export default function GearListView({
     if (!title) return;
 
     try {
-      await api.post(`/lists/${listId}/categories`, {
+      await api.post(`/dashboard/${listId}/categories`, {
         title,
         position: categories.length,
       });
@@ -209,7 +211,7 @@ export default function GearListView({
   const actuallyDeleteCat = async () => {
     const catId = pendingDeleteCatId;
     try {
-      await api.delete(`/lists/${listId}/categories/${catId}`);
+      await api.delete(`/dashboard/${listId}/categories/${catId}`);
 
       // re-sync our entire `fullData` (including categories & items)
       await onRefresh();
@@ -237,7 +239,9 @@ export default function GearListView({
       return;
     }
     try {
-      await api.patch(`/lists/${listId}/categories/${id}`, { title: newTitle });
+      await api.patch(`/dashboard/${listId}/categories/${id}`, {
+        title: newTitle,
+      });
       // re-pull the entire payload (list, cats, items)
       await onRefresh();
       setEditingCatId(null);
@@ -293,7 +297,7 @@ export default function GearListView({
               it.position !== oldArray.find((x) => x._id === it._id).position
             ) {
               await api.patch(
-                `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+                `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
                 { position: i }
               );
             }
@@ -330,7 +334,7 @@ export default function GearListView({
 
         // 1) update moved item's category + position
         await api.patch(
-          `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
+          `/dashboard/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
           {
             category: destCatId,
             position: newDest.find((i) => i._id === sourceItemId).position,
@@ -343,7 +347,7 @@ export default function GearListView({
             it.position !== sourceArr.find((x) => x._id === it._id).position
           ) {
             await api.patch(
-              `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+              `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
               { position: i }
             );
           }
@@ -356,7 +360,7 @@ export default function GearListView({
             it.position !== destArr.find((x) => x._id === it._id).position
           ) {
             await api.patch(
-              `/lists/${listId}/categories/${destCatId}/items/${it._id}`,
+              `/dashboard/${listId}/categories/${destCatId}/items/${it._id}`,
               { position: i }
             );
           }
@@ -393,7 +397,7 @@ export default function GearListView({
 
       // persist
       await api.patch(
-        `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
+        `/dashboard/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
         {
           category: destCatId,
           position: newDest.length - 1,
@@ -403,7 +407,7 @@ export default function GearListView({
         const it = newSource[i];
         if (it.position !== sourceArr.find((x) => x._id === it._id).position) {
           await api.patch(
-            `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+            `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
             { position: i }
           );
         }

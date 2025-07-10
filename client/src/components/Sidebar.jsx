@@ -75,7 +75,7 @@ export default function Sidebar({
     if (!title) return toast.error("List name cannot be empty.");
 
     try {
-      const { data } = await api.post("/lists", { title });
+      const { data } = await api.post("/dashboard", { title });
       setNewListTitle("");
       await fetchLists();
       localStorage.setItem("lastListId", data.list._id);
@@ -97,7 +97,7 @@ export default function Sidebar({
     if (!title) return toast.error("List name cannot be empty.");
 
     try {
-      await api.patch(`/lists/${id}`, { title });
+      await api.patch(`/dashboard/${id}`, { title });
       setEditingId(null);
       setEditingTitle("");
       await fetchLists();
@@ -129,7 +129,7 @@ export default function Sidebar({
   const actuallyDeleteList = async () => {
     const id = pendingDeleteListId;
     try {
-      await api.delete(`/lists/${id}`);
+      await api.delete(`/dashboard/${id}`);
       setConfirmListOpen(false);
       setPendingDeleteListId(null);
       await fetchLists();
@@ -156,20 +156,23 @@ export default function Sidebar({
     }
     const cat = categories[0];
     try {
-      await api.post(`/lists/${currentListId}/categories/${cat._id}/items`, {
-        globalItem: item._id,
-        brand: item.brand,
-        itemType: item.itemType,
-        name: item.name,
-        description: item.description,
-        weight: item.weight,
-        price: item.price,
-        link: item.link,
-        worn: item.worn,
-        consumable: item.consumable,
-        quantity: item.quantity,
-        position: 0,
-      });
+      await api.post(
+        `/dashboard/${currentListId}/categories/${cat._id}/items`,
+        {
+          globalItem: item._id,
+          brand: item.brand,
+          itemType: item.itemType,
+          name: item.name,
+          description: item.description,
+          weight: item.weight,
+          price: item.price,
+          link: item.link,
+          worn: item.worn,
+          consumable: item.consumable,
+          quantity: item.quantity,
+          position: 0,
+        }
+      );
       onRefresh();
     } catch (err) {
       console.error("Error adding item to list:", err);

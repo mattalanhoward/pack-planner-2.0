@@ -25,7 +25,7 @@ export default function VerifyEmail() {
     verifyEmail(token)
       .then((data) => {
         toast.success(data.message); // “Email verified—thank you!”
-        navigate("/lists"); // or “/dashboard”
+        navigate("/dashboard"); // or “/dashboard”
       })
       .catch((err) => {
         // show the error *once*

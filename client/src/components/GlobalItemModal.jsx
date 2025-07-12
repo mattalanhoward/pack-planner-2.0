@@ -157,6 +157,7 @@ export default function GlobalItemModal({
               <input
                 type="number"
                 min="0"
+                step="0.01"
                 value={displayWeight}
                 onChange={(e) => setDisplayWeight(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"

@@ -182,7 +182,7 @@ export default function GlobalItemModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-              rows={1}
+              rows={2}
             />
           </div>
         </div>

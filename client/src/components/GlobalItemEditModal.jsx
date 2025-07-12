@@ -233,7 +233,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               value={form.description}
               onChange={handleChange}
               className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-              rows={1}
+              rows={2}
             />
           </div>
         </div>

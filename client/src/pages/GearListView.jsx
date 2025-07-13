@@ -478,34 +478,33 @@ export default function GearListView({
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <div
-        className={
-          `flex justify-between items-center px-6 py-4 ` +
-          (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
-        }
-      >
-        <div className="flex items-center space-x-4">
-          <h2 className="hide-on-touch text-xl text-primaryAlt">
-            {list.title}
-          </h2>
-          <PackStats
-            base={stats.baseWeight}
-            worn={stats.wornWeight}
-            consumable={stats.consumableWeight}
-            total={stats.totalWeight}
-            breakdowns={breakdowns}
-          />
-        </div>
-        {/* make the link a flex container too */}
-        <a
-          href="#"
-          className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
-          aria-label="More options"
+      <div className="w-full bg-black bg-opacity-25">
+        <div
+          className={
+            `flex justify-between items-center px-8 py-2 ` +
+            (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
+          }
         >
-          <FaEllipsisH />
-        </a>
+          <div className="flex items-center space-x-4">
+            <h2 className="hide-on-touch text-xl text-accent">{list.title}</h2>
+            <PackStats
+              base={stats.baseWeight}
+              worn={stats.wornWeight}
+              consumable={stats.consumableWeight}
+              total={stats.totalWeight}
+              breakdowns={breakdowns}
+            />
+          </div>
+          {/* make the link a flex container too */}
+          <a
+            href="#"
+            className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
+            aria-label="More options"
+          >
+            <FaEllipsisH />
+          </a>
+        </div>
       </div>
-
       {/* ───── Wrap everything in one DndContextWrapper ───── */}
       <DndContextWrapper
         items={categories.map((c) => `cat-${c._id}`)}
@@ -549,7 +548,7 @@ export default function GearListView({
         )}
       >
         {viewMode === "list" ? (
-          <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
+          <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
             {categories.map((cat) => (
               <SortableSection
                 key={cat._id}
@@ -606,7 +605,7 @@ export default function GearListView({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
+          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
             {categories.map((cat) => (
               <SortableColumn
                 key={cat._id}

@@ -10,7 +10,7 @@ export default function SharedView() {
 
   useEffect(() => {
     api
-      .get(`/lists/share/${token}`)
+      .get(`/dashboard/share/${token}`)
       .then(({ data }) => setListId(data.listId))
       .catch(() => setError("This list isn’t available."));
   }, [token]);

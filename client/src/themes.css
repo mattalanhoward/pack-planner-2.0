@@ -8,8 +8,10 @@
   --color-secondaryAlt-rgb: 253, 247, 228; /* Creamy Ivory: Secondary Alternative Text */
   --color-accent-rgb: 224, 178, 81; /* Mustard Yellow */
   --color-neutral-rgb: 23, 43, 77; /* Midnight Navy: Blue Category BG */
+  --color-neutralAlt-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
   --color-error-rgb: 231, 111, 81; /* Vibrant Coral Red: */
   --color-base-100-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
+  --color-base-100Alt-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
 }
 
 /* desert theme */
@@ -20,8 +22,10 @@
   --color-secondaryAlt-rgb: 253, 247, 228; /* Creamy Ivory: Secondary Alternative Text */
   --color-accent-rgb: 224, 178, 81; /* Mustard Yellow */
   --color-neutral-rgb: 23, 43, 77; /* Midnight Navy: Blue Category BG */
+  --color-neutralAlt-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
   --color-error-rgb: 231, 111, 81; /* Vibrant Coral Red: */
   --color-base-100-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
+  --color-base-100Alt-rgb: 253, 247, 228; /* Creamy Ivory: Card BG */
 }
 
 /* alpine theme v4 */
@@ -32,8 +36,10 @@
   --color-secondaryAlt-rgb: 100, 140, 180; /* Glacier Blue: Same as secondary */
   --color-accent-rgb: 235, 160, 90; /* Sunrise Orange */
   --color-neutral-rgb: 250, 252, 255; /* Soft Mist: Category BG / Topbar BG */
+  --color-neutralAlt-rgb: 250, 252, 255; /* Soft Mist: Category BG / Topbar BG */
   --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
   --color-base-100-rgb: 245, 242, 238; /* Light Mist: Card Background */
+  --color-base-100Alt-rgb: 245, 242, 238; /* Light Mist: Card Background */
 }
 
 /* forest theme v1 */
@@ -44,8 +50,10 @@
   --color-secondaryAlt-rgb: 107, 143, 86; /* Moss Green: Secondary Alternative Text */
   --color-accent-rgb: 200, 176, 126; /* Golden Tan: Accent */
   --color-neutral-rgb: 241, 239, 232; /* Soft Birch: Category BG / Topbar BG */
+  --color-neutralAlt-rgb: 241, 239, 232; /* Soft Birch: Category BG / Topbar BG */
   --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
   --color-base-100-rgb: 230, 234, 228; /* Pale Leaf: Card Background */
+  --color-base-100Alt-rgb: 230, 234, 228; /* Pale Leaf: Card Background */
 }
 
 /* forest theme v2 */
@@ -68,8 +76,10 @@
   --color-secondaryAlt-rgb: 100, 115, 125; /* Mist Gray: Same as secondary */
   --color-accent-rgb: 180, 205, 255; /* Ice Blue: Accent */
   --color-neutral-rgb: 255, 255, 255; /* Pure White: Category BG / Topbar BG */
+  --color-neutralAlt-rgb: 255, 255, 255; /* Pure White: Category BG / Topbar BG */
   --color-error-rgb: 231, 111, 81; /* Coral Red: Error */
   --color-base-100-rgb: 245, 248, 250; /* Soft White: Card Background */
+  --color-base-100Alt-rgb: 245, 248, 250; /* Soft White: Card Background */
 }
 
 /* ocean */
@@ -80,8 +90,10 @@
   --color-secondaryAlt-rgb: 56, 189, 248; /* Bright aqua */
   --color-accent-rgb: 96, 165, 250; /* Soft azure */
   --color-neutral-rgb: 224, 242, 254; /* Pale blue */
+  --color-neutralAlt-rgb: 224, 242, 254; /* Pale blue */
   --color-error-rgb: 239, 68, 68; /* Vivid red */
   --color-base-100-rgb: 224, 242, 254; /* Pale blue */
+  --color-base-100Alt-rgb: 224, 242, 254; /* Pale blue */
 }
 
 /* theme-light */
@@ -92,8 +104,10 @@
   --color-secondaryAlt-rgb: 68, 84, 111; /* Steel blue: Same as secondary */
   --color-accent-rgb: 12, 102, 228; /* Electric blue: accent */
   --color-neutral-rgb: 241, 242, 244; /* Light gray: Category BG / Topbar BG */
+  --color-neutralAlt-rgb: 241, 242, 244; /* Light gray: Category BG / Topbar BG */
   --color-error-rgb: 239, 68, 68; /* Vivid red: error */
   --color-base-100-rgb: 255, 255, 255; /* Pure white: Card Background */
+  --color-base-100Alt-rgb: 255, 255, 255; /* Pure white: Card Background */
 }
 
 /* theme-dark */
@@ -104,8 +118,10 @@
   --color-secondaryAlt-rgb: 159, 173, 188; /* Soft blue: Same as secondary */
   --color-accent-rgb: 56, 189, 248; /* Bright cyan: accent */
   --color-neutral-rgb: 16, 18, 4; /* Pitch black: Category BG */
+  --color-neutralAlt-rgb: 16, 18, 4; /* Pitch black: Category BG */
   --color-error-rgb: 239, 68, 68; /* Vivid red: error */
   --color-base-100-rgb: 34, 39, 43; /* Charcoal gray: Card BG */
+  --color-base-100Alt-rgb: 34, 39, 43; /* Charcoal gray: Card BG */
 }
 
 /*Trello Dark 

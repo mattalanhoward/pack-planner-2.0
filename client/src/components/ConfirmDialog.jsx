@@ -16,7 +16,7 @@ export default function ConfirmDialog({
     // Overlay
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       {/* Dialog box */}
-      <div className="bg-neutral rounded-lg shadow-lg max-w-sm w-full mx-4">
+      <div className="bg-neutralAlt rounded-lg shadow-lg max-w-sm w-full mx-4">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg text-center font-semibold text-secondary">
@@ -30,10 +30,10 @@ export default function ConfirmDialog({
         </div>
 
         {/* Footer */}
-        <div className="rounded-lg px-6 py-4 bg-neutral flex justify-center space-x-2">
+        <div className="rounded-lg px-6 py-4 bg-neutralAlt flex justify-center space-x-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-neutral text-primary rounded hover:bg-neutral/90 focus:outline-none focus:ring-2 focus:ring-neutral"
+            className="px-4 py-2 bg-neutralAlt text-primary rounded hover:bg-neutralAlt/90 focus:outline-none focus:ring-2 focus:ring-neutral"
           >
             {cancelText}
           </button>

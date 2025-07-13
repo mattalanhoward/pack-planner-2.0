@@ -7,7 +7,7 @@ const GearList = require("../models/gearList");
 const router = express.Router({ mergeParams: true });
 router.use(auth);
 
-// ─── GET /api/lists/:listId/categories/:catId/items ───
+// ─── GET /api/dashboard/:listId/categories/:catId/items ───
 // Return all items in this category
 router.get("/", async (req, res) => {
   const { listId, catId } = req.params;
@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ─── POST /api/lists/:listId/categories/:catId/items ───
+// ─── POST /api/dashboard/:listId/categories/:catId/items ───
 // Create a new item in this category
 router.post("/", async (req, res) => {
   const { listId, catId } = req.params;
@@ -100,7 +100,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ─── PATCH /api/lists/:listId/categories/:catId/items/:itemId ───
+// ─── PATCH /api/dashboard/:listId/categories/:catId/items/:itemId ───
 // Update inline fields and possibly move to another category
 router.patch("/:itemId", async (req, res) => {
   const { listId, catId, itemId } = req.params;
@@ -166,7 +166,7 @@ router.patch("/:itemId", async (req, res) => {
   }
 });
 
-// ─── DELETE /api/lists/:listId/categories/:catId/items/:itemId ───
+// ─── DELETE /api/dashboard/:listId/categories/:catId/items/:itemId ───
 // Remove one gear item
 router.delete("/:itemId", async (req, res) => {
   const { listId, catId, itemId } = req.params;

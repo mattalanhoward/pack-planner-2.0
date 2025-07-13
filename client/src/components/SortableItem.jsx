@@ -49,7 +49,7 @@ export default function SortableItem({
     setWornLocal(newWorn);
 
     api
-      .patch(`/lists/${listId}/categories/${catId}/items/${item._id}`, {
+      .patch(`/dashboard/${listId}/categories/${catId}/items/${item._id}`, {
         worn: newWorn,
       })
       .catch((err) => {
@@ -69,7 +69,7 @@ export default function SortableItem({
     setConsumableLocal(newConsumable);
 
     api
-      .patch(`/lists/${listId}/categories/${catId}/items/${item._id}`, {
+      .patch(`/dashboard/${listId}/categories/${catId}/items/${item._id}`, {
         consumable: newConsumable,
       })
       .catch((err) => {
@@ -117,7 +117,7 @@ export default function SortableItem({
 
         // always try to persist, so that we can catch & roll back on error
         api
-          .patch(`/lists/${listId}/categories/${catId}/items/${itemId}`, {
+          .patch(`/dashboard/${listId}/categories/${catId}/items/${itemId}`, {
             quantity: newQty,
           })
           .catch((err) => {

@@ -57,7 +57,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           disp = (initialGrams * 0.00220462).toFixed(1);
           break;
         case "oz":
-          disp = (initialGrams * 0.035274).toFixed(1);
+          disp = (initialGrams * 0.035274).toFixed(2);
           break;
         default: // "g"
           disp = Math.round(initialGrams).toString();
@@ -135,7 +135,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSave}
-        className="bg-neutral rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
+        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-2 sm:mb-4">
@@ -206,6 +206,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               <input
                 type="number"
                 min="0"
+                step="0.01"
                 value={displayWeight}
                 onChange={(e) => setDisplayWeight(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
@@ -233,7 +234,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               value={form.description}
               onChange={handleChange}
               className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-              rows={1}
+              rows={2}
             />
           </div>
         </div>
@@ -275,7 +276,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutral rounded hover:bg-neutral/90 text-primary text-sm sm:text-base"
+              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
             >
               Cancel
             </button>

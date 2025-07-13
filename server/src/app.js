@@ -41,10 +41,10 @@ app.use(express.json());
 // Mount routers — each must be a function (router)
 app.use("/api/auth", authRoutes);
 app.use("/api/settings", settingsRouter);
-app.use("/api/lists", authMiddleware, gearListRoutes);
-app.use("/api/lists/:listId/categories", authMiddleware, categoriesRoutes);
+app.use("/api/dashboard", authMiddleware, gearListRoutes);
+app.use("/api/dashboard/:listId/categories", authMiddleware, categoriesRoutes);
 app.use(
-  "/api/lists/:listId/categories/:catId/items",
+  "/api/dashboard/:listId/categories/:catId/items",
   authMiddleware,
   gearItemRoutes
 );

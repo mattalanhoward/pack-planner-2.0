@@ -1,7 +1,8 @@
 // src/pages/GearListView.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { FaPlus, FaEllipsisH } from "react-icons/fa";
+import { FaPlus, FaEllipsisH, FaCheck, FaSpinner } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { DragOverlay, closestCorners, pointerWithin } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
@@ -13,15 +14,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { DndContextWrapper } from "../components/DndContextWrapper";
-import grandcanyonbg from "../assets/grand-canyon-bg.jpeg";
-import sierraNevadaBg from "../assets/sierra-nevada-bg.jpeg";
 import api from "../services/api";
+import DropdownMenu from "../components/DropdownMenu";
 import ConfirmDialog from "../components/ConfirmDialog";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn";
 import PackStats from "../components/PackStats";
 import SortableColumn from "../components/SortableColumn";
 import SortableSection from "../components/SortableSection";
+import { GEARLIST_SWATCHES as swatches } from "../config/colors";
 
 export default function GearListView({
   listId,
@@ -31,6 +32,7 @@ export default function GearListView({
   items, // array of all items
   onRefresh,
   onReorderCategories,
+  fetchLists,
 }) {
   const [editingCatId, setEditingCatId] = useState(null);
   const [addingNewCat, setAddingNewCat] = useState(false);
@@ -47,6 +49,19 @@ export default function GearListView({
   const [confirmCatOpen, setConfirmCatOpen] = useState(false);
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
+  // For inline‐title editing:
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleText, setTitleText] = useState(list.title);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState(null);
+
+  useEffect(() => setTitleText(list.title), [list.title]);
+
+  // For delete‐list confirmation:
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+  const navigate = useNavigate();
 
   // NEW: auto-group every time `items` changes
   useEffect(() => {
@@ -60,7 +75,7 @@ export default function GearListView({
 
   const fetchItems = async (catId) => {
     const { data } = await api.get(
-      `/lists/${listId}/categories/${catId}/items`
+      `/dashboard/${listId}/categories/${catId}/items`
     );
     setItemsMap((m) => ({ ...m, [catId]: data }));
   };
@@ -136,7 +151,7 @@ export default function GearListView({
       try {
         // 2) Patch the server
         await api.patch(
-          `/lists/${listId}/categories/${catId}/items/${itemId}`,
+          `/dashboard/${listId}/categories/${catId}/items/${itemId}`,
           {
             quantity: newQty,
           }
@@ -162,7 +177,9 @@ export default function GearListView({
   const actuallyDeleteItem = async () => {
     const { catId, itemId } = pendingDelete;
     try {
-      await api.delete(`/lists/${listId}/categories/${catId}/items/${itemId}`);
+      await api.delete(
+        `/dashboard/${listId}/categories/${catId}/items/${itemId}`
+      );
       fetchItems(catId);
       toast.success("Item deleted");
     } catch (err) {
@@ -174,7 +191,7 @@ export default function GearListView({
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDeleteItem = () => {
     setConfirmOpen(false);
     setPendingDelete({ catId: null, itemId: null });
   };
@@ -185,7 +202,7 @@ export default function GearListView({
     if (!title) return;
 
     try {
-      await api.post(`/lists/${listId}/categories`, {
+      await api.post(`/dashboard/${listId}/categories`, {
         title,
         position: categories.length,
       });
@@ -209,7 +226,7 @@ export default function GearListView({
   const actuallyDeleteCat = async () => {
     const catId = pendingDeleteCatId;
     try {
-      await api.delete(`/lists/${listId}/categories/${catId}`);
+      await api.delete(`/dashboard/${listId}/categories/${catId}`);
 
       // re-sync our entire `fullData` (including categories & items)
       await onRefresh();
@@ -237,7 +254,9 @@ export default function GearListView({
       return;
     }
     try {
-      await api.patch(`/lists/${listId}/categories/${id}`, { title: newTitle });
+      await api.patch(`/dashboard/${listId}/categories/${id}`, {
+        title: newTitle,
+      });
       // re-pull the entire payload (list, cats, items)
       await onRefresh();
       setEditingCatId(null);
@@ -293,7 +312,7 @@ export default function GearListView({
               it.position !== oldArray.find((x) => x._id === it._id).position
             ) {
               await api.patch(
-                `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+                `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
                 { position: i }
               );
             }
@@ -330,7 +349,7 @@ export default function GearListView({
 
         // 1) update moved item's category + position
         await api.patch(
-          `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
+          `/dashboard/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
           {
             category: destCatId,
             position: newDest.find((i) => i._id === sourceItemId).position,
@@ -343,7 +362,7 @@ export default function GearListView({
             it.position !== sourceArr.find((x) => x._id === it._id).position
           ) {
             await api.patch(
-              `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+              `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
               { position: i }
             );
           }
@@ -356,7 +375,7 @@ export default function GearListView({
             it.position !== destArr.find((x) => x._id === it._id).position
           ) {
             await api.patch(
-              `/lists/${listId}/categories/${destCatId}/items/${it._id}`,
+              `/dashboard/${listId}/categories/${destCatId}/items/${it._id}`,
               { position: i }
             );
           }
@@ -393,7 +412,7 @@ export default function GearListView({
 
       // persist
       await api.patch(
-        `/lists/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
+        `/dashboard/${listId}/categories/${sourceCatId}/items/${sourceItemId}`,
         {
           category: destCatId,
           position: newDest.length - 1,
@@ -403,7 +422,7 @@ export default function GearListView({
         const it = newSource[i];
         if (it.position !== sourceArr.find((x) => x._id === it._id).position) {
           await api.patch(
-            `/lists/${listId}/categories/${sourceCatId}/items/${it._id}`,
+            `/dashboard/${listId}/categories/${sourceCatId}/items/${it._id}`,
             { position: i }
           );
         }
@@ -466,40 +485,269 @@ export default function GearListView({
     return pointerWithin(args);
   };
 
-  const bgstyle = {
-    backgroundImage: `url(${sierraNevadaBg})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
+  // Rename list
+  const handleTitleSubmit = async () => {
+    const trimmed = titleText.trim();
+    if (!trimmed) {
+      setTitleText(list.title);
+      return setIsEditingTitle(false);
+    }
+    try {
+      await api.patch(`/dashboard/${listId}`, { title: trimmed });
+      toast.success("List renamed");
+      onRefresh();
+      fetchLists();
+    } catch (err) {
+      toast.error(err.message || "Rename failed");
+      setTitleText(list.title);
+    } finally {
+      setIsEditingTitle(false);
+    }
   };
+
+  const handleImageUpload = async (e) => {
+    e.stopPropagation();
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFileName(file.name);
+
+    if (file.size > MAX_SIZE) {
+      toast.error("Please select an image under 5 MB.");
+      return;
+    }
+    const fd = new FormData();
+    fd.append("image", file);
+
+    setIsUploading(true);
+    try {
+      await api.post(`/dashboard/${listId}/preferences/image`, fd);
+      toast.success("Background image updated");
+      await onRefresh();
+    } catch (err) {
+      if (err.response?.status === 413) {
+        toast.error("Image is too large. Please pick one under 5 MB.");
+      } else {
+        toast.error(err.message || "Upload failed");
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleColorSelect = async (color) => {
+    try {
+      await api.patch(`/dashboard/${listId}/preferences`, {
+        backgroundColor: color,
+      });
+      toast.success("Background color updated");
+      onRefresh();
+    } catch (err) {
+      toast.error(err.message || "Update failed");
+    }
+  };
+
+  // Copy list
+  const handleCopyList = async () => {
+    try {
+      const { data } = await api.post(`/dashboard/${listId}/copy`);
+      toast.success("List copied");
+      fetchLists(); // refresh sidebar (you’ll need to pass fetchLists in as a prop)
+      localStorage.setItem("lastListId", data.list._id);
+      navigate(`/dashboard/${data.list._id}`);
+    } catch (err) {
+      toast.error(err.message || "Copy failed");
+    }
+  };
+
+  // Share list (placeholder)
+  const handleShareList = () => {
+    toast("Share feature coming soon");
+  };
+
+  // Delete list
+  const openDeleteListConfirm = () => setConfirmDeleteOpen(true);
+  const cancelDeleteList = () => setConfirmDeleteOpen(false);
+  const actuallyDeleteList = async () => {
+    try {
+      await api.delete(`/dashboard/${listId}`);
+      toast.success("List deleted");
+      fetchLists();
+      cancelDeleteList();
+      navigate("/dashboard");
+    } catch (err) {
+      toast.error(err.message || "Delete failed");
+    }
+  };
+
+  // Gradient overlay definition
+  const overlay = "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3))";
+
+  // Dynamic style based on list prefs, with gradient on top
+  const bgstyle = list.backgroundImageUrl
+    ? {
+        backgroundImage: `${overlay}, url(${list.backgroundImageUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : list.backgroundColor
+    ? {
+        backgroundColor: list.backgroundColor,
+        backgroundImage: overlay,
+      }
+    : {};
 
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
-      <div
-        className={
-          `flex justify-between items-center px-6 py-4 ` +
-          (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
-        }
-      >
-        <div className="flex items-center space-x-4">
-          <h2 className="hide-on-touch text-xl text-primaryAlt">
-            {list.title}
-          </h2>
-          <PackStats
-            base={stats.baseWeight}
-            worn={stats.wornWeight}
-            consumable={stats.consumableWeight}
-            total={stats.totalWeight}
-            breakdowns={breakdowns}
+      {/* 1) full-page spinner overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <FaSpinner className="animate-spin text-white text-4xl" />
+        </div>
+      )}
+      <div className="w-full bg-black bg-opacity-25">
+        <div
+          className={
+            `flex justify-between items-center px-8 py-2 ` +
+            (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
+          }
+        >
+          {/* Title + stats, inline-editable */}
+          <div className="flex items-center space-x-4">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={titleText}
+                autoFocus
+                onChange={(e) => setTitleText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleTitleSubmit();
+                  if (e.key === "Escape") {
+                    setTitleText(list.title);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                onBlur={handleTitleSubmit}
+                className="hide-on-touch text-xl text-accent bg-transparent border-b border-accent focus:outline-none"
+              />
+            ) : (
+              <>
+                <h2
+                  onClick={() => setIsEditingTitle(true)}
+                  className="hide-on-touch text-xl text-accent"
+                >
+                  {list.title}
+                </h2>
+                <PackStats
+                  base={stats.baseWeight}
+                  worn={stats.wornWeight}
+                  consumable={stats.consumableWeight}
+                  total={stats.totalWeight}
+                  breakdowns={breakdowns}
+                />{" "}
+              </>
+            )}
+          </div>
+          {/* Ellipsis menu */}
+          <DropdownMenu
+            trigger={
+              <button
+                className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
+                aria-label="List options"
+              >
+                <FaEllipsisH />
+              </button>
+            }
+            menuWidth="w-56"
+            items={[
+              {
+                key: "upload-image",
+                render: () => (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <label className="block text-sm text-secondary mb-1">
+                      Change Background
+                    </label>
+                    {/* hidden native file input, triggered by our button */}
+                    <label className="inline-flex items-center px-3 py-1 bg-base-100 border rounded cursor-pointer text-sm">
+                      Upload Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                    </label>
+                    {/* caption below button showing selected file name */}
+                    <p className="text-xs text-secondary mt-2">
+                      {selectedFileName || "No file chosen"}
+                    </p>
+                  </div>
+                ),
+              },
+              ,
+              {
+                key: "color-swatches",
+                render: () => (
+                  <div
+                    className="grid grid-cols-4 gap-2 place-items-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {swatches.map(({ key, value, class: cls }) => (
+                      <div key={key} className="relative group">
+                        <button
+                          onClick={() => handleColorSelect(value)}
+                          className={`${cls} w-6 h-6 rounded-full`}
+                        >
+                          {list.backgroundColor === value && (
+                            <FaCheck className="text-white text-xs" />
+                          )}
+                        </button>
+                        {/* tooltip */}
+                        <span
+                          className="
+         absolute 
+         bottom-full 
+         left-1/2 
+         transform -translate-x-1/2 
+         mb-1 
+         px-2 py-0.5 
+         text-xs 
+         text-white 
+         bg-black bg-opacity-75 
+         rounded 
+         opacity-0 
+         pointer-events-none 
+         group-hover:opacity-100 
+         transition-opacity
+       "
+                        >
+                          {key}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ),
+              },
+              {
+                key: "details",
+                label: "View / Edit details",
+                onClick: () => toast("View / Edit details feature coming soon"),
+              },
+              { key: "copy", label: "Copy gear list", onClick: handleCopyList },
+              {
+                key: "share",
+                label: "Share gear list",
+                onClick: handleShareList,
+              },
+              {
+                key: "delete",
+                label: "Delete gear list",
+                onClick: openDeleteListConfirm,
+                className: "text-error",
+              },
+            ]}
           />
         </div>
-        {/* make the link a flex container too */}
-        <a
-          href="#"
-          className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
-          aria-label="More options"
-        >
-          <FaEllipsisH />
-        </a>
       </div>
 
       {/* ───── Wrap everything in one DndContextWrapper ───── */}
@@ -545,7 +793,7 @@ export default function GearListView({
         )}
       >
         {viewMode === "list" ? (
-          <div className="flex-1 overflow-y-auto px-4 pb-2 sm:w-4/5 sm:mx-auto">
+          <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
             {categories.map((cat) => (
               <SortableSection
                 key={cat._id}
@@ -602,7 +850,7 @@ export default function GearListView({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:snap-none">
+          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
             {categories.map((cat) => (
               <SortableColumn
                 key={cat._id}
@@ -668,8 +916,9 @@ export default function GearListView({
         confirmText="Yes, remove"
         cancelText="Cancel"
         onConfirm={actuallyDeleteItem}
-        onCancel={cancelDelete}
+        onCancel={cancelDeleteItem}
       />
+
       <ConfirmDialog
         isOpen={confirmCatOpen}
         title="Delete this category?"
@@ -678,6 +927,16 @@ export default function GearListView({
         cancelText="Cancel"
         onConfirm={actuallyDeleteCat}
         onCancel={cancelDeleteCat}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDeleteOpen}
+        title="Delete this gear list?"
+        message="This will remove the list and all its categories/items."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={actuallyDeleteList}
+        onCancel={cancelDeleteList}
       />
     </div>
   );

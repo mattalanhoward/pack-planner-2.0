@@ -11,7 +11,7 @@ import { useUserSettings } from "../contexts/UserSettings";
 
 export default function Dashboard() {
   const { isAuthenticated } = useAuth();
-  const { listId } = useParams(); // from /lists/:listId
+  const { listId } = useParams(); // from /dashboard/:listId
   const navigate = useNavigate();
 
   // ─── Single‐source‐of‐truth for our `/full` payload ───
@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [lists, setLists] = useState([]);
   const fetchLists = useCallback(async () => {
     try {
-      const { data } = await api.get("/lists");
+      const { data } = await api.get("/dashboard");
       setLists(data);
     } catch (err) {
       console.error("Failed to fetch lists", err);
@@ -56,23 +56,23 @@ export default function Dashboard() {
     // 2) try lastListId from localStorage
     const stored = localStorage.getItem("lastListId");
     if (stored && ids.includes(stored)) {
-      navigate(`/lists/${stored}`, { replace: true });
+      navigate(`/dashboard/${stored}`, { replace: true });
       return;
     }
 
     // 3) fallback to first list
-    navigate(`/lists/${ids[0]}`, { replace: true });
+    navigate(`/dashboard/${ids[0]}`, { replace: true });
   }, [lists, listId, navigate]);
 
   // ─── viewMode persistence ───
   // NEW: pull from server-backed Context
   const { viewMode, setViewMode } = useUserSettings();
 
-  // fetch /api/lists/:listId/full
+  // fetch /api/dashboard/:listId/full
   const fetchFullData = useCallback(async () => {
     if (!listId) return;
     try {
-      const { data } = await api.get(`/lists/${listId}/full`);
+      const { data } = await api.get(`/dashboard/${listId}/full`);
       setFullData({
         list: data.list,
         categories: data.categories,
@@ -98,7 +98,7 @@ export default function Dashboard() {
       for (let i = 0; i < reorderedCats.length; i++) {
         const { _id, position } = reorderedCats[i];
         if (oldPosMap[_id] !== position) {
-          await api.patch(`/lists/${listId}/categories/${_id}/position`, {
+          await api.patch(`/dashboard/${listId}/categories/${_id}/position`, {
             position,
           });
         }
@@ -136,7 +136,7 @@ export default function Dashboard() {
             } else {
               localStorage.removeItem("lastListId");
             }
-            navigate(`/lists/${id}`);
+            navigate(`/dashboard/${id}`);
           }}
           onRefresh={fetchFullData}
         />
@@ -151,6 +151,7 @@ export default function Dashboard() {
               onReorderCategories={onReorderCategories}
               list={fullData.list}
               items={fullData.items}
+              fetchLists={fetchLists} // ← add this line
             />
           ) : (
             <div className="h-full flex items-center justify-center text-primary text-lg">

@@ -151,6 +151,7 @@ export default function Dashboard() {
               onReorderCategories={onReorderCategories}
               list={fullData.list}
               items={fullData.items}
+              fetchLists={fetchLists} // ← add this line
             />
           ) : (
             <div className="h-full flex items-center justify-center text-primary text-lg">

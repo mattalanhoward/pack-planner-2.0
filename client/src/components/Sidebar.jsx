@@ -6,7 +6,6 @@ import {
   FaChevronRight,
   FaPlus,
   FaEllipsisH,
-  FaTimes,
 } from "react-icons/fa";
 import GlobalItemModal from "./GlobalItemModal";
 import GlobalItemEditModal from "./GlobalItemEditModal";
@@ -24,8 +23,6 @@ export default function Sidebar({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingGlobalItem, setEditingGlobalItem] = useState(null);
@@ -85,39 +82,6 @@ export default function Sidebar({
       console.error("Error creating list:", err);
       toast.error(err.response?.data?.message || "Could not create list.");
     }
-  };
-
-  const startEditList = (id, title) => {
-    setEditingId(id);
-    setEditingTitle(title);
-  };
-
-  const saveEditList = async (id) => {
-    const title = editingTitle.trim();
-    if (!title) return toast.error("List name cannot be empty.");
-
-    try {
-      await api.patch(`/dashboard/${id}`, { title });
-      setEditingId(null);
-      setEditingTitle("");
-      await fetchLists();
-      if (currentListId === id) {
-        // ✅ re‐select the renamed list
-        localStorage.setItem("lastListId", id);
-        onSelectList(id);
-        // then refresh its detail pane:
-        onRefresh();
-      }
-      toast.success("List renamed!");
-    } catch (err) {
-      console.error("Error renaming list:", err);
-      toast.error(err.response?.data?.message || "Could not update list.");
-    }
-  };
-
-  const cancelEditList = () => {
-    setEditingId(null);
-    setEditingTitle("");
   };
 
   // ─── Delete list flow ───
@@ -267,53 +231,30 @@ export default function Sidebar({
               <ul className="overflow-y-auto flex-1 space-y-1 text-secondaryAlt">
                 {sortedLists.map((l) => (
                   <li key={l._id} className="flex items-center">
-                    {editingId === l._id ? (
-                      <input
-                        className="flex-1 rounded-lg p-2 text-primary border border-primary bg-base-100"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onBlur={() => saveEditList(l._id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEditList(l._id);
-                          if (e.key === "Escape") cancelEditList();
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            // 1) Select the new list
-                            onSelectList(l._id);
-                            // 2) if on mobile, collapse sidebar
-                            if (isMobile()) {
-                              setCollapsed(true);
-                            }
-                            // 3) Persist or clear storage
-                            if (l._id) {
-                              localStorage.setItem("lastListId", l._id);
-                            } else {
-                              localStorage.removeItem("lastListId");
-                            }
-                          }}
-                          className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
-                            l._id === currentListId
-                              ? "bg-primaryAlt text-base-100"
-                              : "hover:bg-primaryAlt hover:text-neutral"
-                          }`}
-                        >
-                          {l.title}
-                        </button>
-                        <FaEllipsisH
-                          onClick={() => startEditList(l._id, l.title)}
-                          className="ml-2 cursor-pointer text-primaryAlt hover:text-primaryAlt/80"
-                        />
-                        <FaTimes
-                          onClick={() => handleDeleteListClick(l._id)}
-                          className="ml-2 cursor-pointer text-error hover:text-error/80"
-                        />
-                      </>
-                    )}
+                    <button
+                      onClick={() => {
+                        // 1) Select the new list
+                        onSelectList(l._id);
+                        // 2) if on mobile, collapse sidebar
+                        if (isMobile()) {
+                          setCollapsed(true);
+                        }
+                        // 3) Persist or clear storage
+                        if (l._id) {
+                          localStorage.setItem("lastListId", l._id);
+                        } else {
+                          localStorage.removeItem("lastListId");
+                        }
+                      }}
+                      className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
+                        l._id === currentListId
+                          ? "bg-primaryAlt text-base-100"
+                          : "hover:bg-primaryAlt hover:text-neutral"
+                      }`}
+                    >
+                      {" "}
+                      {l.title}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -393,23 +334,6 @@ export default function Sidebar({
           </div>
         )}
       </div>
-
-      {/* Delete List Confirm */}
-      <ConfirmDialog
-        isOpen={confirmListOpen}
-        title={
-          pendingDeleteListId
-            ? `Delete “${
-                lists.find((l) => l._id === pendingDeleteListId)?.title || ""
-              }” Gear List?`
-            : "Delete this list?"
-        }
-        message="This will completely remove the gear list"
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={actuallyDeleteList}
-        onCancel={cancelDeleteList}
-      />
     </div>
   );
 }

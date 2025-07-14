@@ -33,6 +33,7 @@ export default function GearListView({
   onRefresh,
   onReorderCategories,
   fetchLists,
+  collapsed,
 }) {
   const [editingCatId, setEditingCatId] = useState(null);
   const [addingNewCat, setAddingNewCat] = useState(false);
@@ -596,6 +597,13 @@ export default function GearListView({
       }
     : {};
 
+  const headerPadding =
+    viewMode === "list"
+      ? "pl-6 sm:w-4/5 sm:mx-auto"
+      : collapsed
+      ? "pl-0 sm:pl-15"
+      : "pl-0 sm:pl-6";
+
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
       {/* 1) full-page spinner overlay */}
@@ -606,13 +614,17 @@ export default function GearListView({
       )}
       <div className="w-full bg-black bg-opacity-25">
         <div
-          className={
-            `flex justify-between items-center px-8 py-2 ` +
-            (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
-          }
+          className={[
+            "flex justify-between items-center pr-6 py-2",
+            headerPadding,
+          ].join(" ")}
         >
           {/* Title + stats, inline-editable */}
-          <div className="flex items-center space-x-4">
+          <div
+            className="flex-1 flex items-center justify-center space-x-4
++                          sm:flex-none sm:justify-start"
+          >
+            {" "}
             {isEditingTitle ? (
               <input
                 type="text"

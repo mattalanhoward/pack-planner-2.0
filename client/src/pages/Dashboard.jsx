@@ -14,6 +14,9 @@ export default function Dashboard() {
   const { listId } = useParams(); // from /dashboard/:listId
   const navigate = useNavigate();
 
+  // ─── Sidebar collapsed state ───
+  const [collapsed, setCollapsed] = useState(false);
+
   // ─── Single‐source‐of‐truth for our `/full` payload ───
   const [fullData, setFullData] = useState({
     list: null,
@@ -130,6 +133,8 @@ export default function Dashboard() {
           fetchLists={fetchLists} // allows Sidebar to re-load after mutating
           currentListId={listId}
           categories={fullData?.categories || []}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
           onSelectList={(id) => {
             if (id) {
               localStorage.setItem("lastListId", id);
@@ -151,7 +156,8 @@ export default function Dashboard() {
               onReorderCategories={onReorderCategories}
               list={fullData.list}
               items={fullData.items}
-              fetchLists={fetchLists} // ← add this line
+              fetchLists={fetchLists}
+              collapsed={collapsed}
             />
           ) : (
             <div className="h-full flex items-center justify-center text-primary text-lg">

@@ -20,8 +20,9 @@ export default function Sidebar({
   categories,
   onSelectList,
   onRefresh,
+  collapsed,
+  setCollapsed,
 }) {
-  const [collapsed, setCollapsed] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -169,7 +170,7 @@ export default function Sidebar({
     );
   }, [items, searchQuery]);
 
-  const widthClass = collapsed ? "w-5" : "w-full sm:w-80";
+  const widthClass = collapsed ? "w-0" : "w-full sm:w-80";
   const overlay = !collapsed
     ? // on mobile: take it out of the flow and cover
       "fixed top-12 left-0 right-0 bottom-0 z-50 \
@@ -188,8 +189,7 @@ export default function Sidebar({
           relative
           bg-neutral
           ${widthClass}
-          /* never shrink smaller than w-5 (1.25rem) */
-          min-w-[1.25rem]
+          ${collapsed ? "" : "min-w-[1.25rem]"}
           transition-[width] duration-300 ease-in-out
         `}
       >
@@ -197,8 +197,8 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed((c) => !c)}
           className={
-            `absolute top-3 bg-error text-primary rounded-full p-1 shadow-lg transform ` +
-            (collapsed ? "right-0 translate-x-1/2" : "right-4")
+            `absolute top-2.5 bg-error text-primary rounded-full p-1 shadow-lg transform ` +
+            (collapsed ? "right-[-1rem] translate-x-full" : "right-4")
           }
         >
           {collapsed ? <FaChevronRight /> : <FaChevronLeft />}

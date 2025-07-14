@@ -29,6 +29,9 @@ export default {
         "base-100": withOpacity("--color-base-100-rgb"),
         "base-100Alt": withOpacity("--color-base-100-rgb"),
       },
+      spacing: {
+        15: "3.75rem",
+      },
       height: {
         "d-screen": "100dvh",
         "s-screen": "100svh",

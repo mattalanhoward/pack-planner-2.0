@@ -33,6 +33,7 @@ export default function GearListView({
   onRefresh,
   onReorderCategories,
   fetchLists,
+  collapsed,
 }) {
   const [editingCatId, setEditingCatId] = useState(null);
   const [addingNewCat, setAddingNewCat] = useState(false);
@@ -596,6 +597,13 @@ export default function GearListView({
       }
     : {};
 
+  const headerPadding =
+    viewMode === "list"
+      ? "pl-6 sm:w-4/5 sm:mx-auto"
+      : collapsed
+      ? "pl-0 sm:pl-15"
+      : "pl-0 sm:pl-6";
+
   return (
     <div style={bgstyle} className="flex flex-col h-full overflow-hidden">
       {/* 1) full-page spinner overlay */}
@@ -606,13 +614,17 @@ export default function GearListView({
       )}
       <div className="w-full bg-black bg-opacity-25">
         <div
-          className={
-            `flex justify-between items-center px-8 py-2 ` +
-            (viewMode === "list" ? "sm:w-4/5 sm:mx-auto" : "")
-          }
+          className={[
+            "flex justify-between items-center pr-6 py-2",
+            headerPadding,
+          ].join(" ")}
         >
           {/* Title + stats, inline-editable */}
-          <div className="flex items-center space-x-4">
+          <div
+            className="flex-1 flex items-center justify-center space-x-4
++                          sm:flex-none sm:justify-start"
+          >
+            {" "}
             {isEditingTitle ? (
               <input
                 type="text"
@@ -660,6 +672,14 @@ export default function GearListView({
             menuWidth="w-56"
             items={[
               {
+                key: "header-prefs",
+                render: () => (
+                  <div className="text-xs font-semibold text-primary uppercase">
+                    Gear List Preferences
+                  </div>
+                ),
+              },
+              {
                 key: "upload-image",
                 render: () => (
                   <div onClick={(e) => e.stopPropagation()}>
@@ -684,7 +704,6 @@ export default function GearListView({
                   </div>
                 ),
               },
-              ,
               {
                 key: "color-swatches",
                 render: () => (
@@ -696,7 +715,8 @@ export default function GearListView({
                       <div key={key} className="relative group">
                         <button
                           onClick={() => handleColorSelect(value)}
-                          className={`${cls} w-6 h-6 rounded-full`}
+                          className={`${cls} w-6 h-6 rounded-full flex items-center justify-center p-0`}
+                          // className={`${cls} w-6 h-6 rounded-full`}
                         >
                           {list.backgroundColor === value && (
                             <FaCheck className="text-white text-xs" />
@@ -727,6 +747,10 @@ export default function GearListView({
                     ))}
                   </div>
                 ),
+              },
+              {
+                key: "sep-1",
+                render: () => <div className="border-t border-gray-200 my-2" />,
               },
               {
                 key: "details",

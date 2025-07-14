@@ -660,6 +660,14 @@ export default function GearListView({
             menuWidth="w-56"
             items={[
               {
+                key: "header-prefs",
+                render: () => (
+                  <div className="text-xs font-semibold text-primary uppercase">
+                    Gear List Preferences
+                  </div>
+                ),
+              },
+              {
                 key: "upload-image",
                 render: () => (
                   <div onClick={(e) => e.stopPropagation()}>
@@ -684,7 +692,6 @@ export default function GearListView({
                   </div>
                 ),
               },
-              ,
               {
                 key: "color-swatches",
                 render: () => (
@@ -696,7 +703,8 @@ export default function GearListView({
                       <div key={key} className="relative group">
                         <button
                           onClick={() => handleColorSelect(value)}
-                          className={`${cls} w-6 h-6 rounded-full`}
+                          className={`${cls} w-6 h-6 rounded-full flex items-center justify-center p-0`}
+                          // className={`${cls} w-6 h-6 rounded-full`}
                         >
                           {list.backgroundColor === value && (
                             <FaCheck className="text-white text-xs" />
@@ -727,6 +735,10 @@ export default function GearListView({
                     ))}
                   </div>
                 ),
+              },
+              {
+                key: "sep-1",
+                render: () => <div className="border-t border-gray-200 my-2" />,
               },
               {
                 key: "details",

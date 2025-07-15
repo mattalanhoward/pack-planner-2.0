@@ -48,7 +48,7 @@ export default function StatWithDetails({
         <Popover.Content
           side="bottom"
           align="center"
-          className="w-56 p-2 bg-white rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs"
+          className="w-56 p-2 bg-white rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs z-[9999]"
         >
           <div className="flex justify-between items-center mb-1">
             <span className="font-medium text-gray-800">{label}</span>

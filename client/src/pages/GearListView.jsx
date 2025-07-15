@@ -17,6 +17,7 @@ import { DndContextWrapper } from "../components/DndContextWrapper";
 import api from "../services/api";
 import DropdownMenu from "../components/DropdownMenu";
 import ConfirmDialog from "../components/ConfirmDialog";
+import GearListDetailsModal from "../components/GearListDetailsModal";
 import PreviewCard from "../components/PreviewCard";
 import PreviewColumn from "../components/PreviewColumn";
 import PackStats from "../components/PackStats";
@@ -55,6 +56,7 @@ export default function GearListView({
   const [titleText, setTitleText] = useState(list.title);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => setTitleText(list.title), [list.title]);
 
@@ -85,6 +87,13 @@ export default function GearListView({
 
   // flatten ALL items into one array
   const allItems = Object.values(itemsMap).flat();
+
+  // count & cost
+  const itemsCount = allItems.length;
+  const totalCost = allItems.reduce(
+    (sum, i) => sum + (parseFloat(i.price) || 0) * (i.quantity || 1),
+    0
+  );
 
   // split them into the four buckets
   const baseItems = allItems.filter((i) => !i.worn && !i.consumable);
@@ -771,7 +780,7 @@ export default function GearListView({
               {
                 key: "details",
                 label: "View / Edit details",
-                onClick: () => toast("View / Edit details feature coming soon"),
+                onClick: () => setShowDetailsModal(true),
               },
               { key: "copy", label: "Copy gear list", onClick: handleCopyList },
               {
@@ -950,6 +959,17 @@ export default function GearListView({
           </div>
         )}
       </DndContextWrapper>
+      <GearListDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        list={list}
+        breakdowns={breakdowns}
+        itemsCount={itemsCount}
+        totalCost={totalCost}
+        onRefresh={onRefresh}
+        onRefreshSidebar={fetchLists}
+      />
+
       <ConfirmDialog
         isOpen={confirmOpen}
         title="Remove this item?"

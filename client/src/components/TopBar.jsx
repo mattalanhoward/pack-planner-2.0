@@ -211,10 +211,13 @@ export default function TopBar({ title, openSettings }) {
                     onChange={(e) => setRegion(e.target.value)}
                     className="ml-2 bg-transparent focus:outline-none"
                   >
-                    <option value="eu">EU</option>
+                    <option value="nl">NL</option>
                     <option value="us">USA</option>
                     <option value="ca">CDN</option>
                     <option value="gb">GB</option>
+                    <option value="fr">FR</option>
+                    <option value="it">IT</option>
+                    <option value="es">ES</option>
                   </select>
                 </div>
               ),

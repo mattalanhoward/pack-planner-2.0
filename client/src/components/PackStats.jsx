@@ -23,6 +23,7 @@ export default function PackStats({
   consumable = 0,
   total = 0,
   breakdowns = { base: [], worn: [], consumable: [], total: [] },
+  disablePopover = false,
 }) {
   const { weightUnit } = useUserSettings();
 
@@ -68,7 +69,7 @@ export default function PackStats({
   return (
     <div className="flex items-center space-x-3 text-xs overflow-x-auto px-3 hide-scrollbar">
       {visibleStats.map((s) => (
-        <StatWithDetails key={s.label} {...s} />
+        <StatWithDetails key={s.label} {...s} disablePopover={disablePopover} />
       ))}
     </div>
   );

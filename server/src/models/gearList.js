@@ -14,6 +14,10 @@ const gearListSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    notes: { type: String, default: "" },
+    tripStart: { type: Date },
+    tripEnd: { type: Date },
+    location: { type: String, default: "" },
     backgroundImageUrl: { type: String, default: null },
     backgroundColor: {
       type: String,

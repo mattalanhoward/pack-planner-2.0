@@ -22,11 +22,15 @@ export function SettingsProvider({ children }) {
     () => localStorage.getItem("language") || "en"
   );
   const [region, setRegion] = useState(
-    () => localStorage.getItem("region") || "eu"
+    () => localStorage.getItem("region") || "US"
   );
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem("viewMode") || "column"
   );
+
+  // ─── derive a single locale code, e.g. "en-US" ────────────
+  //    (we uppercase the region to match BCP-47 syntax)
+  const locale = `${language}-${region.toUpperCase()}`;
 
   // ─── mirror to localStorage & apply DOM side‐effects ───────
   useEffect(() => {
@@ -67,7 +71,15 @@ export function SettingsProvider({ children }) {
   // ─── persist everything to server in one shot ─────────────
   useEffect(() => {
     if (!isAuthenticated) return;
-    const payload = { weightUnit, theme, currency, language, region, viewMode };
+    const payload = {
+      weightUnit,
+      theme,
+      currency,
+      language,
+      region,
+      viewMode,
+      locale,
+    };
     api
       .patch("/settings", payload)
       .catch((err) => console.error("Failed to save settings:", err));
@@ -86,6 +98,7 @@ export function SettingsProvider({ children }) {
         setLanguage,
         region,
         setRegion,
+        locale,
         viewMode,
         setViewMode,
       }}

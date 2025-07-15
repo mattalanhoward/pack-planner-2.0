@@ -102,16 +102,32 @@ export default function GearListView({
   };
 
   function computeStats(itemsMap) {
-    const all = Object.values(itemsMap).flat();
-    const wornWeight = all
-      .filter((i) => i.worn)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
-    const consumableWeight = all
-      .filter((i) => i.consumable)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
-    const baseWeight = all
-      .filter((i) => !i.worn && !i.consumable)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
+    let baseWeight = 0;
+    let wornWeight = 0;
+    let consumableWeight = 0;
+
+    Object.values(itemsMap)
+      .flat()
+      .forEach((item) => {
+        const w = item.weight || 0;
+        const qty = item.quantity || 1;
+
+        if (item.consumable) {
+          // all of these go into consumableWeight
+          consumableWeight += w * qty;
+        } else if (item.worn) {
+          // exactly one counts as “worn”
+          wornWeight += w;
+          // extras go back into base
+          if (qty > 1) {
+            baseWeight += w * (qty - 1);
+          }
+        } else {
+          // pure base items
+          baseWeight += w * qty;
+        }
+      });
+
     return {
       baseWeight,
       wornWeight,

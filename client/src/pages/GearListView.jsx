@@ -565,7 +565,7 @@ export default function GearListView({
       await api.patch(`/dashboard/${listId}/preferences`, {
         backgroundColor: color,
       });
-      toast.success("Background color updated");
+      // toast.success("Background color updated");
       onRefresh();
     } catch (err) {
       toast.error(err.message || "Update failed");

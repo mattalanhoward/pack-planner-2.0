@@ -23,6 +23,8 @@ export default function PackStats({
   consumable = 0,
   total = 0,
   breakdowns = { base: [], worn: [], consumable: [], total: [] },
+  disablePopover = false,
+  showLabels = false,
 }) {
   const { weightUnit } = useUserSettings();
 
@@ -64,11 +66,27 @@ export default function PackStats({
   const visibleStats = isImperial
     ? stats.filter((s) => s.label !== "Total")
     : stats;
+  if (!showLabels) {
+    return (
+      <div className="flex items-center space-x-3 text-xs overflow-x-auto px-3 hide-scrollbar">
+        {visibleStats.map((s) => (
+          <StatWithDetails
+            key={s.label}
+            {...s}
+            disablePopover={disablePopover}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center space-x-3 text-xs overflow-x-auto px-3 hide-scrollbar">
+    <div className="flex items-center space-x-6 text-xs overflow-x-auto px-3 hide-scrollbar">
       {visibleStats.map((s) => (
-        <StatWithDetails key={s.label} {...s} />
+        <div key={s.label} className="flex flex-col items-center space-y-2">
+          <StatWithDetails {...s} disablePopover={disablePopover} />
+          <span className="text-xs font-medium text-primary">{s.label}</span>
+        </div>
       ))}
     </div>
   );

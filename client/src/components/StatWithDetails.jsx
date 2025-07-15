@@ -13,6 +13,7 @@ export default function StatWithDetails({
   label,
   items = [],
   colorClass,
+  disablePopover = false,
 }) {
   // 1️⃣ pull the current unit (e.g. "g", "kg", "lb", "oz", or "auto")
   const unit = useUnit();
@@ -20,6 +21,17 @@ export default function StatWithDetails({
   // 2️⃣ format the total/raw value
   const displayValue = formatWeight(raw, unit); // :contentReference[oaicite:0]{index=0}
 
+  if (disablePopover) {
+    // just render the static stat – no popover, no hover / click
+    return (
+      <div className="flex items-center space-x-1">
+        <Icon className="text-base" />
+        <span className="text-sm">{displayValue}</span>{" "}
+      </div>
+    );
+  }
+
+  // otherwise fall back to your normal interactive version:
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
@@ -36,7 +48,7 @@ export default function StatWithDetails({
         <Popover.Content
           side="bottom"
           align="center"
-          className="w-56 p-2 bg-white rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs"
+          className="w-56 p-2 bg-white rounded-lg shadow-lg max-h-64 overflow-y-auto text-xs z-[9999]"
         >
           <div className="flex justify-between items-center mb-1">
             <span className="font-medium text-gray-800">{label}</span>

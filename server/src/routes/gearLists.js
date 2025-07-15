@@ -106,14 +106,32 @@ router.post("/", async (req, res) => {
 // PATCH /api/dashboard/:listId — rename a list
 router.patch("/:listId", async (req, res) => {
   try {
-    const { title } = req.body;
-    if (!title) return res.status(400).json({ message: "Title is required." });
+    // pull all updatable props from body
+    const { title, notes, tripStart, tripEnd, location, backgroundColor } =
+      req.body;
+
+    if (!title) {
+      return res.status(400).json({ message: "Title is required." });
+    }
+
+    // build an update object only with provided fields
+    const update = { title };
+    if (notes !== undefined) update.notes = notes;
+    if (tripStart !== undefined) update.tripStart = tripStart;
+    if (tripEnd !== undefined) update.tripEnd = tripEnd;
+    if (location !== undefined) update.location = location;
+    if (backgroundColor !== undefined) update.backgroundColor = backgroundColor;
+
     const updated = await GearList.findOneAndUpdate(
       { _id: req.params.listId, owner: req.userId },
-      { title },
+      update,
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: "List not found." });
+
+    if (!updated) {
+      return res.status(404).json({ message: "List not found." });
+    }
+    // return the full updated document
     res.json(updated);
   } catch (err) {
     console.error(err);

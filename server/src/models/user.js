@@ -34,7 +34,11 @@ const userSchema = new mongoose.Schema(
     theme: { type: String, default: "desert" },
     weightUnit: { type: String, enum: ["g", "oz"], default: "g" },
     language: { type: String, default: "en" },
-    region: { type: String, enum: ["eu", "us", "ca", "gb"], default: "eu" },
+    region: {
+      type: String,
+      enum: ["nl", "us", "ca", "gb", "es", "fr", "it"],
+      default: "nl",
+    },
   },
   {
     timestamps: true,

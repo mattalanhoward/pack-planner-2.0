@@ -24,7 +24,10 @@ export default function PackStats({
   total = 0,
   breakdowns = { base: [], worn: [], consumable: [], total: [] },
 }) {
-  const { unitPreference } = useUserSettings();
+  const { weightUnit } = useUserSettings();
+
+  // only in imperial units we’ll hide the “Total” stat
+  const isImperial = weightUnit === "lb" || weightUnit === "oz";
 
   const stats = [
     {
@@ -57,9 +60,14 @@ export default function PackStats({
     },
   ];
 
+  // drop the Total entry when in lb/oz mode
+  const visibleStats = isImperial
+    ? stats.filter((s) => s.label !== "Total")
+    : stats;
+
   return (
     <div className="flex items-center space-x-3 text-xs overflow-x-auto px-3 hide-scrollbar">
-      {stats.map((s) => (
+      {visibleStats.map((s) => (
         <StatWithDetails key={s.label} {...s} />
       ))}
     </div>

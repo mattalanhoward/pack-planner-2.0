@@ -7,7 +7,7 @@ export default function PreviewColumn({ category, items }) {
   return (
     <div
       className="
-        snap-center flex-shrink-0 m-2 w-80 sm:w-64
+        snap-center flex-shrink-0 m-2 w-90 sm:w-64
         bg-neutral/20 rounded-lg p-3 flex flex-col h-full
         opacity-75
       "

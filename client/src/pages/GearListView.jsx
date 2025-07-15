@@ -102,16 +102,32 @@ export default function GearListView({
   };
 
   function computeStats(itemsMap) {
-    const all = Object.values(itemsMap).flat();
-    const wornWeight = all
-      .filter((i) => i.worn)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
-    const consumableWeight = all
-      .filter((i) => i.consumable)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
-    const baseWeight = all
-      .filter((i) => !i.worn && !i.consumable)
-      .reduce((sum, i) => sum + (i.weight || 0) * (i.quantity || 1), 0);
+    let baseWeight = 0;
+    let wornWeight = 0;
+    let consumableWeight = 0;
+
+    Object.values(itemsMap)
+      .flat()
+      .forEach((item) => {
+        const w = item.weight || 0;
+        const qty = item.quantity || 1;
+
+        if (item.consumable) {
+          // all of these go into consumableWeight
+          consumableWeight += w * qty;
+        } else if (item.worn) {
+          // exactly one counts as “worn”
+          wornWeight += w;
+          // extras go back into base
+          if (qty > 1) {
+            baseWeight += w * (qty - 1);
+          }
+        } else {
+          // pure base items
+          baseWeight += w * qty;
+        }
+      });
+
     return {
       baseWeight,
       wornWeight,
@@ -817,7 +833,7 @@ export default function GearListView({
         )}
       >
         {viewMode === "list" ? (
-          <div className="flex-1 overflow-y-auto px-4 py-2 sm:w-4/5 sm:mx-auto">
+          <div className="flex-1 overflow-y-auto px-2 py-2 sm:w-4/5 sm:mx-auto">
             {categories.map((cat) => (
               <SortableSection
                 key={cat._id}
@@ -874,7 +890,7 @@ export default function GearListView({
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-4 py-2 snap-x snap-mandatory sm:snap-none">
+          <div className="flex-1 flex flex-nowrap items-start overflow-x-auto px-2 py-2 snap-x snap-mandatory sm:snap-none">
             {categories.map((cat) => (
               <SortableColumn
                 key={cat._id}
@@ -902,7 +918,7 @@ export default function GearListView({
               />
             ))}
             {/* Add New Category column */}
-            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-80 sm:w-64 flex flex-col h-full px-4">
+            <div className="snap-center flex-shrink-0 mt-0 mb-0 w-90 sm:w-64 flex flex-col h-full px-2">
               {addingNewCat ? (
                 <div className="py-3">
                   <input

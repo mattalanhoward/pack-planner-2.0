@@ -32,6 +32,9 @@ export default {
       spacing: {
         15: "3.75rem",
       },
+      width: {
+        90: "21.5rem",
+      },
       height: {
         "d-screen": "100dvh",
         "s-screen": "100svh",

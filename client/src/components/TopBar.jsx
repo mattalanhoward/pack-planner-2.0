@@ -4,7 +4,7 @@ import DropdownMenu from "./DropdownMenu";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { FaSignOutAlt, FaCheck } from "react-icons/fa";
-import logo from "../assets/logo.png";
+import logo from "../assets/images/logo.png";
 import { useUserSettings } from "../contexts/UserSettings";
 import AccountModal from "./AccountModal";
 import ViewToggle from "./ViewToggle";

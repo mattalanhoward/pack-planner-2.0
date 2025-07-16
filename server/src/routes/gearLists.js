@@ -164,34 +164,42 @@ router.delete("/:listId", async (req, res) => {
   }
 });
 
-// PATCH colors
+// PATCH /api/dashboard/:listId/preferences
 router.patch("/:listId/preferences", async (req, res) => {
-  const { backgroundColor } = req.body;
-  await GearList.findOneAndUpdate(
-    { _id: req.params.listId, owner: req.userId },
-    { backgroundColor, backgroundImageUrl: null },
-    { new: true }
-  );
-  res.json({ success: true });
-});
+  const { backgroundColor, backgroundImageUrl } = req.body;
 
-// PATCH /api/gear-lists/:listId/preferences
-// Set a solid-color background
-router.patch("/:listId/preferences", async (req, res) => {
-  const { backgroundColor } = req.body;
+  // build your update object based on what the client sent:
+  const update = {};
+  if (backgroundColor !== undefined) {
+    update.backgroundColor = backgroundColor;
+    update.backgroundImageUrl = null; // clear any image
+  }
+  if (backgroundImageUrl) {
+    update.backgroundImageUrl = backgroundImageUrl;
+    update.backgroundColor = null; // clear any color
+  }
+
   try {
     const updated = await GearList.findOneAndUpdate(
       { _id: req.params.listId, owner: req.userId },
-      { backgroundColor, backgroundImageUrl: null },
-      { new: true }
+      update,
+      { new: true, runValidators: true }
     );
     if (!updated) {
       return res.status(404).json({ error: "List not found" });
     }
-    return res.json({ list: updated });
+
+    // send back the full updated list (or at least both prefs)
+    return res.json({
+      list: {
+        backgroundColor: updated.backgroundColor,
+        backgroundImageUrl: updated.backgroundImageUrl,
+        // …and any other fields you care about…
+      },
+    });
   } catch (err) {
-    console.error("Error updating background color:", err);
-    return res.status(500).json({ error: "Could not update color." });
+    console.error("Error updating preferences:", err);
+    return res.status(500).json({ error: "Could not update preferences." });
   }
 });
 

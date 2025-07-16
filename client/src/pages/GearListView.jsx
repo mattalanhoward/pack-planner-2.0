@@ -24,6 +24,7 @@ import PackStats from "../components/PackStats";
 import SortableColumn from "../components/SortableColumn";
 import SortableSection from "../components/SortableSection";
 import { GEARLIST_SWATCHES as swatches } from "../config/colors";
+import { defaultBackgrounds } from "../config/defaultBackgrounds";
 
 export default function GearListView({
   listId,
@@ -57,6 +58,17 @@ export default function GearListView({
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  // ⚡️ Optimistic UI for background color
+  const [bgColor, setBgColor] = useState(list.backgroundColor);
+  const [bgImage, setBgImage] = useState(list.backgroundImageUrl);
+
+  useEffect(() => {
+    setBgImage(list.backgroundImageUrl);
+  }, [list.backgroundImageUrl]);
+
+  useEffect(() => {
+    setBgColor(list.backgroundColor);
+  }, [list.backgroundColor]);
 
   useEffect(() => setTitleText(list.title), [list.title]);
 
@@ -561,14 +573,47 @@ export default function GearListView({
   };
 
   const handleColorSelect = async (color) => {
+    // 1️⃣ stash old value
+    const previous = bgColor;
+
+    // 2️⃣ flip it immediately
+    setBgColor(color);
+
     try {
+      // 3️⃣ send to server
       await api.patch(`/dashboard/${listId}/preferences`, {
         backgroundColor: color,
       });
-      // toast.success("Background color updated");
+      // toast.success("Background updated");
+      // 4️⃣ optional full re‑sync
       onRefresh();
     } catch (err) {
+      // 5️⃣ revert on failure
+      setBgColor(previous);
       toast.error(err.message || "Update failed");
+    }
+  };
+
+  // user picks one of the default background images
+  const handleDefaultBackgroundSelect = async (url) => {
+    // 1️⃣ Keep the old value so we can roll back on failure
+    const previousImage = bgImage;
+
+    // 2️⃣ Optimistically update the UI
+    setBgImage(url);
+
+    try {
+      // 3️⃣ Send the change to the server
+      await api.patch(`/dashboard/${listId}/preferences`, {
+        backgroundImageUrl: url,
+      });
+      // toast.success("Background updated");
+      // 4️⃣ (Optional) re‑fetch any other updated data
+      onRefresh();
+    } catch (error) {
+      // 5️⃣ Roll back if something goes wrong
+      setBgImage(previousImage);
+      toast.error(error.message || "Update failed");
     }
   };
 
@@ -608,19 +653,22 @@ export default function GearListView({
   // Gradient overlay definition
   const overlay = "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3))";
 
-  // Dynamic style based on list prefs, with gradient on top
-  const bgstyle = list.backgroundImageUrl
-    ? {
-        backgroundImage: `${overlay}, url(${list.backgroundImageUrl})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }
-    : list.backgroundColor
-    ? {
-        backgroundColor: list.backgroundColor,
-        backgroundImage: overlay,
-      }
-    : {};
+  // Dynamic style based on list prefs, with gradient on top of color
+  const bgstyle =
+    bgImage || list.backgroundImageUrl
+      ? {
+          // no overlay when using an image
+          backgroundImage: `url(${bgImage || list.backgroundImageUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }
+      : bgColor
+      ? {
+          // when using only a color, you can keep your overlay if you like:
+          backgroundColor: bgColor,
+          backgroundImage: overlay,
+        }
+      : {};
 
   const headerPadding =
     viewMode === "list"
@@ -704,16 +752,38 @@ export default function GearListView({
                   </div>
                 ),
               },
+
               {
-                key: "upload-image",
+                key: "bg-presets",
                 render: () => (
                   <div onClick={(e) => e.stopPropagation()}>
-                    <label className="block text-sm text-secondary mb-1">
-                      Change Background
-                    </label>
-                    {/* hidden native file input, triggered by our button */}
+                    <div className="block text-sm text-secondary mb-1">
+                      Images
+                      <div className="grid grid-cols-4 gap-2 mt-2 mx-auto w-full max-w-xs">
+                        {defaultBackgrounds.map(({ key, url }) => (
+                          <button
+                            key={key}
+                            onClick={() => handleDefaultBackgroundSelect(url)}
+                            className={
+                              `w-10 h-10 bg-cover bg-center rounded ` +
+                              (bgImage === url
+                                ? "ring-2 ring-secondary"
+                                : "ring-1 ring-transparent hover:ring-gray-300")
+                            }
+                            style={{ backgroundImage: `url(${url})` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "file-upload",
+                render: () => (
+                  <div onClick={(e) => e.stopPropagation()}>
                     <label className="inline-flex items-center px-3 py-1 bg-base-100 border rounded cursor-pointer text-sm">
-                      Upload Photo
+                      Upload Image
                       <input
                         type="file"
                         accept="image/*"
@@ -722,34 +792,37 @@ export default function GearListView({
                         disabled={isUploading}
                       />
                     </label>
-                    {/* caption below button showing selected file name */}
-                    <p className="text-xs text-secondary mt-2">
-                      {selectedFileName || "No file chosen"}
-                    </p>
+                    {!bgImage && (
+                      <p className="text-xs text-secondary mt-2">
+                        {selectedFileName || "No file chosen"}
+                      </p>
+                    )}
                   </div>
                 ),
               },
               {
                 key: "color-swatches",
                 render: () => (
-                  <div
-                    className="grid grid-cols-4 gap-2 place-items-center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {swatches.map(({ key, value, class: cls }) => (
-                      <div key={key} className="relative group">
-                        <button
-                          onClick={() => handleColorSelect(value)}
-                          className={`${cls} w-6 h-6 rounded-full flex items-center justify-center p-0`}
-                          // className={`${cls} w-6 h-6 rounded-full`}
-                        >
-                          {list.backgroundColor === value && (
-                            <FaCheck className="text-white text-xs" />
-                          )}
-                        </button>
-                        {/* tooltip */}
-                        <span
-                          className="
+                  <div onClick={(e) => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="block text-sm text-secondary mb-1">
+                      Colors
+                    </div>
+                    {/* Swatches Grid */}
+                    <div className="grid grid-cols-4 gap-2 place-items-center mt-2">
+                      {swatches.map(({ key, value, class: cls }) => (
+                        <div key={key} className="relative group">
+                          <button
+                            onClick={() => handleColorSelect(value)}
+                            className={`${cls} w-6 h-6 rounded-full flex items-center justify-center p-0`}
+                          >
+                            {bgColor === value && (
+                              <FaCheck className="text-white text-xs" />
+                            )}
+                          </button>
+                          {/* tooltip */}
+                          <span
+                            className="
          absolute 
          bottom-full 
          left-1/2 
@@ -765,11 +838,12 @@ export default function GearListView({
          group-hover:opacity-100 
          transition-opacity
        "
-                        >
-                          {key}
-                        </span>
-                      </div>
-                    ))}
+                          >
+                            {key}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ),
               },

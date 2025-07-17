@@ -635,6 +635,11 @@ export default function GearListView({
     toast("Share feature coming soon");
   };
 
+  // Checklist (placeholder)
+  const handleCheckList = () => {
+    toast("Checklist feature coming soon");
+  };
+
   // Delete list
   const openDeleteListConfirm = () => setConfirmDeleteOpen(true);
   const cancelDeleteList = () => setConfirmDeleteOpen(false);
@@ -757,6 +762,9 @@ export default function GearListView({
                 key: "bg-presets",
                 render: () => (
                   <div onClick={(e) => e.stopPropagation()}>
+                    <div className="block text-sm text-primary mb-1">
+                      Background
+                    </div>
                     <div className="block text-sm text-secondary mb-1">
                       Images
                       <div className="grid grid-cols-4 gap-2 mt-2 mx-auto w-full max-w-xs">
@@ -855,6 +863,11 @@ export default function GearListView({
                 key: "details",
                 label: "View / Edit details",
                 onClick: () => setShowDetailsModal(true),
+              },
+              {
+                key: "checklist",
+                label: "View as Checklist",
+                onClick: handleCheckList,
               },
               { key: "copy", label: "Copy gear list", onClick: handleCopyList },
               {
@@ -1065,8 +1078,8 @@ export default function GearListView({
 
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
-        title="Delete this gear list?"
-        message="This will remove the list and all its categories/items."
+        title={`Delete the ${list.title} gear list?`}
+        message="This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         onConfirm={actuallyDeleteList}

@@ -302,7 +302,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         <ConfirmDialog
           isOpen={deleteConfirmOpen}
           title="Delete this Gear Item?"
-          message="This will remove it from your catalog and all of your gear list."
+          message="This will remove it from your gear items and all of your gear lists."
           confirmText="Delete Item"
           cancelText="Cancel"
           onConfirm={async () => {

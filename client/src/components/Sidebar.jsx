@@ -32,7 +32,7 @@ export default function Sidebar({
   const [confirmListOpen, setConfirmListOpen] = useState(false);
   const [pendingDeleteListId, setPendingDeleteListId] = useState(null);
 
-  // global catalog items & debounced search
+  // global gear items & debounced search
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
@@ -51,7 +51,7 @@ export default function Sidebar({
       });
       setItems(data);
     } catch (err) {
-      console.error("Error fetching catalog items:", err);
+      console.error("Error fetching gear items:", err);
     }
   };
 
@@ -111,7 +111,7 @@ export default function Sidebar({
     setPendingDeleteListId(null);
   };
 
-  // === Catalog actions ===
+  // === gear item actions ===
 
   const addToList = async (item) => {
     if (!currentListId || categories.length === 0) {
@@ -260,10 +260,10 @@ export default function Sidebar({
               </ul>
             </section>
 
-            {/* Catalog / Global Items */}
+            {/* Gear Items / Global Items */}
             <section className="flex flex-col flex-1 p-4 overflow-hidden">
               <div className="flex justify-between items-center mb-2 text-primaryAlt">
-                <h2 className="font-bold truncate">Catalog</h2>
+                <h2 className="font-bold truncate">My Gear</h2>
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="p-1 text-primaryAlt  hover:text-primaryAlt/80"
@@ -274,7 +274,7 @@ export default function Sidebar({
               </div>
               <input
                 className="w-full rounded-lg p-2 bg-base-100 text-primary border border-primary mb-3"
-                placeholder="Search catalog"
+                placeholder="Search Gear Items"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -300,7 +300,7 @@ export default function Sidebar({
                   </li>
                 ))}
                 {filteredAndSortedItems.length === 0 && (
-                  <li className="text-base-100/70 p-2">No catalog items</li>
+                  <li className="text-base-100/70 p-2">No Gear Items</li>
                 )}
               </ul>
 

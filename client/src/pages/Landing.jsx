@@ -10,7 +10,7 @@ export default function Landing() {
           Organize your gear, never forget a strap again
         </h1>
         <p className="max-w-xl text-center mb-8">
-          PackPlanner helps you build, share, and check off gear lists— whether
+          TrekList.co helps you build, share, and check off gear lists— whether
           you’re headed to the backcountry or just the backyard.
         </p>
         <div className="space-x-4">
@@ -69,7 +69,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-gray-800 text-gray-400 py-6">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center px-4 space-y-4 md:space-y-0">
-          <p>© {new Date().getFullYear()} PackPlanner</p>
+          <p>© {new Date().getFullYear()} TrekList.co</p>
           <div className="space-x-4">
             <a href="/privacy" className="hover:text-white">
               Privacy

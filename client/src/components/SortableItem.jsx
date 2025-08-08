@@ -185,17 +185,14 @@ export default function SortableItem({
             </div>
           </div>
 
-          {/* Right side: trash can*/}
-          <button
-            type="button"
-            title="Delete item"
-            aria-label="Delete item"
-            data-testid="trash"
-            onClick={() => onDelete(catId, item._id)}
-            className="inline-flex items-center justify-center text-secondary hover:text-secondary/80 focus:outline-none"
+          {/* Right side: Edit Item */}
+          <a
+            href="#"
+            title="See details"
+            className="text-secondary hover:text-secondary/50"
           >
-            <FaTimes />
-          </button>
+            <FaEllipsisH />
+          </a>
         </div>
 
         {/* ROW 2, COL 1: Weight & Price */}
@@ -240,13 +237,6 @@ export default function SortableItem({
             itemId={item._id}
             fetchItems={fetchItems}
           />
-          <a
-            href="#"
-            title="See details"
-            className="text-secondary hover:text-secondary/50"
-          >
-            <FaEllipsisH />
-          </a>
         </div>
       </div>
 

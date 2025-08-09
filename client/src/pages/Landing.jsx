@@ -349,11 +349,11 @@ export default function Landing() {
           <div className="order-2 md:order-1">
             <h2
               id="features-desktop"
-              className="text-3xl font-bold text-slate-900"
+              className="text-center md:text-left text-3xl font-bold text-slate-900"
             >
-              Desktop View
+              Built for Your Next Adventure
             </h2>
-            <p className="mt-3 text-slate-600">
+            <p className="text-center md:text-left mt-3 text-slate-600">
               Plan, budget, and fine-tune your kit.
             </p>
             <ul className="mt-8 space-y-6">
@@ -392,19 +392,83 @@ export default function Landing() {
 
       {/* Sample Gear List Section */}
       <section id="sampleGearList" className="py-16 px-6 bg-white text-center">
-        <h2 className="text-3xl font-bold mb-4">Recommended Gear List</h2>
-        <p className="max-w-2xl mx-auto text-gray-700 mb-6">
-          Here is a list of European hiking gear that we recommend for your next
-          adventure. These lists are designed to be lightweight, versatile, and
-          suitable for a variety of conditions. View or customize the list.
+        <h2 className="text-3xl font-bold mb-8">Recommended Gear Lists</h2>
+        <p className="max-w-2xl mx-auto text-gray-700 mb-12">
+          Explore our curated gear lists for Europe’s most iconic long-distance
+          trails. View them instantly, or customize and save them to your
+          account.
         </p>
-        <Link
-          to="/about"
-          className="px-5 py-2 border-2 border-blue-600 text-blue-600 font-semibold rounded-full hover:bg-blue-600 hover:text-white transition"
-        >
-          Learn More
-        </Link>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+          {[
+            {
+              title: "Alta Via 1",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752432593/gear-list-backgrounds/docilcoaiwytxccqcc4c.jpg",
+              alt: "Alta Via 1 gear list in the Dolomites, Italy",
+              link: "/gearlist/alta-via-1",
+            },
+            {
+              title: "Camino de Santiago",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752415040/gear-list-backgrounds/foqdt3vgogiubrizfe0s.jpg",
+              alt: "Camino de Santiago gear list for walking across Spain",
+              link: "/gearlist/camino-de-santiago",
+            },
+            {
+              title: "Tour du Mont Blanc",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752609809/gear-list-backgrounds/u726utxdhmmmk5p6npuz.jpg",
+              alt: "Tour du Mont Blanc gear list for trekking around Mont Blanc in France, Italy, and Switzerland",
+              link: "/gearlist/tour-du-mont-blanc",
+            },
+            {
+              title: "West Highland Way",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772966/gear-list-landing/gear-list-west-highland-way_d8d7bq.jpg",
+              alt: "West Highland Way gear list for hiking across the Scottish Highlands",
+              link: "/gearlist/west-highland-way",
+            },
+            {
+              title: "Kungsleden",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772965/gear-list-landing/gear-list-kungsleden_yultsg.jpg",
+              alt: "Kungsleden gear list for trekking through Swedish Lapland",
+              link: "/gearlist/kungsleden",
+            },
+            {
+              title: "GR20 Corsica",
+              img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772963/gear-list-landing/gear-list-gr20_azn4uu.jpg",
+              alt: "GR20 gear list for the rugged mountain traverse in Corsica, France",
+              link: "/gearlist/gr20-corsica",
+            },
+          ].map(({ title, img, alt, link }) => (
+            <a
+              key={title}
+              href={link}
+              className="relative group overflow-hidden rounded-xl shadow-md aspect-[4/3] transition"
+            >
+              <img
+                src={img}
+                alt={alt}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/35 group-hover:bg-black/45 transition" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                <h3 className="text-xl font-bold text-white">{title}</h3>
+                <span className="inline-block mt-2 text-sm font-medium text-white bg-blue-600 px-3 py-1 rounded-full">
+                  View Gear List
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* Affiliate disclosure */}
+        <p className="mt-10 max-w-4xl mx-auto text-sm text-gray-500">
+          <strong>Affiliate Disclosure:</strong> Some links in these gear lists
+          are affiliate links, meaning we may earn a small commission if you
+          make a purchase at no extra cost to you. This helps support
+          TrekList.co and keeps our content free. We only recommend gear we
+          trust and use ourselves.
+        </p>
       </section>
+
       {/* Mission / Social Good */}
       <section id="mission" className="py-16 px-6 bg-white text-center">
         <h2 className="text-3xl font-bold mb-4">Built for Adventurers</h2>

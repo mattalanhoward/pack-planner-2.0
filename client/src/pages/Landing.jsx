@@ -1,13 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import heroTent from "../assets/images/hero-tent.jpeg";
-import heroOsprey from "../assets/images/hero-hiker-blue-osprey.jpg";
-import heroHiking from "../assets/images/hero-hiker-ridgeline.jpg";
-import heroHMG from "../assets/images/hero-hmg-mountains.jpg";
 import mobileSidebarScreenshot from "../assets/images/treklist-mobile-sidebar.png";
 import mobileColumnScreenshot from "../assets/images/treklist-column-mobile.png";
 import desktopColumnScreenshot from "../assets/images/treklist-column-desktop-1.png";
 import AuthModal from "../components/AuthModal"; // new
+
+// Cloudinary responsive hero image URLs
+const heroOspreySources = {
+  768: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_768/v1754767083/gear-list-hero-images/hero-hiker-blue-osprey_nm7lte.jpg",
+  1280: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1280/v1754767083/gear-list-hero-images/hero-hiker-blue-osprey_nm7lte.jpg",
+  1920: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1920/v1754767083/gear-list-hero-images/hero-hiker-blue-osprey_nm7lte.jpg",
+};
+
+const heroHikingSources = {
+  768: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_768/v1754767189/gear-list-hero-images/hero-hiker-ridgeline_v7twmc.jpg",
+  1280: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1280/v1754767189/gear-list-hero-images/hero-hiker-ridgeline_v7twmc.jpg",
+  1920: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1920/v1754767189/gear-list-hero-images/hero-hiker-ridgeline_v7twmc.jpg",
+};
+
+const heroHMGSources = {
+  768: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_768/v1754767189/gear-list-hero-images/hero-hmg-mountains_xn6aso.jpg",
+  1280: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1280/v1754767189/gear-list-hero-images/hero-hmg-mountains_xn6aso.jpg",
+  1920: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1920/v1754767189/gear-list-hero-images/hero-hmg-mountains_xn6aso.jpg",
+};
+
+const heroTentSources = {
+  768: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_768/v1754767080/gear-list-hero-images/hero-tent_ijvmku.jpg",
+  1280: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1280/v1754767080/gear-list-hero-images/hero-tent_ijvmku.jpg",
+  1920: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1920/v1754767080/gear-list-hero-images/hero-tent_ijvmku.jpg",
+};
 
 const Dot = ({ className = "" }) => (
   <span
@@ -82,11 +103,24 @@ const Bullet = ({ title, text, color = "text-blue-600" }) => (
 export default function Landing() {
   // Hero image carousel
   const heroImages = [
-    heroOsprey, // osprey in the mountains
-    heroHiking,
-    heroHMG,
-    heroTent, // tent in the mountains
+    { alt: "Hiker with blue Osprey pack", sources: heroOspreySources },
+    { alt: "Hiker on alpine ridgeline", sources: heroHikingSources },
+    { alt: "HMG pack in the mountains", sources: heroHMGSources },
+    { alt: "Tent in the mountains", sources: heroTentSources },
   ];
+
+  useEffect(() => {
+    const preload = (url) => {
+      const img = new Image();
+      img.src = url;
+    };
+    preload(heroImages[0].sources[1920]); // first slide
+
+    setTimeout(() => {
+      heroImages.slice(1).forEach((img) => preload(img.sources[1280]));
+    }, 1500);
+  }, []);
+
   const [current, setCurrent] = useState(0);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login"); // 'login' | 'register'
@@ -159,12 +193,26 @@ export default function Landing() {
       {/* Hero Carousel */}
       <header className="relative h-screen flex flex-col items-center justify-center">
         {/* Background image + overlay */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('${heroImages[current]}')` }}
-        >
-          <div className="absolute inset-0 bg-black/40"></div>
-        </div>
+        <picture>
+          <source
+            srcSet={`
+      ${heroImages[current].sources[768]} 768w,
+      ${heroImages[current].sources[1280]} 1280w,
+      ${heroImages[current].sources[1920]} 1920w
+    `}
+            sizes="100vw"
+            type="image/jpeg"
+          />
+          <img
+            src={heroImages[current].sources[1920]} // fallback
+            alt={heroImages[current].alt}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </picture>
+        <div className="absolute inset-0 bg-black/40"></div>
 
         {/* Foreground content */}
         <div className="relative z-20 text-center px-4">

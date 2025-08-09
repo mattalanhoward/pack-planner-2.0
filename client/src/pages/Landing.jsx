@@ -4,9 +4,80 @@ import heroTent from "../assets/images/hero-tent.jpeg";
 import heroOsprey from "../assets/images/hero-hiker-blue-osprey.jpg";
 import heroHiking from "../assets/images/hero-hiker-ridgeline.jpg";
 import heroHMG from "../assets/images/hero-hmg-mountains.jpg";
-import mobileScreenshot from "../assets/images/mobile-screenshot.png";
-import desktopScreenshot from "../assets/images/desktop-screenshot.png";
+import mobileSidebarScreenshot from "../assets/images/treklist-mobile-sidebar.png";
+import mobileColumnScreenshot from "../assets/images/treklist-column-mobile.png";
+import desktopColumnScreenshot from "../assets/images/treklist-column-desktop-1.png";
 import AuthModal from "../components/AuthModal"; // new
+
+const Dot = ({ className = "" }) => (
+  <span
+    className={`inline-block h-3 w-3 rounded-full ${className}`}
+    aria-hidden="true"
+  />
+);
+
+const CheckIcon = (props) => (
+  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
+    <path
+      fillRule="evenodd"
+      d="M16.707 5.293a1 1 0 010 1.414l-7.25 7.25a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414l2.293 2.293 6.543-6.543a1 1 0 011.414 0z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+// Minimal, realistic iPhone frame
+const IPhoneFrame = ({ src, alt = "", className = "" }) => (
+  <figure className={`relative aspect-[9/19] ${className}`}>
+    <div className="absolute inset-0 rounded-[2rem] bg-[#0B1220] shadow-[0_18px_44px_rgba(0,0,0,0.35)]">
+      <div className="pointer-events-none absolute inset-0 rounded-[2rem] ring-1 ring-white/10" />
+      <div className="absolute inset-[12px] sm:inset-[13px] md:inset-[14px] rounded-[1.5rem] overflow-hidden bg-black outline outline-1 outline-black">
+        <img
+          src={src}
+          alt={alt}
+          className="block h-full w-full object-cover object-top"
+          loading="lazy"
+        />
+      </div>
+      <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-[8px] sm:top-[9px] md:top-[10px] h-3.5 sm:h-4 md:h-4.5 w-[34%] md:w-[32%] rounded-b-2xl bg-[#0B1220]" />
+    </div>
+  </figure>
+);
+
+// BrowserMock with MacBook Air-ish proportions
+const BrowserMock = ({ src, alt = "", className = "" }) => (
+  <div
+    className={`relative mx-auto rounded-xl bg-slate-900 shadow-2xl ring-1 ring-black/10 overflow-hidden ${className}`}
+  >
+    {/* top bar */}
+    <div className="flex items-center space-x-1 px-3 py-2 bg-slate-800">
+      <span className="w-3 h-3 rounded-full bg-red-500" />
+      <span className="w-3 h-3 rounded-full bg-yellow-500" />
+      <span className="w-3 h-3 rounded-full bg-green-500" />
+    </div>
+
+    {/* screenshot area — MacBook aspect */}
+    <div className="aspect-[16/10] w-full bg-black">
+      <img
+        src={src}
+        alt={alt}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  </div>
+);
+
+// --- Feature bullet item ---
+const Bullet = ({ title, text, color = "text-blue-600" }) => (
+  <li className="flex gap-3">
+    <CheckIcon className={`mt-1 h-5 w-5 flex-none ${color}`} />
+    <div>
+      <p className="font-semibold text-slate-900">{title}</p>
+      <p className="text-slate-600">{text}</p>
+    </div>
+  </li>
+);
 
 export default function Landing() {
   // Hero image carousel
@@ -56,17 +127,17 @@ export default function Landing() {
 
   return (
     <div className="relative flex flex-col min-h-screen bg-white text-gray-800">
-      <nav className="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 z-30">
+      <nav className="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 z-30 bg-white/10 backdrop-blur-md">
         <div className="text-2xl font-semibold">TrekList.co</div>
         <div className="space-x-6 hidden md:flex">
           <a href="#features" className="hover:underline">
             Features
           </a>
+          <a href="#sampleGearList" className="hover:underline">
+            Sample Gear List
+          </a>
           <a href="#mission" className="hover:underline">
             Mission
-          </a>
-          <a href="#community" className="hover:underline">
-            Community
           </a>
         </div>
         <div className="space-x-4">
@@ -86,11 +157,16 @@ export default function Landing() {
       </nav>
 
       {/* Hero Carousel */}
-      <header
-        className="h-screen flex flex-col items-center justify-center bg-cover bg-center transition-all duration-1000"
-        style={{ backgroundImage: `url('${heroImages[current]}')` }}
-      >
-        <div className="absolute inset-0 bg-black opacity-40"></div>
+      <header className="relative h-screen flex flex-col items-center justify-center">
+        {/* Background image + overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${heroImages[current]}')` }}
+        >
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+
+        {/* Foreground content */}
         <div className="relative z-20 text-center px-4">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
             Pack Smart. Travel Light.
@@ -107,6 +183,7 @@ export default function Landing() {
             Start Your List
           </button>
         </div>
+
         {/* Dots */}
         <div className="absolute bottom-10 flex space-x-2 z-20">
           {heroImages.map((_, idx) => (
@@ -138,47 +215,140 @@ export default function Landing() {
       </section> */}
 
       {/* Screenshot + Features */}
-      <section id="features" className="py-16 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-12">
-          {/* App Screenshot Placeholder */}
-          <div className="flex-1">
-            <img
-              src={mobileScreenshot}
-              alt="App in use on mobile device"
-              className="rounded-2xl shadow-lg w-full max-w-sm mx-auto"
-            />
-          </div>
-          {/* Feature List */}
-          <div className="flex-1 space-y-8">
-            {[
-              {
-                title: "Mobile‑First UI",
-                desc: "Touch‑friendly design to build & edit on the go.",
-              },
-              {
-                title: "Custom Gear Library",
-                desc: "Import from our database or add your own kit.",
-              },
-              {
-                title: "Checklist & PDF Export",
-                desc: "Interactive browser checklist + printer‑friendly PDF.",
-              },
-            ].map((f) => (
-              <div key={f.title}>
-                <h3 className="text-2xl font-semibold mb-1">{f.title}</h3>
-                <p className="text-gray-600">{f.desc}</p>
+      {/* ===== Section A: Image (phones) -> Text ===== */}
+
+      <section
+        id="features"
+        aria-labelledby="features-mobile"
+        className="mx-auto max-w-7xl px-6 py-12 md:py-16 lg:py-20 pb-24 md:pb-28 lg:pb-32" // extra bottom space
+      >
+        <h2 className="text-center text-3xl font-bold mb-4">Features</h2>
+        <div
+          className="
+      grid items-center gap-10 md:gap-16
+      md:[grid-template-columns:420px_minmax(0,1fr)]
+      lg:[grid-template-columns:520px_minmax(0,1fr)]
+    "
+        >
+          {/* Phones (single phone on mobile, overlap on md+) */}
+          <div
+            className="
+    relative mx-auto md:mx-0 w-full max-w-[520px]
+    h-auto md:h-[440px] lg:h-[520px]
+  "
+          >
+            <div className="flex justify-center md:block">
+              {/* back/left phone — hidden on small screens */}
+              <div className="hidden md:block md:absolute md:left-0 md:top-0 z-10">
+                <IPhoneFrame
+                  src={mobileSidebarScreenshot}
+                  alt="TrekList mobile view showing gear lists and My Gear search"
+                  className="mx-0 w-[200px] sm:w-[220px] md:w-[240px] lg:w-[280px]"
+                />
               </div>
-            ))}
+
+              {/* front/right phone — always visible */}
+              <div className="relative md:absolute md:top-8 md:left-16 lg:left-[14rem] z-20">
+                <IPhoneFrame
+                  src={mobileColumnScreenshot}
+                  alt="TrekList mobile category columns"
+                  className="mx-0 w-[200px] sm:w-[220px] md:w-[240px] lg:w-[280px]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Text bullets */}
+          <div className="relative z-10">
+            <h2
+              id="features-mobile"
+              className="text-center md:text-left text-3xl font-bold text-slate-900"
+            >
+              Built for the Trail
+            </h2>
+            <p className="text-center md:text-left mt-3 text-slate-600">
+              Mobile first UX — add, edit, and reorder without friction.
+            </p>
+            <ul className="mt-8 space-y-6">
+              <Bullet
+                title="Mobile-first design"
+                text="Create and edit gear lists on the go."
+              />
+              <Bullet
+                title="Smart weight totals"
+                text="Base, worn, consumables in real time."
+              />
+              <Bullet
+                title="Quick add & search"
+                text="Find gear fast, edit from anywhere."
+              />
+              <Bullet
+                title="Pack checklist"
+                text="One-tap packing, clean PDF export."
+              />
+            </ul>
           </div>
         </div>
       </section>
-      {/* Recommended Gear List Section */}
-      <section id="mission" className="py-16 px-6 bg-white text-center">
+
+      {/* ===== Section B: Text -> Image (desktop) ===== */}
+      <section
+        aria-labelledby="features-desktop"
+        className="mx-auto max-w-7xl px-6 py-12 lg:px-8"
+      >
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          {/* Text bullets (left on desktop) */}
+          <div className="order-2 md:order-1">
+            <h2
+              id="features-desktop"
+              className="text-3xl font-bold text-slate-900"
+            >
+              Desktop View
+            </h2>
+            <p className="mt-3 text-slate-600">
+              Plan, budget, and fine-tune your kit.
+            </p>
+            <ul className="mt-8 space-y-6">
+              <Bullet
+                title="Drag between categories"
+                text="Kanban-style columns or Traditional List View for planning."
+                color="text-emerald-600"
+              />
+              <Bullet
+                title="Price & currency"
+                text="Track costs alongside weights."
+                color="text-emerald-600"
+              />
+              <Bullet
+                title="Public share links"
+                text="Read-only pages for forums/blogs."
+                color="text-emerald-600"
+              />
+              <Bullet
+                title="Embeds"
+                text="Drop your list into posts."
+                color="text-emerald-600"
+              />
+            </ul>
+          </div>
+
+          {/* Desktop browser mock (right on desktop) */}
+          <div className="order-1 md:order-2">
+            <BrowserMock
+              src={desktopColumnScreenshot}
+              alt="TrekList desktop view with multiple gear categories in columns"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Sample Gear List Section */}
+      <section id="sampleGearList" className="py-16 px-6 bg-white text-center">
         <h2 className="text-3xl font-bold mb-4">Recommended Gear List</h2>
         <p className="max-w-2xl mx-auto text-gray-700 mb-6">
           Here is a list of European hiking gear that we recommend for your next
           adventure. These lists are designed to be lightweight, versatile, and
-          suitable for a variety of conditions.
+          suitable for a variety of conditions. View or customize the list.
         </p>
         <Link
           to="/about"

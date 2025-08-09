@@ -241,8 +241,8 @@ export default function TopBar({ title, openSettings }) {
               className: "mb-2",
               label: "Log out",
               onClick: async () => {
+                navigate("/", { replace: true, state: { reason: "manual" } });
                 await logout();
-                navigate("/login");
               },
             },
           ]}

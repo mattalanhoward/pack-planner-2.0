@@ -204,11 +204,11 @@ export default function Landing() {
             type="image/jpeg"
           />
           <img
-            src={heroImages[current].sources[1920]} // fallback
+            src={heroImages[current].sources[1920]}
             alt={heroImages[current].alt}
             className="absolute inset-0 h-full w-full object-cover"
-            loading="eager"
-            fetchpriority="high"
+            loading={current === 0 ? "eager" : "lazy"}
+            fetchpriority={current === 0 ? "high" : "auto"}
             decoding="async"
           />
         </picture>

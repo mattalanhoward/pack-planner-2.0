@@ -61,7 +61,7 @@ api.interceptors.response.use(
       (response?.status === 401 && !SAFE_METHODS.includes(method))
     ) {
       localStorage.removeItem("accessToken");
-      window.location.href = "/login";
+      window.location.replace("/"); // clean landing page, no modal
     }
 
     return Promise.reject(error);

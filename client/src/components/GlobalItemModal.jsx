@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import CurrencyInput from "../components/CurrencyInput";
 import LinkInput from "../components/LinkInput";
 import { useUnit } from "../hooks/useUnit";
-import { parseWeight } from "../utils/weight";
+import { useWeightInput } from "../hooks/useWeightInput";
 
 export default function GlobalItemModal({
   categories = [],
@@ -19,7 +19,6 @@ export default function GlobalItemModal({
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
   const [description, setDescription] = useState("");
-  const [weight, setWeight] = useState("");
   const [price, setPrice] = useState("");
   const [link, setLink] = useState("");
   const [worn, setWorn] = useState(false);
@@ -27,6 +26,7 @@ export default function GlobalItemModal({
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const unit = useUnit();
+  const { unitLabel, parseInput } = useWeightInput(unit);
   const [displayWeight, setDisplayWeight] = useState("");
 
   const handleSubmit = async (e) => {
@@ -40,9 +40,18 @@ export default function GlobalItemModal({
     if (itemType.trim()) payload.itemType = itemType.trim();
     if (brand.trim()) payload.brand = brand.trim();
     if (description.trim()) payload.description = description.trim();
-    // convert the user’s entry back into grams once
+    // Convert user’s entry (g/oz, with comma/dot) → integer grams
     if (displayWeight !== "") {
-      payload.weight = parseWeight(displayWeight, unit);
+      const grams = parseInput(displayWeight);
+      if (grams == null) {
+        toast.error("Enter a valid weight.");
+        return;
+      }
+      if (grams < 0) {
+        toast.error("Weight cannot be negative.");
+        return;
+      }
+      payload.weight = grams;
     }
     if (price) payload.price = Number(price);
     if (link.trim()) payload.link = link.trim();
@@ -152,13 +161,13 @@ export default function GlobalItemModal({
           <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Weight ({unit})
+                Weight ({unitLabel})
               </label>
               <input
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={displayWeight}
+                placeholder={unitLabel === "g" ? "e.g. 350" : "e.g. 12.6"}
                 onChange={(e) => setDisplayWeight(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />

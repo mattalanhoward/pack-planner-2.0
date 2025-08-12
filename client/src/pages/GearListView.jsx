@@ -690,7 +690,7 @@ export default function GearListView({
           <FaSpinner className="animate-spin text-white text-4xl" />
         </div>
       )}
-      <div className="w-full bg-black bg-opacity-25">
+      <div className="w-full bg-neutral bg-opacity-50">
         <div
           className={[
             "flex justify-between items-center pr-6 py-2",
@@ -723,7 +723,7 @@ export default function GearListView({
               <>
                 <h2
                   onClick={() => setIsEditingTitle(true)}
-                  className="hide-on-touch text-xl text-accent"
+                  className="hide-on-touch text-xl text-primary"
                 >
                   {list.title}
                 </h2>
@@ -839,7 +839,7 @@ export default function GearListView({
          px-2 py-0.5 
          text-xs 
          text-white 
-         bg-neutral bg-opacity-75 
+         bg-black bg-opacity-75 
          rounded 
          opacity-0 
          pointer-events-none 

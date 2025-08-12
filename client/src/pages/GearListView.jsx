@@ -839,7 +839,7 @@ export default function GearListView({
          px-2 py-0.5 
          text-xs 
          text-white 
-         bg-black bg-opacity-75 
+         bg-neutral bg-opacity-75 
          rounded 
          opacity-0 
          pointer-events-none 

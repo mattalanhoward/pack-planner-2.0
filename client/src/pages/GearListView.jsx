@@ -690,7 +690,7 @@ export default function GearListView({
           <FaSpinner className="animate-spin text-white text-4xl" />
         </div>
       )}
-      <div className="w-full bg-neutral bg-opacity-50">
+      <div className="w-full bg-base-100 bg-opacity-80">
         <div
           className={[
             "flex justify-between items-center pr-6 py-2",
@@ -741,7 +741,7 @@ export default function GearListView({
           <DropdownMenu
             trigger={
               <button
-                className="inline-flex items-center justify-center text-l text-accent hover:text-accent-dark leading-none"
+                className="inline-flex items-center justify-center text-l text-primaryAlt hover:text-primaryAlt/80 leading-none"
                 aria-label="List options"
               >
                 <FaEllipsisH />

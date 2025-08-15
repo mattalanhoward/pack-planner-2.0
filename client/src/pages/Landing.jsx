@@ -30,12 +30,12 @@ const heroTentSources = {
   1920: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_1920/v1754767080/gear-list-hero-images/hero-tent_ijvmku.jpg",
 };
 
-const Dot = ({ className = "" }) => (
-  <span
-    className={`inline-block h-3 w-3 rounded-full ${className}`}
-    aria-hidden="true"
-  />
-);
+// const Dot = ({ className = "" }) => (
+//   <span
+//     className={`inline-block h-3 w-3 rounded-full ${className}`}
+//     aria-hidden="true"
+//   />
+// );
 
 const CheckIcon = (props) => (
   <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
@@ -164,13 +164,13 @@ export default function Landing() {
       <nav className="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 z-30 bg-white/10 backdrop-blur-md">
         <div className="text-2xl font-semibold">TrekList.co</div>
         <div className="space-x-6 hidden md:flex">
-          <a href="#features" className="hover:underline">
+          <a href="#features" className="hover:underline text-gray-800">
             Features
           </a>
-          <a href="#sampleGearList" className="hover:underline">
+          <a href="#sampleGearList" className="hover:underline text-gray-800">
             Sample Gear List
           </a>
-          <a href="#mission" className="hover:underline">
+          <a href="#mission" className="hover:underline text-gray-800">
             Mission
           </a>
         </div>
@@ -312,7 +312,7 @@ export default function Landing() {
               id="features-mobile"
               className="text-center md:text-left text-3xl font-bold text-slate-900"
             >
-              Built for the Trail
+              Built for the Trek
             </h2>
             <p className="text-center md:text-left mt-3 text-slate-600">
               Mobile first UX — add, edit, and reorder without friction.
@@ -331,7 +331,7 @@ export default function Landing() {
                 text="Find gear fast, edit from anywhere."
               />
               <Bullet
-                title="Pack checklist"
+                title="Packing checklist"
                 text="One-tap packing, clean PDF export."
               />
             </ul>
@@ -359,7 +359,7 @@ export default function Landing() {
             <ul className="mt-8 space-y-6">
               <Bullet
                 title="Drag between categories"
-                text="Kanban-style columns or Traditional List View for planning."
+                text="Kanban-style columns or traditional list view for planning."
                 color="text-emerald-600"
               />
               <Bullet

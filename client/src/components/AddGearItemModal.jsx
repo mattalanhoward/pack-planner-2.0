@@ -87,7 +87,8 @@ export default function AddGearItemModal({
     if (selectedIds.size === 0) {
       return toast.error("Please select at least one item");
     }
-    // DUP CHECK at save: build set of globalItem IDs already in the list
+
+    // DUP CHECK
     const existingGlobalIds = new Set(
       existingItems.map((it) => it.globalItem || it._id)
     );
@@ -100,8 +101,23 @@ export default function AddGearItemModal({
 
     setSaving(true);
     try {
+      // Compute the starting position at the end of THIS category
+      const itemsInThisCat = existingItems.filter(
+        (it) => String(it.category) === String(categoryId)
+      );
+      const maxPos = itemsInThisCat.length
+        ? Math.max(
+            ...itemsInThisCat.map((it) =>
+              Number.isFinite(it.position) ? it.position : -1
+            )
+          )
+        : -1;
+      const startPos = maxPos + 1;
+
+      const selected = Array.from(selectedIds); // preserves insertion order
+
       await Promise.all(
-        Array.from(selectedIds).map((itemId) => {
+        selected.map((itemId, idx) => {
           const sel = allResults.find((i) => i._id === itemId);
           if (!sel) return Promise.resolve();
           return api.post(
@@ -118,11 +134,12 @@ export default function AddGearItemModal({
               worn: sel.worn,
               consumable: sel.consumable,
               quantity,
-              position: 0,
+              position: startPos + idx, // <-- append to end
             }
           );
         })
       );
+
       toast.success("Items added successfully");
       onAdded();
       onClose();

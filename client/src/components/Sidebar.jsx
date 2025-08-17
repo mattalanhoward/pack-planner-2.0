@@ -119,8 +119,26 @@ export default function Sidebar({
         "Pick or create a list with at least one category first."
       );
     }
-    const cat = categories[0];
+
+    const cat = categories[0]; // or whichever category you're using
+
     try {
+      // Fetch current items in this category to compute next position
+      const { data: itemsInCat } = await api.get(
+        `/dashboard/${currentListId}/categories/${cat._id}/items`
+      );
+
+      const maxPos =
+        itemsInCat && itemsInCat.length
+          ? Math.max(
+              ...itemsInCat.map((it) =>
+                Number.isFinite(it.position) ? it.position : -1
+              )
+            )
+          : -1;
+
+      const nextPos = maxPos + 1;
+
       await api.post(
         `/dashboard/${currentListId}/categories/${cat._id}/items`,
         {
@@ -135,9 +153,10 @@ export default function Sidebar({
           worn: item.worn,
           consumable: item.consumable,
           quantity: item.quantity,
-          position: 0,
+          position: nextPos, // <-- append to end
         }
       );
+
       onRefresh();
     } catch (err) {
       console.error("Error adding item to list:", err);

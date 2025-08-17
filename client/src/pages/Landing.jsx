@@ -167,8 +167,11 @@ export default function Landing() {
           <a href="#features" className="hover:underline text-gray-800">
             Features
           </a>
-          <a href="#sampleGearList" className="hover:underline text-gray-800">
-            Sample Gear List
+          <a
+            href="#recommendedGearList"
+            className="hover:underline text-gray-800"
+          >
+            Recommended Gear List
           </a>
           <a href="#mission" className="hover:underline text-gray-800">
             Mission
@@ -390,8 +393,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Sample Gear List Section */}
-      <section id="sampleGearList" className="py-16 px-6 bg-white text-center">
+      {/* Gear List Section */}
+      <section
+        id="recommendedGearList"
+        className="py-16 px-6 bg-white text-center"
+      >
         <h2 className="text-3xl font-bold mb-8">Recommended Gear Lists</h2>
         <p className="max-w-2xl mx-auto text-gray-700 mb-12">
           Explore our curated gear lists for Europe’s most iconic long-distance

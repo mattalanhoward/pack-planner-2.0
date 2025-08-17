@@ -1,70 +1,122 @@
-// services/api.js
+// client/src/services/api.js
 import axios from "axios";
 
+/**
+ * Base URL for your API; example: http://localhost:3000
+ * Ensure VITE_API_URL is set in your client .env
+ */
+// Ensure base ends with /api so client calls can use paths like "/auth/login"
+const BASE_HOST = (import.meta.env.VITE_API_URL || "")
+  .trim()
+  .replace(/\/+$/, ""); // strip trailing slash
+const BASE_URL = `${BASE_HOST}/api`;
+if (!BASE_URL) {
+  // eslint-disable-next-line no-console
+  console.warn("VITE_API_URL is not set; requests will likely fail.");
+}
+
+// ---- Token helpers ----
+export function getAccessToken() {
+  try {
+    return localStorage.getItem("accessToken") || "";
+  } catch {
+    return "";
+  }
+}
+export function setAccessToken(token) {
+  try {
+    if (token) localStorage.setItem("accessToken", token);
+    else localStorage.removeItem("accessToken");
+  } catch {
+    /* ignore */
+  }
+}
+
+// ---- Axios instances ----
+// main API instance (used by the app)
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL + "/api",
+  baseURL: BASE_URL,
+  withCredentials: true, // send/receive refreshToken cookie
+});
+
+// auth-only instance that won't recurse through our response interceptor
+const authApi = axios.create({
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
-const SAFE_METHODS = ["get", "head", "options"];
-
+// Attach Authorization header if we have a token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = getAccessToken();
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
+// ---- 401 handling with single-flight refresh ----
+let refreshPromise = null;
+
+async function refreshAccessTokenOnce() {
+  if (!refreshPromise) {
+    refreshPromise = authApi
+      .post("/auth/refresh")
+      .then((res) => {
+        const { accessToken } = res.data || {};
+        if (!accessToken) {
+          throw new Error("No accessToken in refresh response");
+        }
+        setAccessToken(accessToken);
+        return accessToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const { response, config } = error;
-    const url = config.url || ""; // ← add this
-    const isRefreshCall = config.url.includes("/auth/refresh");
-    const method = (config.method || "").toLowerCase(); // ← safer normalization
+    const original = error?.config;
+    const status = error?.response?.status;
 
-    // Don’t intercept 401s from login/register/verify endpoints
-    if (
-      response?.status === 401 &&
-      (url.includes("/auth/login") ||
-        url.includes("/auth/register") ||
-        url.includes("/auth/verify-email"))
-    ) {
-      // Let your Login.jsx catch & display the error
+    // If no response or not a 401, just bubble it up
+    if (!status || status !== 401) {
       return Promise.reject(error);
     }
-    // 1) If 401 on a SAFE call, try one silent refresh then retry
-    if (
-      response?.status === 401 &&
-      !config._retry &&
-      !isRefreshCall &&
-      SAFE_METHODS.includes(method)
-    ) {
-      config._retry = true;
-      try {
-        const { data: refreshData } = await api.post("/auth/refresh");
-        const { accessToken } = refreshData;
-        localStorage.setItem("accessToken", accessToken);
-        // update headers
-        api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-        config.headers.Authorization = `Bearer ${accessToken}`;
-        return api(config);
-      } catch {
-        // fall through to redirect
+
+    // Don't try to refresh if the original request was the refresh endpoint
+    const url = (original?.url || "").toString();
+    if (url.endsWith("/auth/refresh")) {
+      // refresh failed → treat as logged-out
+      setAccessToken("");
+      return Promise.reject(error);
+    }
+
+    // If we've already retried this request once, don't loop forever
+    if (original && original._retry) {
+      setAccessToken("");
+      return Promise.reject(error);
+    }
+
+    try {
+      const newToken = await refreshAccessTokenOnce();
+      // retry original request with the new token
+      if (original) {
+        original._retry = true;
+        original.headers = original.headers || {};
+        original.headers.Authorization = `Bearer ${newToken}`;
+        return api(original);
       }
+      return Promise.reject(error);
+    } catch (e) {
+      // Refresh failed → clear token; caller (AuthContext/route guard) can redirect to login
+      setAccessToken("");
+      return Promise.reject(e);
     }
-
-    // 2) If 401 on a refresh call OR on any non‐safe method, just log out
-    if (
-      (response?.status === 401 && isRefreshCall) ||
-      (response?.status === 401 && !SAFE_METHODS.includes(method))
-    ) {
-      localStorage.removeItem("accessToken");
-      window.location.replace("/"); // clean landing page, no modal
-    }
-
-    return Promise.reject(error);
   }
 );
 

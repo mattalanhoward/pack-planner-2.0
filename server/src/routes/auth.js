@@ -1,26 +1,44 @@
+// server/src/routes/auth.js
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const cookieParser = require("cookie-parser");
-const User = require("../models/user");
 const { promisify } = require("util");
+
+const User = require("../models/user");
+
 const router = express.Router();
 router.use(cookieParser());
 
-const JWT_EXP = "7d";
+// ---- Config & constants ----
+const JWT_EXP = process.env.JWT_EXP || "7d";
 const REFRESH_TOKEN_EXP_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const COOKIE_OPTS = {
+const isProd = process.env.NODE_ENV === "production";
+
+// Prefer explicit CLIENT_URL; fallback to first CLIENT_URLS entry; then localhost
+const CLIENT_URL =
+  process.env.CLIENT_URL ||
+  (process.env.CLIENT_URLS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)[0] ||
+  "http://localhost:5173";
+
+// Cross-site compatible cookie in prod (SameSite=None; Secure)
+const REFRESH_COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: isProd ? "none" : "lax",
+  secure: isProd,
+  path: "/", // ensure refresh/logout can clear consistently
   maxAge: REFRESH_TOKEN_EXP_MS,
 };
 
+// ---- Mailer ----
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: true,
+  secure: true, // if you use port 587, set this to false
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -28,7 +46,7 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendVerificationEmail(email, token) {
-  const url = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
+  const url = `${CLIENT_URL}/verify-email?token=${token}`;
   await transporter.sendMail({
     from: `"PackPlanner" <${process.env.SMTP_USER}>`,
     to: email,
@@ -38,8 +56,9 @@ async function sendVerificationEmail(email, token) {
 }
 
 async function sendPasswordResetEmail(email, token) {
-  const url = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
-  const expHrs = (Number(process.env.RESET_TOKEN_EXP) || 3600) / 3600;
+  const url = `${CLIENT_URL}/reset-password?token=${token}`;
+  const expSec = Number(process.env.RESET_TOKEN_EXP) || 3600; // default 1h
+  const expHrs = expSec / 3600;
   await transporter.sendMail({
     from: `"PackPlanner" <${process.env.SMTP_USER}>`,
     to: email,
@@ -48,7 +67,7 @@ async function sendPasswordResetEmail(email, token) {
   });
 }
 
-// Helpers
+// ---- Helpers ----
 function issueTokens(user) {
   const accessToken = jwt.sign(
     { userId: user._id, email: user.email },
@@ -62,7 +81,9 @@ function issueTokens(user) {
 
 async function sendTokenResponse(res, user, { accessToken, refreshToken }) {
   await user.save();
-  res.cookie("refreshToken", refreshToken, COOKIE_OPTS).json({ accessToken });
+  res
+    .cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTS)
+    .json({ accessToken });
 }
 
 // middleware to verify JWT on the Authorization header
@@ -73,9 +94,7 @@ async function authenticate(req, res, next) {
   }
   const token = auth.split(" ")[1];
   try {
-    // verify returns the payload { userId, email, iat, exp }
     const payload = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    // attach userId to req for downstream handlers
     req.userId = payload.userId;
     next();
   } catch (err) {
@@ -88,7 +107,7 @@ async function authenticate(req, res, next) {
 // GET /auth/me — returns the current user’s public profile
 router.get("/me", authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("email trailname"); // pick only the fields you want to expose
+    const user = await User.findById(req.userId).select("email trailname");
     if (!user) return res.status(404).json({ message: "User not found." });
     res.json({ user });
   } catch (err) {
@@ -104,8 +123,9 @@ router.post("/forgot-password", async (req, res) => {
   if (!user) return res.status(404).json({ message: "Email not found." });
 
   const token = crypto.randomBytes(20).toString("hex");
+  const resetExpSec = Number(process.env.RESET_TOKEN_EXP) || 3600; // default 1h
   user.resetPasswordToken = token;
-  user.resetPasswordExpires = Date.now() + process.env.RESET_TOKEN_EXP * 1000;
+  user.resetPasswordExpires = Date.now() + resetExpSec * 1000;
   await user.save();
 
   await sendPasswordResetEmail(email, token);
@@ -123,7 +143,8 @@ router.post("/reset-password", async (req, res) => {
     return res.status(400).json({ message: "Invalid or expired token." });
 
   await user.setPassword(newPassword);
-  user.resetPasswordToken = user.resetPasswordExpires = undefined;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
   await user.save();
   res.json({ message: "Password has been reset." });
 });
@@ -168,7 +189,8 @@ router.post("/verify-email", async (req, res) => {
     return res.status(400).json({ message: "Invalid or expired token." });
 
   user.isVerified = true;
-  user.verifyEmailToken = user.verifyEmailExpires = undefined;
+  user.verifyEmailToken = undefined;
+  user.verifyEmailExpires = undefined;
 
   const tokens = issueTokens(user);
   await sendTokenResponse(res, user, tokens);
@@ -230,12 +252,13 @@ router.post("/logout", async (req, res) => {
         { $pull: { refreshTokens: refreshToken } }
       );
     }
-    // Clear the cookie without maxAge:
+    // Clear with matching options
     res
       .clearCookie("refreshToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: REFRESH_COOKIE_OPTS.sameSite,
+        secure: REFRESH_COOKIE_OPTS.secure,
+        path: REFRESH_COOKIE_OPTS.path,
       })
       .status(204)
       .end();

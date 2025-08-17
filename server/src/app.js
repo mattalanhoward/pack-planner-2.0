@@ -2,8 +2,10 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
+
 const authRoutes = require("./routes/auth");
 const gearListRoutes = require("./routes/gearLists");
 const authMiddleware = require("./middleware/auth");
@@ -14,29 +16,59 @@ const settingsRouter = require("./routes/settings");
 
 const app = express();
 
-// Pick the “allowed origin” from the environment. If NODE_ENV=development,
-// CLIENT_URL likely is "http://localhost:5173". In production, you’ve set
-// CLIENT_URL="https://packplanner.netlify.app" on Render.
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+/**
+ * If the API is behind a proxy/ELB/CDN in production, enable trust proxy
+ * so secure cookies and req.secure work correctly.
+ * Set TRUST_PROXY=1 in production.
+ */
+if (process.env.TRUST_PROXY === "1") {
+  app.set("trust proxy", 1);
+}
 
-const whitelist = ["http://localhost:5173", "https://packplanner.netlify.app"];
+/**
+ * Security headers
+ * (CSP can be added later once external domains are enumerated)
+ */
+app.use(helmet());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // allow requests with no origin (e.g. mobile clients, curl)
-      if (!origin || whitelist.includes(origin)) {
-        return callback(null, true);
-      }
-      callback(new Error(`CORS blocked for origin: ${origin}`));
-    },
-    credentials: true,
-  })
-);
+/**
+ * CORS allow-list (env-driven)
+ * Use CLIENT_URLS as a comma-separated list, e.g.:
+ * CLIENT_URLS=http://localhost:5173,http://127.0.0.1:5173,https://packplanner.netlify.app
+ */
+const parseOrigins = (s) =>
+  (s || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+const defaultOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://packplanner.netlify.app",
+];
+
+const envOrigins = parseOrigins(process.env.CLIENT_URLS);
+const allowedOrigins = new Set(envOrigins.length ? envOrigins : defaultOrigins);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // allow requests with no origin (curl, mobile apps) and same-origin
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+// Preflight
+app.options("*", cors(corsOptions));
 
 app.use(cookieParser());
-
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 // Mount routers — each must be a function (router)
 app.use("/api/auth", authRoutes);
@@ -49,23 +81,22 @@ app.use(
   gearItemRoutes
 );
 app.use("/api/global/items", authMiddleware, globalItemsRoutes);
+
+// Central error handler
 app.use((err, req, res, next) => {
   console.error("🔴 Unhandled server error:", err.stack || err);
   res.status(500).json({ message: "Something went wrong." });
 });
 
-// Make sure you read the URI exactly from process.env:
+// ---- MongoDB connection ----
 const mongoURI = process.env.MONGO_URI;
 if (!mongoURI) {
   console.error("❌ No MONGO_URI defined in environment!");
   process.exit(1);
 }
 
-// console.log("→ Attempting to connect with URI:", mongoURI);
-
-// Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

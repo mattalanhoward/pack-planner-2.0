@@ -1,9 +1,8 @@
-// src/components/AffiliateProductPicker.jsx
-import { useCallback, useEffect, useState } from "react";
-import { searchAwinProducts } from "../services/affiliates";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { searchAwinProducts, getAwinFacets } from "../services/affiliates";
 import { FaPlus } from "react-icons/fa";
 
-function useDebouncedValue(value, delay = 300) {
+function useDebounced(value, delay = 300) {
   const [v, setV] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setV(value), delay);
@@ -14,28 +13,57 @@ function useDebouncedValue(value, delay = 300) {
 
 /**
  * Props:
- * - region: ISO country code like "GB" (required; passed from parent)
- * - merchantId?: string (optional hidden filter)
- * - onPick(product): function (required)
+ * - region (required)
+ * - merchantId? (optional hidden filter)
+ * - onPick(product) (required)
+ * - pageSize? default 10 (smaller to make paging visible)
  */
 export default function AffiliateProductPicker({
   region,
   merchantId = "",
   onPick,
+  pageSize = 10,
 }) {
   const [q, setQ] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [brand, setBrand] = useState("");
+  const [itemType, setItemType] = useState("");
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const debouncedQ = useDebouncedValue(q, 300);
-  const limit = 24;
+  const [brandOpts, setBrandOpts] = useState([]);
+  const [typeOpts, setTypeOpts] = useState([]);
 
-  const doSearch = useCallback(
-    async (opts = {}) => {
+  const debouncedQ = useDebounced(q, 300);
+  const limit = pageSize;
+  const sentinelRef = useRef(null);
+
+  // Load facets (independent of q)
+  const loadFacets = useCallback(async () => {
+    try {
+      const res = await getAwinFacets({
+        region,
+        ...(merchantId && { merchantId }),
+        limit: 50,
+      });
+      setBrandOpts(res.brands || []);
+      setTypeOpts(res.itemTypes || []);
+    } catch (e) {
+      // Non-fatal for UI
+      console.warn("facets error", e?.message || e);
+    }
+  }, [region, merchantId]);
+
+  useEffect(() => {
+    loadFacets();
+  }, [loadFacets]);
+
+  // Search with current q + filters (fresh page)
+  const runSearch = useCallback(
+    async (pageNum = 1) => {
       setBusy(true);
       setError("");
       try {
@@ -43,12 +71,18 @@ export default function AffiliateProductPicker({
           q: debouncedQ || "",
           region,
           ...(merchantId && { merchantId }),
-          page: opts.page || 1,
+          ...(brand && { brand }),
+          ...(itemType && { itemType }),
+          page: pageNum,
           limit,
           sort: debouncedQ ? "relevance" : "-updated",
         };
         const res = await searchAwinProducts(params);
-        setItems(res.items);
+        if (pageNum === 1) {
+          setItems(res.items);
+        } else {
+          setItems((prev) => [...prev, ...res.items]);
+        }
         setTotal(res.total);
         setPage(res.page);
         setHasMore(res.hasMore);
@@ -58,39 +92,38 @@ export default function AffiliateProductPicker({
         setBusy(false);
       }
     },
-    [debouncedQ, region, merchantId]
+    [debouncedQ, region, merchantId, brand, itemType, limit]
   );
 
+  // Reset to page 1 when q or filters change
   useEffect(() => {
-    setPage(1);
-    doSearch({ page: 1 });
-  }, [debouncedQ, region, merchantId, doSearch]);
+    runSearch(1);
+  }, [runSearch]);
 
-  const nextPage = async () => {
+  // Infinite scroll: observe sentinel at list bottom
+  useEffect(() => {
     if (!hasMore || busy) return;
-    setBusy(true);
-    try {
-      const res = await searchAwinProducts({
-        q: debouncedQ || "",
-        region,
-        ...(merchantId && { merchantId }),
-        page: page + 1,
-        limit,
-        sort: debouncedQ ? "relevance" : "-updated",
-      });
-      setItems((prev) => [...prev, ...res.items]);
-      setPage(res.page);
-      setHasMore(res.hasMore);
-    } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Search failed.");
-    } finally {
-      setBusy(false);
-    }
-  };
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
 
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasMore && !busy) {
+          runSearch(page + 1);
+        }
+      },
+      { root: sentinel.parentElement, rootMargin: "200px", threshold: 0.1 }
+    );
+
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [hasMore, busy, page, runSearch]);
+
+  // UI
   return (
     <div className="space-y-3">
-      {/* Search only */}
+      {/* Search */}
       <div>
         <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
           Search
@@ -103,8 +136,51 @@ export default function AffiliateProductPicker({
         />
       </div>
 
+      {/* Filters (independent of q) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+            Brand
+          </label>
+          <select
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+          >
+            <option value="">All</option>
+            {brandOpts.map((b) =>
+              b.value ? (
+                <option key={b.value} value={b.value}>
+                  {b.value} ({b.count})
+                </option>
+              ) : null
+            )}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+            Item Type
+          </label>
+          <select
+            value={itemType}
+            onChange={(e) => setItemType(e.target.value)}
+            className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+          >
+            <option value="">All</option>
+            {typeOpts.map((t) =>
+              t.value ? (
+                <option key={t.value} value={t.value}>
+                  {t.value} ({t.count})
+                </option>
+              ) : null
+            )}
+          </select>
+        </div>
+      </div>
+
       {error ? <div className="text-xs text-red-600">{error}</div> : null}
 
+      {/* Results */}
       <div className="grid grid-cols-1 gap-2 h-56 sm:h-64 overflow-auto border border-primary/30 rounded-md p-2">
         {items.map((p) => (
           <div
@@ -143,23 +219,15 @@ export default function AffiliateProductPicker({
             </button>
           </div>
         ))}
-        {!busy && items.length === 0 ? (
-          <div className="text-sm text-primary/70 px-1">No results.</div>
-        ) : null}
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} />
       </div>
 
       <div className="flex justify-between items-center">
         <div className="text-xs text-primary/70">
-          Page {page}, {items.length}/{total}
+          {busy ? "Loading…" : `Showing ${items.length}/${total}`}
         </div>
-        <button
-          type="button"
-          className="px-3 py-1 rounded border text-sm disabled:opacity-50"
-          onClick={nextPage}
-          disabled={!hasMore || busy}
-        >
-          {busy ? "Loading…" : hasMore ? "Load more" : "No more"}
-        </button>
+        {/* Remove the manual load-more button; infinite scroll handles it */}
       </div>
     </div>
   );

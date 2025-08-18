@@ -12,3 +12,8 @@ export async function createGlobalItemFromAffiliate(payload) {
   const { data } = await api.post("/global/items/from-affiliate", payload);
   return data;
 }
+
+export async function getAwinFacets(params) {
+  const { data } = await api.get("/affiliates/awin/facets", { params });
+  return data; // { brands: [{value,count}], itemTypes: [{value,count}] }
+}

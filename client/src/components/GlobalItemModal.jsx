@@ -45,6 +45,16 @@ export default function GlobalItemModal({
   const [tab, setTab] = useState("import"); // "import" | "custom"
   const [affProduct, setAffProduct] = useState(null); // selected affiliate product (or null)
 
+  // Derive item type from a category path string (e.g., "A > B > C" -> "C")
+  const deriveItemTypeFromCategoryPath = (path) => {
+    if (!path || typeof path !== "string") return "";
+    const parts = path
+      .split(/>|›|»|\/|\|/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return parts[parts.length - 1] || "";
+  };
+
   // When a product is picked, prefill the visible fields and lock price/link
   function handlePickAffiliate(p) {
     setAffProduct(p);
@@ -54,6 +64,8 @@ export default function GlobalItemModal({
     setDescription(p?.description || "");
     setPrice(typeof p?.price === "number" ? String(p.price) : "");
     setLink(p?.awDeepLink || "");
+    const derived = deriveItemTypeFromCategoryPath(p?.categoryPath);
+    if (derived) setItemType(derived);
   }
 
   ///////////////////
@@ -257,6 +269,7 @@ export default function GlobalItemModal({
             <AffiliateProductPicker
               region={regionForSearch}
               onPick={handlePickAffiliate}
+              pageSize={10}
             />
           </div>
         )}

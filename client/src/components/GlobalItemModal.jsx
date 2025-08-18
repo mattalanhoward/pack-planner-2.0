@@ -8,6 +8,8 @@ import CurrencyInput from "../components/CurrencyInput";
 import LinkInput from "../components/LinkInput";
 import { useUnit } from "../hooks/useUnit";
 import { useWeightInput } from "../hooks/useWeightInput";
+import AffiliateProductPicker from "./AffiliateProductPicker";
+import { createGlobalItemFromAffiliate } from "../services/affiliates";
 
 export default function GlobalItemModal({
   categories = [],
@@ -28,21 +30,69 @@ export default function GlobalItemModal({
   const unit = useUnit();
   const { unitLabel, parseInput } = useWeightInput(unit);
   const [displayWeight, setDisplayWeight] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    brand: "",
+    description: "",
+    itemType: "",
+    weight: null,
+    worn: false,
+    consumable: false,
+    price: null,
+    link: "",
+    quantity: 1,
+  });
+  const [tab, setTab] = useState("import"); // "import" | "custom"
+  const [affProduct, setAffProduct] = useState(null); // selected affiliate product (or null)
+
+  // When a product is picked, prefill the visible fields and lock price/link
+  function handlePickAffiliate(p) {
+    setAffProduct(p);
+    setTab("custom");
+    setName(p?.name || "");
+    setBrand(p?.brand || p?.merchantName || "");
+    setDescription(p?.description || "");
+    setPrice(typeof p?.price === "number" ? String(p.price) : "");
+    setLink(p?.awDeepLink || "");
+  }
+
+  ///////////////////
+  // TEMP: force GB so the seeded products show up. Replace with detected region once other regions are ingested.
+  const regionForSearch = "GB";
+  ///////////////////
+
+  // Region: derive from browser locale (fallback GB). Later we can read from user settings.
+  const detectedRegion =
+    (
+      typeof navigator !== "undefined" &&
+      navigator.language &&
+      navigator.language.split("-")[1]
+    )?.toUpperCase() || "GB";
+
+  // Friendly popup when a locked field is focused
+  const showLockedPopup = () =>
+    Swal.fire({
+      icon: "info",
+      title: "Locked field",
+      text: "For affiliate items, price and link come from the merchant and can’t be edited.",
+    });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Accept either variable name; keep one source of truth.
+    const selectedAffiliate = affProduct || null;
+
+    // Basic validation (still require a name)
     if (!name.trim()) {
       toast.error("Name is required.");
       return;
     }
 
-    const payload = { category, name: name.trim() };
-    if (itemType.trim()) payload.itemType = itemType.trim();
-    if (brand.trim()) payload.brand = brand.trim();
-    if (description.trim()) payload.description = description.trim();
-    // Convert user’s entry (g/oz, with comma/dot) → integer grams
+    // Parse/validate weight (grams) from displayWeight if provided
+    let grams;
     if (displayWeight !== "") {
-      const grams = parseInput(displayWeight);
+      grams = parseInput(displayWeight);
       if (grams == null) {
         toast.error("Enter a valid weight.");
         return;
@@ -51,28 +101,64 @@ export default function GlobalItemModal({
         toast.error("Weight cannot be negative.");
         return;
       }
-      payload.weight = grams;
     }
-    if (price) payload.price = Number(price);
-    if (link.trim()) payload.link = link.trim();
-    payload.worn = worn;
-    payload.consumable = consumable;
-    payload.quantity = Number(quantity);
 
     setLoading(true);
     try {
-      await api.post("/global/items", payload);
+      let created;
+
+      if (selectedAffiliate?._id) {
+        // Affiliate-backed: server controls price/link; we send only overrides
+        const payload = {
+          affiliateProductId: selectedAffiliate._id,
+          name: name.trim(),
+          ...(itemType.trim() && { itemType: itemType.trim() }),
+          ...(brand.trim() && { brand: brand.trim() }),
+          ...(description.trim() && { description: description.trim() }),
+          ...(typeof grams === "number" && { weight: grams }),
+          worn,
+          consumable,
+          quantity: Number(quantity) || 1,
+          // Keep whatever category your API expects; omit if not used server-side
+          ...(category && { category }),
+        };
+
+        created = await api
+          .post("/global/items/from-affiliate", payload)
+          .then((r) => r.data);
+      } else {
+        // Custom item: same as your original flow (price/link allowed)
+        const payload = { category, name: name.trim() };
+        if (itemType.trim()) payload.itemType = itemType.trim();
+        if (brand.trim()) payload.brand = brand.trim();
+        if (description.trim()) payload.description = description.trim();
+        if (typeof grams === "number") payload.weight = grams;
+
+        if (price !== "" && price != null) {
+          const p = Number(price);
+          if (Number.isNaN(p) || p < 0) {
+            toast.error("Enter a valid price.");
+            setLoading(false);
+            return;
+          }
+          payload.price = p;
+        }
+        if (link.trim()) payload.link = link.trim();
+
+        payload.worn = worn;
+        payload.consumable = consumable;
+        payload.quantity = Number(quantity) || 1;
+
+        created = await api.post("/global/items", payload).then((r) => r.data);
+      }
+
       toast.success("Global item created!");
-      onCreated();
-      onClose();
+      onCreated?.(created);
+      onClose?.();
     } catch (err) {
       console.error("Error creating global item:", err);
       const msg = err.response?.data?.message || "Failed to create item.";
-      await Swal.fire({
-        icon: "error",
-        title: "Creation Failed",
-        text: msg,
-      });
+      await Swal.fire({ icon: "error", title: "Creation Failed", text: msg });
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -83,7 +169,7 @@ export default function GlobalItemModal({
     <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
+        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4 min-h-[600px]"
       >
         {/* Header (smaller on phones) */}
         <div className="flex justify-between items-center mb-2 sm:mb-4">
@@ -100,124 +186,237 @@ export default function GlobalItemModal({
           </button>
         </div>
 
-        {/* Grid: most fields are 1col on phones, 2col on sm+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-          {/* Item Type */}
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-              Item Type
-            </label>
-            <input
-              type="text"
-              placeholder="Tent"
-              required
-              value={itemType}
-              onChange={(e) => setItemType(e.target.value)}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-            />
+        {/* Import / Custom tabs */}
+        <div className="flex items-center justify-between mb-2 sm:mb-4">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={`px-2 py-1 rounded border text-sm ${
+                tab === "import"
+                  ? "bg-primary/10 border-primary"
+                  : "bg-neutralAlt border-primary/30"
+              }`}
+              onClick={() => setTab("import")}
+              disabled={loading}
+            >
+              Import
+            </button>
+            <button
+              type="button"
+              className={`px-2 py-1 rounded border text-sm ${
+                tab === "custom"
+                  ? "bg-primary/10 border-primary"
+                  : "bg-neutralAlt border-primary/30"
+              }`}
+              onClick={() => setTab("custom")}
+              disabled={loading}
+            >
+              Custom
+            </button>
           </div>
 
-          {/* Name */}
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-              Name<span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Tarptent"
-              value={name}
-              required
-              onChange={(e) => setName(e.target.value)}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+          {affProduct ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-primary">
+                Selected: <strong>{affProduct.name}</strong>
+              </span>
+              <button
+                type="button"
+                className="text-xs underline text-primary"
+                onClick={() => {
+                  // Remove affiliate selection
+                  setAffProduct(null);
+
+                  // Reset every user-editable field
+                  setCategory?.(""); // if you keep category in this modal
+                  setItemType("");
+                  setName("");
+                  setBrand("");
+                  setDescription("");
+                  setDisplayWeight(""); // clears the visible weight input
+                  setPrice("");
+                  setLink("");
+                  setWorn(false);
+                  setConsumable(false);
+                  setQuantity(1);
+
+                  // If you want to take the user back to Import, uncomment:
+                  // setTab("import");
+                }}
+                disabled={loading}
+              >
+                Clear
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Import tab content */}
+        {tab === "import" && (
+          <div className="mb-3 sm:mb-4">
+            <AffiliateProductPicker
+              region={regionForSearch}
+              onPick={handlePickAffiliate}
             />
           </div>
+        )}
 
-          {/* Brand */}
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-              Brand
-            </label>
-            <input
-              type="text"
-              placeholder="Rainbow"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-            />
-          </div>
-
-          {/* Link */}
-          <div>
-            <LinkInput
-              value={link}
-              onChange={setLink}
-              label="Link"
-              placeholder="tarptent.com"
-              required={false}
-            />
-          </div>
-
-          {/* Weight + Price: force flex on all breakpoints */}
-          <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
-            <div className="flex-1">
+        {/* Grid: only visible on the Custom tab */}
+        {tab === "custom" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            {/* Item Type */}
+            <div>
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Weight ({unitLabel})
+                Item Type
               </label>
               <input
                 type="text"
-                inputMode="decimal"
-                value={displayWeight}
-                placeholder={unitLabel === "g" ? "e.g. 350" : "e.g. 12.6"}
-                onChange={(e) => setDisplayWeight(e.target.value)}
+                placeholder="Tent"
+                required
+                value={itemType}
+                onChange={(e) => setItemType(e.target.value)}
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>
-            <div className="flex-1">
+
+            {/* Name */}
+            <div>
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Price (€)
+                Name<span className="text-red-500">*</span>
               </label>
-              <CurrencyInput
-                value={price}
-                onChange={(value) => setPrice(value)}
+              <input
+                type="text"
+                placeholder="Tarptent"
+                value={name}
+                required
+                onChange={(e) => setName(e.target.value)}
+                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              />
+            </div>
+
+            {/* Brand */}
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+                Brand
+              </label>
+              <input
+                type="text"
+                placeholder="Rainbow"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              />
+            </div>
+
+            {/* Link (locked if affiliate selected) */}
+            <div className="relative">
+              <LinkInput
+                value={link}
+                onChange={setLink}
+                label="Link"
+                placeholder="tarptent.com"
+                required={false}
+                readOnly={!!affProduct}
+                onFocus={affProduct ? showLockedPopup : undefined}
+              />
+              {affProduct && (
+                <button
+                  type="button"
+                  aria-label="Link is locked"
+                  title="Link is locked"
+                  // onClick={showLockedPopup}
+                  className="absolute inset-0 cursor-not-allowed bg-transparent"
+                />
+              )}
+              {affProduct ? (
+                <p className="mt-1 text-[11px] text-primary/80">
+                  Link is set by the merchant for imported items.
+                </p>
+              ) : null}
+            </div>
+
+            {/* Weight + Price: force flex on all breakpoints */}
+            <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
+              <div className="flex-1">
+                <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+                  Weight ({unitLabel})
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={displayWeight}
+                  placeholder={unitLabel === "g" ? "e.g. 350" : "e.g. 12.6"}
+                  onChange={(e) => setDisplayWeight(e.target.value)}
+                  className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+                  Price (€)
+                </label>
+                <div className="relative">
+                  <CurrencyInput
+                    value={price}
+                    onChange={(value) => setPrice(value)}
+                    readOnly={!!affProduct}
+                    onFocus={affProduct ? showLockedPopup : undefined}
+                  />
+                  {affProduct && (
+                    <button
+                      type="button"
+                      aria-label="Price is locked"
+                      title="Price is locked"
+                      // onClick={showLockedPopup}
+                      className="absolute inset-0 cursor-not-allowed bg-transparent"
+                    />
+                  )}
+                </div>
+                {affProduct ? (
+                  <p className="mt-1 text-[11px] text-primary/80">
+                    Price is set by the merchant for imported items.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Description spans full width */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                rows={2}
               />
             </div>
           </div>
+        )}
 
-          {/* Description spans full width */}
-          <div className="sm:col-span-2">
-            <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-              Description
+        {/* Worn / Consumable (only on Custom tab) */}
+        {tab === "custom" && (
+          <div className="flex items-center space-x-4 mt-2">
+            <label className="inline-flex items-center text-xs sm:text-sm text-primary">
+              <input
+                type="checkbox"
+                checked={worn}
+                onChange={(e) => setWorn(e.target.checked)}
+                className="mr-1 sm:mr-2"
+              />
+              Worn
             </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-              rows={2}
-            />
+            <label className="inline-flex items-center text-xs sm:text-sm text-primary">
+              <input
+                type="checkbox"
+                checked={consumable}
+                onChange={(e) => setConsumable(e.target.checked)}
+                className="mr-1 sm:mr-2"
+              />
+              Consumable
+            </label>
           </div>
-        </div>
-
-        {/* Worn / Consumable (smaller) */}
-        <div className="flex items-center space-x-4 mt-2">
-          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
-            <input
-              type="checkbox"
-              checked={worn}
-              onChange={(e) => setWorn(e.target.checked)}
-              className="mr-1 sm:mr-2"
-            />
-            Worn
-          </label>
-          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
-            <input
-              type="checkbox"
-              checked={consumable}
-              onChange={(e) => setConsumable(e.target.checked)}
-              className="mr-1 sm:mr-2"
-            />
-            Consumable
-          </label>
-        </div>
+        )}
 
         {/* Actions (slightly tighter) */}
         <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
@@ -225,6 +424,11 @@ export default function GlobalItemModal({
             type="button"
             onClick={onClose}
             disabled={loading}
+            title={
+              tab === "import"
+                ? "Pick a product (Import) or switch to Custom"
+                : undefined
+            }
             className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
           >
             Cancel

@@ -71,6 +71,7 @@ router.get(
     let projection = {
       name: 1,
       brand: 1,
+      description: 1,
       price: 1,
       currency: 1,
       imageUrl: 1,

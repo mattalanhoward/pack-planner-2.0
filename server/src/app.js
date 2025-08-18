@@ -101,7 +101,9 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("✅ Connected to MongoDB"))
+  .then(() =>
+    console.log(`✅ Connected to MongoDB (db=${mongoose.connection.name})`)
+  )
   .catch((err) => console.error("❌ Mongo connection error:", err));
 
 module.exports = app;

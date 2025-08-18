@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
     refreshTokens: {
       type: [String],
@@ -46,14 +46,14 @@ const userSchema = new mongoose.Schema(
 );
 
 // Helper to set the password
-userSchema.methods.setPassword = async function (plainText) {
+UserSchema.methods.setPassword = async function (plainText) {
   const saltRounds = 10;
   this.passwordHash = await bcrypt.hash(plainText, saltRounds);
 };
 
 // Helper to check the password
-userSchema.methods.validatePassword = async function (plainText) {
+UserSchema.methods.validatePassword = async function (plainText) {
   return bcrypt.compare(plainText, this.passwordHash);
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", UserSchema);

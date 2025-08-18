@@ -97,6 +97,7 @@ if (!mongoURI) {
 
 mongoose
   .connect(mongoURI, {
+    dbName: process.env.MONGO_DB_NAME, // <— forces the DB even if URI lacks /dbname
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

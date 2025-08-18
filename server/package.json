@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --detectOpenHandles --runInBand --coverage"
+    "test": "jest --detectOpenHandles --runInBand --coverage",
+    "db:ensure-indexes": "node scripts/ensure-indexes.js",
+    "ingest:awin": "node scripts/ingest-awin-feed.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -35,6 +37,7 @@
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "helmet": "^8.1.0",

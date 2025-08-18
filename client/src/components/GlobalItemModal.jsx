@@ -47,12 +47,20 @@ export default function GlobalItemModal({
 
   // Derive item type from a category path string (e.g., "A > B > C" -> "C")
   const deriveItemTypeFromCategoryPath = (path) => {
-    if (!path || typeof path !== "string") return "";
-    const parts = path
-      .split(/>|›|»|\/|\|/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    return parts[parts.length - 1] || "";
+    if (!path) return "";
+    if (Array.isArray(path)) {
+      const last = path[path.length - 1];
+      return typeof last === "string" ? last.trim() : "";
+    }
+    if (typeof path === "string") {
+      const parts = path
+        .replace(/›|»|\||\//g, ">")
+        .split(">")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return parts[parts.length - 1] || "";
+    }
+    return "";
   };
 
   // When a product is picked, prefill the visible fields and lock price/link
@@ -64,7 +72,10 @@ export default function GlobalItemModal({
     setDescription(p?.description || "");
     setPrice(typeof p?.price === "number" ? String(p.price) : "");
     setLink(p?.awDeepLink || "");
-    const derived = deriveItemTypeFromCategoryPath(p?.categoryPath);
+    const derived =
+      deriveItemTypeFromCategoryPath(p?.categoryPath) ||
+      deriveItemTypeFromCategoryPath(p?.category) ||
+      deriveItemTypeFromCategoryPath(p?.categories);
     if (derived) setItemType(derived);
   }
 

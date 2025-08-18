@@ -53,50 +53,112 @@ router.get(
       const match = { network: "awin", region };
       if (merchantId) match.merchantId = String(merchantId);
 
-      // Build a raw category string from any of: categoryPath (array|string) | category | categories[]
+      // Compute last category segment as _cat from array|string categoryPath (or fallbacks)
       const normalizeAndLastSegment = [
         {
           $addFields: {
-            _raw: {
+            _cat: {
               $switch: {
                 branches: [
-                  // categoryPath: array -> join with " > "
+                  // categoryPath: array → last element
                   {
                     case: { $eq: [{ $type: "$categoryPath" }, "array"] },
                     then: {
-                      $reduce: {
-                        input: "$categoryPath",
-                        initialValue: "",
-                        in: {
-                          $concat: [
-                            { $cond: [{ $eq: ["$$value", ""] }, "", " > "] },
-                            { $toString: "$$this" },
+                      $trim: {
+                        input: {
+                          $arrayElemAt: [
+                            "$categoryPath",
+                            { $subtract: [{ $size: "$categoryPath" }, 1] },
                           ],
                         },
                       },
                     },
                   },
-                  // categoryPath: string
+                  // categoryPath: string → normalize separators, split, take last
                   {
                     case: { $eq: [{ $type: "$categoryPath" }, "string"] },
-                    then: "$categoryPath",
+                    then: {
+                      $let: {
+                        vars: {
+                          norm: {
+                            $reduce: {
+                              input: [
+                                { find: "›", repl: ">" },
+                                { find: "»", repl: ">" },
+                                { find: "/", repl: ">" },
+                                { find: "|", repl: ">" },
+                              ],
+                              initialValue: "$categoryPath",
+                              in: {
+                                $replaceAll: {
+                                  input: "$$value",
+                                  find: "$$this.find",
+                                  replacement: "$$this.repl",
+                                },
+                              },
+                            },
+                          },
+                        },
+                        in: {
+                          $trim: {
+                            input: {
+                              $arrayElemAt: [
+                                {
+                                  $filter: {
+                                    input: {
+                                      $map: {
+                                        input: { $split: ["$$norm", ">"] },
+                                        as: "p",
+                                        in: { $trim: { input: "$$p" } },
+                                      },
+                                    },
+                                    as: "x",
+                                    cond: { $ne: ["$$x", ""] },
+                                  },
+                                },
+                                {
+                                  $subtract: [
+                                    {
+                                      $size: {
+                                        $filter: {
+                                          input: {
+                                            $map: {
+                                              input: {
+                                                $split: ["$$norm", ">"],
+                                              },
+                                              as: "p",
+                                              in: { $trim: { input: "$$p" } },
+                                            },
+                                          },
+                                          as: "x",
+                                          cond: { $ne: ["$$x", ""] },
+                                        },
+                                      },
+                                    },
+                                    1,
+                                  ],
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
                   },
-                  // category: string
+                  // category: string fallback
                   {
                     case: { $eq: [{ $type: "$category" }, "string"] },
-                    then: "$category",
+                    then: { $trim: { input: "$category" } },
                   },
-                  // categories: array -> join
+                  // categories: array fallback → last element
                   {
                     case: { $eq: [{ $type: "$categories" }, "array"] },
                     then: {
-                      $reduce: {
-                        input: "$categories",
-                        initialValue: "",
-                        in: {
-                          $concat: [
-                            { $cond: [{ $eq: ["$$value", ""] }, "", " > "] },
-                            { $toString: "$$this" },
+                      $trim: {
+                        input: {
+                          $arrayElemAt: [
+                            "$categories",
+                            { $subtract: [{ $size: "$categories" }, 1] },
                           ],
                         },
                       },
@@ -108,71 +170,7 @@ router.get(
             },
           },
         },
-        // Normalize separators to ">"
-        {
-          $addFields: {
-            _path: {
-              $replaceAll: { input: "$_raw", find: "›", replacement: ">" },
-            },
-          },
-        },
-        {
-          $addFields: {
-            _path: {
-              $replaceAll: { input: "$_path", find: "»", replacement: ">" },
-            },
-          },
-        },
-        {
-          $addFields: {
-            _path: {
-              $replaceAll: { input: "$_path", find: "/", replacement: ">" },
-            },
-          },
-        },
-        {
-          $addFields: {
-            _path: {
-              $replaceAll: { input: "$_path", find: "|", replacement: ">" },
-            },
-          },
-        },
-        // Split, trim, drop empties
-        {
-          $addFields: {
-            _parts: {
-              $filter: {
-                input: {
-                  $map: {
-                    input: { $split: ["$_path", ">"] },
-                    as: "p",
-                    in: { $trim: { input: "$$p" } },
-                  },
-                },
-                as: "x",
-                cond: { $ne: ["$$x", ""] },
-              },
-            },
-          },
-        },
-        // Take last segment
-        {
-          $addFields: {
-            _cat: {
-              $cond: [
-                { $gt: [{ $size: "$_parts" }, 0] },
-                {
-                  $arrayElemAt: [
-                    "$_parts",
-                    { $subtract: [{ $size: "$_parts" }, 1] },
-                  ],
-                },
-                "",
-              ],
-            },
-          },
-        },
-        { $project: { _raw: 0, _path: 0, _parts: 0 } },
+        { $match: { _cat: { $type: "string", $ne: "" } } },
       ];
 
       const [brandsAgg, itemTypesAgg] = await Promise.all([
@@ -248,12 +246,38 @@ router.get(
       and.push({ categoryPath: new RegExp(escapeRegex(category), "i") });
     if (itemType) {
       const seg = escapeRegex(itemType);
-      const tail = new RegExp(`(?:^|[>›»/|])\\s*${seg}\\s*$`, "i");
+      const tail = new RegExp(`(?:^|[>›»/|])\\s*${seg}\\s*$`, "i"); // for string paths
       and.push({
         $or: [
+          // string shapes
           { categoryPath: tail },
           { category: tail },
-          { categories: tail }, // arrays accept regex element-match
+          { categories: new RegExp(`^${seg}$`, "i") },
+          // array categoryPath → compare last element case-insensitively
+          {
+            $expr: {
+              $and: [
+                { $eq: [{ $type: "$categoryPath" }, "array"] },
+                {
+                  $eq: [
+                    {
+                      $toLower: {
+                        $trim: {
+                          input: {
+                            $arrayElemAt: [
+                              "$categoryPath",
+                              { $subtract: [{ $size: "$categoryPath" }, 1] },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                    String(itemType).toLowerCase(),
+                  ],
+                },
+              ],
+            },
+          },
         ],
       });
     }

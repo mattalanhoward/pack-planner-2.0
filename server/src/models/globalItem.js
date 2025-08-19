@@ -58,6 +58,7 @@ const GlobalItemSchema = new mongoose.Schema(
           region: { type: String }, // source region (e.g., "GB")
           externalProductId: { type: String }, // Awin product id
           deepLink: { type: String }, // canonical deep link we stored
+          itemGroupId: { type: String }, // ← add this
           alternates: [
             {
               region: String,

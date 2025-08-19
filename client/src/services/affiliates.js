@@ -17,3 +17,32 @@ export async function getAwinFacets(params) {
   const { data } = await api.get("/affiliates/awin/facets", { params });
   return data; // { brands: [{value,count}], itemTypes: [{value,count}] }
 }
+
+export async function fetchAwinFacets({
+  region,
+  merchantId,
+  q,
+  brand,
+  itemType,
+  limit = 100,
+}) {
+  const { data } = await api.get("/affiliates/awin/facets", {
+    params: { region, merchantId, q, brand, itemType, limit },
+  });
+  return data; // { brands: [{key,value,count}], itemTypes: [{value,count}] }
+}
+
+export async function fetchAwinProducts({
+  region,
+  merchantId,
+  brand,
+  itemType,
+  q,
+  page = 1,
+  limit = 24,
+}) {
+  const { data } = await api.get("/affiliates/awin/products", {
+    params: { region, merchantId, brand, itemType, q, page, limit },
+  });
+  return data; // { items, page, total, hasMore }
+}

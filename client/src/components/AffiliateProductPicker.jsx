@@ -40,6 +40,7 @@ export default function AffiliateProductPicker({
   const debouncedQ = useDebounced(q, 300);
   const limit = pageSize;
   const sentinelRef = useRef(null);
+  const listRef = useRef(null); // scroll container for IO root
 
   // Load facets (independent of q)
   const loadFacets = useCallback(async () => {
@@ -104,16 +105,16 @@ export default function AffiliateProductPicker({
   useEffect(() => {
     if (!hasMore || busy) return;
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const root = listRef.current;
+    if (!sentinel || !root) return;
 
     const io = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasMore && !busy) {
+        if (entries[0].isIntersecting && hasMore && !busy) {
           runSearch(page + 1);
         }
       },
-      { root: sentinel.parentElement, rootMargin: "200px", threshold: 0.1 }
+      { root, rootMargin: "200px", threshold: 0.1 }
     );
 
     io.observe(sentinel);
@@ -180,11 +181,14 @@ export default function AffiliateProductPicker({
 
       {error ? <div className="text-xs text-red-600">{error}</div> : null}
 
-      {/* Results */}
-      <div className="grid grid-cols-1 gap-2 h-56 sm:h-64 overflow-auto border border-primary/30 rounded-md p-2">
+      {/* Results (fixed height to avoid modal jumping) */}
+      <div
+        ref={listRef}
+        className="grid grid-cols-1 gap-2 h-56 sm:h-64 overflow-auto border border-primary/30 rounded-md p-2"
+      >
         {items.map((p) => (
           <div
-            key={p._id}
+            key={p._id || p.externalProductId}
             className="flex gap-3 items-center border border-primary/20 rounded-md p-2"
           >
             {p.imageUrl ? (
@@ -204,8 +208,11 @@ export default function AffiliateProductPicker({
                 {p.name}
               </div>
               <div className="text-xs text-primary/80 truncate">
-                {p.brand || p.merchantName} • {p.price ?? "—"}{" "}
-                {p.currency || ""}
+                {p.brand || p.merchantName} •{" "}
+                {p.itemType || (p.categoryPath?.slice?.(-1)[0] ?? "")}
+                {typeof p.price === "number"
+                  ? ` • ${p.price} ${p.currency || ""}`
+                  : ""}
               </div>
             </div>
             <button
@@ -227,7 +234,7 @@ export default function AffiliateProductPicker({
         <div className="text-xs text-primary/70">
           {busy ? "Loading…" : `Showing ${items.length}/${total}`}
         </div>
-        {/* Remove the manual load-more button; infinite scroll handles it */}
+        {/* No button needed; infinite scroll handles paging */}
       </div>
     </div>
   );

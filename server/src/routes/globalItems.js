@@ -5,6 +5,8 @@ const GlobalItem = require("../models/globalItem");
 const GearItem = require("../models/gearItem");
 const AffiliateProduct = require("../models/affiliateProduct");
 const { body, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
+const { isValidObjectId } = mongoose;
 
 const router = express.Router();
 
@@ -19,6 +21,26 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/global/items/:id — fetch one (owner-scoped)
+router.get("/:id", async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid id." });
+    }
+
+    const doc = await GlobalItem.findOne({
+      _id: req.params.id,
+      owner: req.userId,
+    }).lean();
+
+    if (!doc) return res.status(404).json({ message: "Not found." });
+    res.json(doc);
+  } catch (err) {
+    console.error("GET /global/items/:id error:", err);
+    res.status(500).json({ message: "Server error." });
   }
 });
 
@@ -52,11 +74,26 @@ router.post(
     }
     try {
       const { affiliateProductId } = req.body;
-      const p = await AffiliateProduct.findById(affiliateProductId).lean();
-      if (!p)
+      let p = null;
+      // Try Mongo ObjectId first
+      if (isValidObjectId(affiliateProductId)) {
+        p = await AffiliateProduct.findById(affiliateProductId).lean();
+      }
+      // Fallback to business identifiers
+      if (!p) {
+        p = await AffiliateProduct.findOne({
+          $or: [
+            { externalProductId: String(affiliateProductId) },
+            { itemGroupId: String(affiliateProductId) },
+            { sku: String(affiliateProductId) },
+          ],
+        }).lean();
+      }
+      if (!p) {
         return res
           .status(404)
           .json({ message: "Affiliate product not found." });
+      }
 
       // Build the new GlobalItem — price/link always from affiliate product
       const data = {

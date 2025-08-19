@@ -283,6 +283,7 @@ export default function GlobalItemModal({
                   setConsumable(false);
                   setQuantity(1);
                   setWeightSource("user");
+                  console.debug("[GlobalItemModal] weightSource reset -> user");
 
                   // If you want to take the user back to Import, uncomment:
                   // setTab("import");

@@ -9,7 +9,9 @@
     "dev": "nodemon src/server.js",
     "test": "jest --detectOpenHandles --runInBand --coverage",
     "db:ensure-indexes": "node scripts/ensure-indexes.js",
-    "ingest:awin": "node scripts/ingest-awin-feed.js"
+    "ingest:awin": "node scripts/ingest-awin-feed.js",
+    "db:backfill-affiliate-derived:dry": "node scripts/backfill-affiliate-derived.js --dry-run",
+    "db:backfill-affiliate-derived": "node scripts/backfill-affiliate-derived.js"
   },
   "jest": {
     "testEnvironment": "node",

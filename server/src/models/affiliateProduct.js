@@ -19,8 +19,12 @@ const AffiliateProductSchema = new Schema(
 
     name: { type: String, required: true },
     brand: { type: String },
+    // derived, denormalized
+    brandLC: { type: String, index: true }, // "osprey", "black diamond", ...
     description: { type: String },
     categoryPath: [{ type: String }],
+    // derived, denormalized
+    itemType: { type: String, index: true }, // e.g., "Headlamps", "Daypacks"
 
     price: { type: Number }, // numeric price (native currency)
     awDeepLink: { type: String, required: true },
@@ -45,5 +49,9 @@ AffiliateProductSchema.index(
 // Search & filters
 AffiliateProductSchema.index({ name: "text", brand: "text" });
 AffiliateProductSchema.index({ region: 1, merchantId: 1, price: 1 });
+// Helpful compound indexes for common filters (keep it lean)
+AffiliateProductSchema.index({ network: 1, region: 1, brandLC: 1 });
+AffiliateProductSchema.index({ network: 1, region: 1, itemType: 1 });
+AffiliateProductSchema.index({ network: 1, region: 1, merchantId: 1 });
 
 module.exports = model("AffiliateProduct", AffiliateProductSchema);

@@ -2,11 +2,15 @@
 const express = require("express");
 const { query, validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
+const auth = require("../middleware/auth");
 const AffiliateProduct = require("../models/affiliateProduct");
 
 const router = express.Router();
 
-// Rate limit: 90 req / 5 min per IP
+// Protect all affiliate endpoints
+router.use(auth);
+
+// Rate limit: 90 req / 5 min per IP for product search
 const searchLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 90,
@@ -14,207 +18,140 @@ const searchLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const validateSearch = [
-  query("q").optional().isString().isLength({ max: 120 }).trim(),
-  query("merchantId").optional().isString().isLength({ max: 40 }).trim(),
-  query("brand").optional().isString().isLength({ max: 120 }).trim(),
-  query("category").optional().isString().isLength({ max: 200 }).trim(), // substring
-  query("itemType").optional().isString().isLength({ max: 200 }).trim(), // last segment
-  query("region").optional().isString().isLength({ min: 2, max: 2 }).trim(),
-  query("minPrice").optional().isFloat({ min: 0 }),
-  query("maxPrice").optional().isFloat({ min: 0 }),
-  query("page").optional().isInt({ min: 1 }),
-  query("limit").optional().isInt({ min: 1, max: 96 }),
-  query("sort")
-    .optional()
-    .isIn(["price", "-price", "updated", "-updated", "relevance"]),
-];
+// Small helpers
+function escapeRegex(s) {
+  return String(s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeBrandKey(brand) {
+  return String(brand || "")
+    .toLowerCase()
+    .trim();
+}
 
 /**
- * GET /api/affiliates/awin/facets?region=GB[&merchantId=26895]&limit=50
- * Returns top brands and itemTypes (last category segment) for independent filtering.
+ * GET /api/affiliates/awin/facets
+ * Query params:
+ *  - region: "GB" | "DE" | "US" ... (required)
+ *  - merchantId?: number-like
+ *  - q?: string (simple regex search on name/description)
+ *  - brand?: string (filters results before faceting)
+ *  - itemType?: string (filters results before faceting)
+ *  - limit?: number (how many facet buckets to return, default 50)
  */
 router.get(
   "/awin/facets",
   [
     query("region").isString().isLength({ min: 2, max: 2 }).trim(),
     query("merchantId").optional().isString().trim(),
+    query("q").optional().isString().trim(),
+    query("brand").optional().isString().trim(),
+    query("itemType").optional().isString().trim(),
     query("limit").optional().isInt({ min: 1, max: 200 }),
   ],
   async (req, res) => {
+    // validate
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
         .status(400)
         .json({ error: { code: "BAD_QUERY", details: errors.array() } });
     }
-    try {
-      const { region, merchantId, limit = 50 } = req.query;
-      const match = { network: "awin", region };
-      if (merchantId) match.merchantId = String(merchantId);
 
-      // Compute last category segment as _cat from array|string categoryPath (or fallbacks)
-      const normalizeAndLastSegment = [
+    try {
+      const {
+        region,
+        merchantId,
+        q = "",
+        brand = "",
+        itemType = "",
+        limit = 50,
+      } = req.query;
+
+      const match = { network: "awin", region };
+      if (merchantId) match.merchantId = Number(merchantId);
+      if (brand) match.brandLC = normalizeBrandKey(brand);
+      if (itemType) match.itemType = String(itemType).trim();
+
+      if (q && q.trim()) {
+        const rx = new RegExp(escapeRegex(q.trim()), "i");
+        match.$or = [{ name: rx }, { description: rx }];
+      }
+
+      const [agg] = await AffiliateProduct.aggregate([
+        { $match: match },
         {
-          $addFields: {
-            _cat: {
-              $switch: {
-                branches: [
-                  // categoryPath: array → last element
-                  {
-                    case: { $eq: [{ $type: "$categoryPath" }, "array"] },
-                    then: {
-                      $trim: {
-                        input: {
-                          $arrayElemAt: [
-                            "$categoryPath",
-                            { $subtract: [{ $size: "$categoryPath" }, 1] },
-                          ],
-                        },
-                      },
-                    },
-                  },
-                  // categoryPath: string → normalize separators, split, take last
-                  {
-                    case: { $eq: [{ $type: "$categoryPath" }, "string"] },
-                    then: {
-                      $let: {
-                        vars: {
-                          norm: {
-                            $reduce: {
-                              input: [
-                                { find: "›", repl: ">" },
-                                { find: "»", repl: ">" },
-                                { find: "/", repl: ">" },
-                                { find: "|", repl: ">" },
-                              ],
-                              initialValue: "$categoryPath",
-                              in: {
-                                $replaceAll: {
-                                  input: "$$value",
-                                  find: "$$this.find",
-                                  replacement: "$$this.repl",
-                                },
-                              },
-                            },
-                          },
-                        },
-                        in: {
-                          $trim: {
-                            input: {
-                              $arrayElemAt: [
-                                {
-                                  $filter: {
-                                    input: {
-                                      $map: {
-                                        input: { $split: ["$$norm", ">"] },
-                                        as: "p",
-                                        in: { $trim: { input: "$$p" } },
-                                      },
-                                    },
-                                    as: "x",
-                                    cond: { $ne: ["$$x", ""] },
-                                  },
-                                },
-                                {
-                                  $subtract: [
-                                    {
-                                      $size: {
-                                        $filter: {
-                                          input: {
-                                            $map: {
-                                              input: {
-                                                $split: ["$$norm", ">"],
-                                              },
-                                              as: "p",
-                                              in: { $trim: { input: "$$p" } },
-                                            },
-                                          },
-                                          as: "x",
-                                          cond: { $ne: ["$$x", ""] },
-                                        },
-                                      },
-                                    },
-                                    1,
-                                  ],
-                                },
-                              ],
-                            },
-                          },
-                        },
-                      },
-                    },
-                  },
-                  // category: string fallback
-                  {
-                    case: { $eq: [{ $type: "$category" }, "string"] },
-                    then: { $trim: { input: "$category" } },
-                  },
-                  // categories: array fallback → last element
-                  {
-                    case: { $eq: [{ $type: "$categories" }, "array"] },
-                    then: {
-                      $trim: {
-                        input: {
-                          $arrayElemAt: [
-                            "$categories",
-                            { $subtract: [{ $size: "$categories" }, 1] },
-                          ],
-                        },
-                      },
-                    },
-                  },
-                ],
-                default: "",
+          $facet: {
+            // Brands: group by stable key brandLC, expose "value" as the proper-cased brand
+            brands: [
+              { $match: { brandLC: { $type: "string", $ne: "" } } },
+              {
+                $group: {
+                  _id: "$brandLC",
+                  proper: { $first: "$brand" },
+                  count: { $sum: 1 },
+                },
               },
-            },
+              { $project: { _id: 0, key: "$_id", value: "$proper", count: 1 } },
+              { $sort: { count: -1, value: 1 } },
+              { $limit: Number(limit) },
+            ],
+            // Item types: already denormalized
+            itemTypes: [
+              { $match: { itemType: { $type: "string", $ne: "" } } },
+              { $group: { _id: "$itemType", count: { $sum: 1 } } },
+              { $project: { _id: 0, value: "$_id", count: 1 } },
+              { $sort: { count: -1, value: 1 } },
+              { $limit: Number(limit) },
+            ],
           },
         },
-        { $match: { _cat: { $type: "string", $ne: "" } } },
-      ];
+      ]).option({ allowDiskUse: true });
 
-      const [brandsAgg, itemTypesAgg] = await Promise.all([
-        AffiliateProduct.aggregate([
-          { $match: match },
-          { $match: { brand: { $type: "string", $ne: "" } } },
-          { $group: { _id: "$brand", count: { $sum: 1 } } },
-          { $project: { _id: 0, value: "$_id", count: 1 } },
-          { $sort: { count: -1, value: 1 } },
-          { $limit: Number(limit) },
-        ]).option({ allowDiskUse: true }),
-        AffiliateProduct.aggregate([
-          { $match: match },
-          ...normalizeAndLastSegment,
-          { $match: { _cat: { $type: "string", $ne: "" } } },
-          { $group: { _id: "$_cat", count: { $sum: 1 } } },
-          { $project: { _id: 0, value: "$_id", count: 1 } },
-          { $sort: { count: -1, value: 1 } },
-          { $limit: Number(limit) },
-        ]).option({ allowDiskUse: true }),
-      ]);
-
-      return res.json({ brands: brandsAgg, itemTypes: itemTypesAgg });
-    } catch (err) {
-      console.error("facets error:", err);
-      return res.status(500).json({
-        error: {
-          code: "FACETS_ERROR",
-          message: err.message || "Aggregation failed",
-        },
+      res.json({
+        brands: agg?.brands || [],
+        itemTypes: agg?.itemTypes || [],
       });
+    } catch (err) {
+      console.error("affiliates/facets error:", err);
+      res.status(500).json({ message: "Server error." });
     }
   }
 );
 
 /**
  * GET /api/affiliates/awin/products
- * Search + filters + pagination.
+ * Query params:
+ *  - region: "GB" | "DE" | "US" ... (required)
+ *  - merchantId?: number-like
+ *  - brand?: string (exact, case-insensitive via brandLC)
+ *  - itemType?: string (exact on denormalized itemType)
+ *  - category?: string (substring match against categoryPath for legacy UIs)
+ *  - q?: string (regex search in name/description; safe w/o text index)
+ *  - minPrice?: number
+ *  - maxPrice?: number
+ *  - page?: number (default 1)
+ *  - limit?: number (default 24, max 50)
+ *  - sort?: "relevance" | "-updated" | "price" | "-price" (relevance behaves same as -updated here)
  */
 router.get(
   "/awin/products",
   searchLimiter,
-  validateSearch,
+  [
+    query("region").isString().isLength({ min: 2, max: 2 }).trim(),
+    query("merchantId").optional().isString().trim(),
+    query("brand").optional().isString().trim(),
+    query("itemType").optional().isString().trim(),
+    query("category").optional().isString().trim(),
+    query("q").optional().isString().trim(),
+    query("minPrice").optional().isFloat({ min: 0 }),
+    query("maxPrice").optional().isFloat({ min: 0 }),
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 50 }),
+    query("sort").optional().isString().trim(),
+  ],
   async (req, res) => {
+    // validate
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res
@@ -222,147 +159,81 @@ router.get(
         .json({ error: { code: "BAD_QUERY", details: errors.array() } });
     }
 
-    const {
-      q = "",
-      merchantId,
-      brand,
-      category,
-      itemType,
-      region,
-      minPrice,
-      maxPrice,
-      page = 1,
-      limit = 24,
-      sort = q ? "relevance" : "-updated",
-    } = req.query;
+    try {
+      const {
+        region,
+        merchantId,
+        brand = "",
+        itemType = "",
+        category = "",
+        q = "",
+        minPrice,
+        maxPrice,
+        page = 1,
+        limit = 24,
+        sort = q ? "relevance" : "-updated",
+      } = req.query;
 
-    const filter = { network: "awin" };
-    const and = [];
+      const pageNum = Math.max(1, parseInt(page, 10));
+      const pageSize = Math.min(50, Math.max(1, parseInt(limit, 10)));
+      const skip = (pageNum - 1) * pageSize;
 
-    if (region) filter.region = region;
-    if (merchantId) filter.merchantId = String(merchantId);
-    if (brand) and.push({ brand: new RegExp(`^${escapeRegex(brand)}$`, "i") });
-    if (category)
-      and.push({ categoryPath: new RegExp(escapeRegex(category), "i") });
-    if (itemType) {
-      const seg = escapeRegex(itemType);
-      const tail = new RegExp(`(?:^|[>›»/|])\\s*${seg}\\s*$`, "i"); // for string paths
-      and.push({
-        $or: [
-          // string shapes
-          { categoryPath: tail },
-          { category: tail },
-          { categories: new RegExp(`^${seg}$`, "i") },
-          // array categoryPath → compare last element case-insensitively
-          {
-            $expr: {
-              $and: [
-                { $eq: [{ $type: "$categoryPath" }, "array"] },
-                {
-                  $eq: [
-                    {
-                      $toLower: {
-                        $trim: {
-                          input: {
-                            $arrayElemAt: [
-                              "$categoryPath",
-                              { $subtract: [{ $size: "$categoryPath" }, 1] },
-                            ],
-                          },
-                        },
-                      },
-                    },
-                    String(itemType).toLowerCase(),
-                  ],
-                },
-              ],
-            },
-          },
-        ],
-      });
-    }
-    if (and.length) filter.$and = and;
+      const filter = { network: "awin", region };
+      const and = [];
 
-    if (minPrice)
-      filter.price = Object.assign(filter.price || {}, {
-        $gte: Number(minPrice),
-      });
-    if (maxPrice)
-      filter.price = Object.assign(filter.price || {}, {
-        $lte: Number(maxPrice),
-      });
+      if (merchantId) filter.merchantId = Number(merchantId);
 
-    let projection = {
-      name: 1,
-      brand: 1,
-      description: 1,
-      categoryPath: 1,
-      category: 1,
-      categories: 1,
-      price: 1,
-      currency: 1,
-      imageUrl: 1,
-      awDeepLink: 1,
-      region: 1,
-      merchantId: 1,
-      merchantName: 1,
-      externalProductId: 1,
-      itemGroupId: 1,
-      ean: 1,
-      sku: 1,
-      lastUpdated: 1,
-    };
+      // denormalized brand/itemType
+      if (brand) filter.brandLC = normalizeBrandKey(brand);
+      if (itemType) filter.itemType = String(itemType).trim();
 
-    const sortSpec = {};
-    if (q) {
-      filter.$text = { $search: String(q) };
-      projection = { ...projection, score: { $meta: "textScore" } };
-      if (sort === "relevance") sortSpec.score = { $meta: "textScore" };
-    }
-    if (!sortSpec.score) {
-      switch (sort) {
-        case "price":
-          sortSpec.price = 1;
-          break;
-        case "-price":
-          sortSpec.price = -1;
-          break;
-        case "updated":
-          sortSpec.lastUpdated = 1;
-          break;
-        case "-updated":
-          sortSpec.lastUpdated = -1;
-          break;
-        default:
-          break;
+      // legacy category-path contains (kept for compatibility)
+      if (category) {
+        and.push({ categoryPath: new RegExp(escapeRegex(category), "i") });
       }
-    }
 
-    const pageNum = Number(page) || 1;
-    const lim = Number(limit) || 24;
-    const skip = (pageNum - 1) * lim;
+      // price range
+      if (minPrice != null || maxPrice != null) {
+        const p = {};
+        if (minPrice != null) p.$gte = Number(minPrice);
+        if (maxPrice != null) p.$lte = Number(maxPrice);
+        filter.price = p;
+      }
 
-    const [items, total] = await Promise.all([
-      AffiliateProduct.find(filter, projection)
+      // safe regex search; avoids requiring a text index
+      if (q && q.trim()) {
+        const rx = new RegExp(escapeRegex(q.trim()), "i");
+        and.push({ $or: [{ name: rx }, { description: rx }] });
+      }
+
+      if (and.length) filter.$and = and;
+
+      // simple sorts (no textScore since we're using regex)
+      const sortSpec = {};
+      if (sort === "price") sortSpec.price = 1;
+      else if (sort === "-price") sortSpec.price = -1;
+      else if (sort === "-updated" || sort === "relevance")
+        sortSpec.updatedAt = -1;
+      else sortSpec.updatedAt = -1;
+
+      const total = await AffiliateProduct.countDocuments(filter);
+      const items = await AffiliateProduct.find(filter)
         .sort(sortSpec)
         .skip(skip)
-        .limit(lim)
-        .lean()
-        .exec(),
-      AffiliateProduct.countDocuments(filter),
-    ]);
+        .limit(pageSize)
+        .lean();
 
-    res.json({
-      items,
-      page: pageNum,
-      total,
-      hasMore: skip + items.length < total,
-    });
+      return res.json({
+        items,
+        page: pageNum,
+        total,
+        hasMore: skip + items.length < total,
+      });
+    } catch (err) {
+      console.error("affiliates/products error:", err);
+      res.status(500).json({ message: "Server error." });
+    }
   }
 );
-
-function escapeRegex(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 module.exports = router;

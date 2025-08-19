@@ -25,6 +25,23 @@ const mongoose = require("mongoose");
 
 const AffiliateProduct = require("../src/models/affiliateProduct");
 
+function deriveItemType(categoryPath, category, categories) {
+  const pickLast = (arr) =>
+    Array.isArray(arr) && arr.length ? String(arr[arr.length - 1]).trim() : "";
+  if (Array.isArray(categoryPath)) return pickLast(categoryPath);
+  if (typeof categoryPath === "string") {
+    const norm = categoryPath.replace(/[›»/|]/g, ">");
+    const parts = norm
+      .split(">")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : "";
+  }
+  if (typeof category === "string") return category.trim();
+  if (Array.isArray(categories)) return pickLast(categories);
+  return "";
+}
+
 // ---- args parsing ----
 function getArg(name, def) {
   const a = process.argv.find((s) => s.startsWith(`--${name}=`));
@@ -144,8 +161,11 @@ function mapRow(row) {
     externalProductId,
     name,
     brand: brand || undefined,
+    brandLC: brand ? brand.toLowerCase() : undefined,
     description: description || undefined,
     categoryPath,
+    itemType:
+      deriveItemType(categoryPath, row.category, row.categories) || undefined,
 
     price,
     awDeepLink,

@@ -11,7 +11,8 @@
     "db:ensure-indexes": "node scripts/ensure-indexes.js",
     "ingest:awin": "node scripts/ingest-awin-feed.js",
     "db:backfill-affiliate-derived:dry": "node scripts/backfill-affiliate-derived.js --dry-run",
-    "db:backfill-affiliate-derived": "node scripts/backfill-affiliate-derived.js"
+    "db:backfill-affiliate-derived": "node scripts/backfill-affiliate-derived.js",
+    "db:backfill-globalitem-itemgroupid": "node scripts/backfill-globalitem-itemGroupId.js"
   },
   "jest": {
     "testEnvironment": "node",

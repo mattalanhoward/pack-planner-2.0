@@ -24,6 +24,7 @@ const { parse } = require("csv-parse");
 const mongoose = require("mongoose");
 
 const AffiliateProduct = require("../src/models/affiliateProduct");
+const MerchantOffer = require("../src/models/MerchantOffer");
 
 function deriveItemType(categoryPath, category, categories) {
   const pickLast = (arr) =>
@@ -206,11 +207,13 @@ async function run() {
   );
 
   const batch = [];
+  const offersBatch = [];
   const BATCH_SIZE = 500; // safe batch size
 
   let processed = 0;
   let upserts = 0;
   let skipped = 0;
+  let offersUpserts = 0;
 
   function flushBatch() {
     if (batch.length === 0) return Promise.resolve();
@@ -232,6 +235,33 @@ async function run() {
     });
   }
 
+  function flushOffersBatch() {
+    if (offersBatch.length === 0) return Promise.resolve();
+    const ops = offersBatch.splice(0, offersBatch.length).map((o) => ({
+      updateOne: {
+        filter: {
+          network: "awin",
+          itemGroupId: String(o.itemGroupId),
+          region: String(o.region),
+          merchantId: String(o.merchantId),
+        },
+        update: {
+          $set: {
+            merchantName: o.merchantName || undefined,
+            externalProductId: o.externalProductId || undefined,
+            awDeepLink: o.awDeepLink,
+            currency: o.currency || undefined,
+            price: typeof o.price === "number" ? o.price : undefined,
+          },
+        },
+        upsert: true,
+      },
+    }));
+    return MerchantOffer.bulkWrite(ops, { ordered: false }).then((res) => {
+      offersUpserts += (res.upsertedCount || 0) + (res.modifiedCount || 0);
+    });
+  }
+
   const parser = fs.createReadStream(abs).pipe(
     parse({
       columns: true,
@@ -250,18 +280,33 @@ async function run() {
       skipped++;
     } else {
       batch.push(doc);
+      // Also prepare a MerchantOffer upsert if we have the required keys
+      if (doc.itemGroupId && doc.awDeepLink && doc.region && doc.merchantId) {
+        offersBatch.push({
+          itemGroupId: doc.itemGroupId,
+          region: doc.region,
+          merchantId: doc.merchantId,
+          merchantName: doc.merchantName,
+          externalProductId: doc.externalProductId,
+          awDeepLink: doc.awDeepLink,
+          currency: doc.currency,
+          price: doc.price,
+        });
+      }
     }
 
     if (LIMIT && processed >= LIMIT) break;
     if (batch.length >= BATCH_SIZE) {
       await flushBatch();
+      await flushOffersBatch();
     }
   }
 
   await flushBatch();
+  await flushOffersBatch();
 
   console.log(
-    `✅ Done. rows=${processed} upserts/updates≈${upserts} skipped=${skipped}`
+    `✅ Done. rows=${processed} products≈${upserts} offers≈${offersUpserts} skipped=${skipped}`
   );
 
   await mongoose.disconnect();

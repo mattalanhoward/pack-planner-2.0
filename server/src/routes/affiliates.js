@@ -4,6 +4,8 @@ const { query, validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
 const auth = require("../middleware/auth");
 const AffiliateProduct = require("../models/affiliateProduct");
+const GlobalItem = require("../models/globalItem");
+const MerchantOffer = require("../models/MerchantOffer");
 
 const router = express.Router();
 
@@ -231,6 +233,94 @@ router.get(
       });
     } catch (err) {
       console.error("affiliates/products error:", err);
+      res.status(500).json({ message: "Server error." });
+    }
+  }
+);
+
+/**
+ * GET /api/affiliates/awin/resolve-link
+ * Either provide:
+ *   - globalItemId=<id>&region=GB
+ * OR
+ *   - itemGroupId=<group>&region=GB
+ * Returns best deep link for that region; falls back to original global item link.
+ */
+router.get(
+  "/awin/resolve-link",
+  [
+    query("region").isString().isLength({ min: 2, max: 2 }).trim(),
+    query("globalItemId").optional().isString().trim(),
+    query("itemGroupId").optional().isString().trim(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res
+        .status(400)
+        .json({ error: { code: "BAD_QUERY", details: errors.array() } });
+    }
+    try {
+      const { region, globalItemId, itemGroupId } = req.query;
+
+      let group = itemGroupId || null;
+      let original = null;
+
+      if (globalItemId) {
+        // Owner-scoped for now (future public share route can be unauth)
+        const gi = await GlobalItem.findOne({
+          _id: globalItemId,
+          owner: req.userId,
+        }).lean();
+        if (!gi)
+          return res.status(404).json({ message: "Global item not found." });
+        original = { link: gi.link, region: gi?.affiliate?.region || null };
+        group =
+          group ||
+          gi?.affiliate?.itemGroupId ||
+          gi?.affiliate?.externalProductId ||
+          null;
+      }
+
+      if (!group) {
+        return res
+          .status(400)
+          .json({ message: "Missing itemGroupId or globalItemId." });
+      }
+
+      // Find best match for requested region
+      const mo = await MerchantOffer.findOne({
+        network: "awin",
+        itemGroupId: String(group),
+        region: String(region),
+      })
+        .sort({ updatedAt: -1 })
+        .lean();
+
+      if (mo?.awDeepLink) {
+        return res.json({
+          link: mo.awDeepLink,
+          region: mo.region,
+          network: mo.network,
+          merchantId: mo.merchantId,
+          merchantName: mo.merchantName,
+          source: "exact-region",
+        });
+      }
+
+      // Fallback: return the original global item deeplink if any
+      if (original?.link) {
+        return res.json({
+          link: original.link,
+          region: original.region,
+          network: "awin",
+          source: "fallback-original",
+        });
+      }
+
+      return res.status(404).json({ message: "No link available." });
+    } catch (err) {
+      console.error("affiliates/resolve-link error:", err);
       res.status(500).json({ message: "Server error." });
     }
   }

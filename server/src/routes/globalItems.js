@@ -121,6 +121,7 @@ router.post(
           region: p.region,
           externalProductId: p.externalProductId,
           deepLink: p.awDeepLink,
+          itemGroupId: p.itemGroupId || null,
         },
       };
 

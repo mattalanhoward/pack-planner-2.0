@@ -10,6 +10,7 @@ import { useUnit } from "../hooks/useUnit";
 import { useWeightInput } from "../hooks/useWeightInput";
 import AffiliateProductPicker from "./AffiliateProductPicker";
 import { createGlobalItemFromAffiliate } from "../services/affiliates";
+import { extractWeightGrams } from "../utils/weight";
 
 export default function GlobalItemModal({
   categories = [],
@@ -30,6 +31,7 @@ export default function GlobalItemModal({
   const unit = useUnit();
   const { unitLabel, parseInput } = useWeightInput(unit);
   const [displayWeight, setDisplayWeight] = useState("");
+  const [weightSource, setWeightSource] = useState("user"); // "user" | "heuristic" | "scraped" | "catalog" | "verified"
   const [form, setForm] = useState({
     name: "",
     brand: "",
@@ -77,6 +79,20 @@ export default function GlobalItemModal({
       deriveItemTypeFromCategoryPath(p?.category) ||
       deriveItemTypeFromCategoryPath(p?.categories);
     if (derived) setItemType(derived);
+
+    // Prefill weight from name/description if present
+    const grams = extractWeightGrams(
+      [p?.name, p?.description].filter(Boolean).join(" ")
+    );
+    if (grams != null) {
+      if (unitLabel === "g") {
+        setDisplayWeight(String(grams));
+      } else {
+        const oz = Math.round((grams / 28.349523125) * 10) / 10; // 1 decimal
+        setDisplayWeight(String(oz));
+      }
+      setWeightSource("heuristic");
+    }
   }
 
   ///////////////////
@@ -139,6 +155,7 @@ export default function GlobalItemModal({
           ...(brand.trim() && { brand: brand.trim() }),
           ...(description.trim() && { description: description.trim() }),
           ...(typeof grams === "number" && { weight: grams }),
+          ...(typeof grams === "number" && weightSource && { weightSource }),
           worn,
           consumable,
           quantity: Number(quantity) || 1,
@@ -155,7 +172,10 @@ export default function GlobalItemModal({
         if (itemType.trim()) payload.itemType = itemType.trim();
         if (brand.trim()) payload.brand = brand.trim();
         if (description.trim()) payload.description = description.trim();
-        if (typeof grams === "number") payload.weight = grams;
+        if (typeof grams === "number") {
+          payload.weight = grams;
+          if (weightSource === "heuristic") payload.weightSource = "heuristic";
+        }
 
         if (price !== "" && price != null) {
           const p = Number(price);
@@ -262,6 +282,7 @@ export default function GlobalItemModal({
                   setWorn(false);
                   setConsumable(false);
                   setQuantity(1);
+                  setWeightSource("user");
 
                   // If you want to take the user back to Import, uncomment:
                   // setTab("import");

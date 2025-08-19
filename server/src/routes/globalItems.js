@@ -39,6 +39,9 @@ router.post(
       .isLength({ min: 1, max: 120 })
       .trim(),
     body("quantity").optional().isInt({ min: 1, max: 999 }),
+    body("weightSource")
+      .optional()
+      .isIn(["user", "heuristic", "scraped", "catalog", "verified"]),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -63,6 +66,7 @@ router.post(
         description: req.body.description ?? p.description,
         itemType: req.body.itemType ?? null,
         weight: req.body.weight ?? null,
+        ...(req.body.weightSource && { weightSource: req.body.weightSource }),
         worn: Boolean(req.body.worn),
         consumable: Boolean(req.body.consumable),
         quantity: Number.isFinite(req.body.quantity)
@@ -101,10 +105,21 @@ router.post("/", async (req, res) => {
     if (!name) {
       return res.status(400).json({ message: "Name is required." });
     }
-    const newItem = await GlobalItem.create({
-      owner: req.userId,
-      ...req.body,
-    });
+    const allowedSources = [
+      "user",
+      "heuristic",
+      "scraped",
+      "catalog",
+      "verified",
+    ];
+    const body = { ...req.body };
+    if (
+      typeof body.weightSource === "string" &&
+      !allowedSources.includes(body.weightSource)
+    ) {
+      delete body.weightSource;
+    }
+    const newItem = await GlobalItem.create({ owner: req.userId, ...body });
     res.status(201).json(newItem);
   } catch (err) {
     console.error(err);

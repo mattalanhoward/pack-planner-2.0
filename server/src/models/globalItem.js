@@ -25,6 +25,13 @@ const GlobalItemSchema = new mongoose.Schema(
       type: Number,
       required: false,
     },
+    // where did the weight come from?
+    weightSource: {
+      type: String,
+      enum: ["user", "heuristic", "scraped", "catalog", "verified"],
+      default: "user",
+      index: true,
+    },
     price: {
       type: Number,
       required: false,

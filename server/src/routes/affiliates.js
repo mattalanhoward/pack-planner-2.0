@@ -240,11 +240,11 @@ router.get(
 
 /**
  * GET /api/affiliates/awin/resolve-link
- * Either provide:
- *   - globalItemId=<id>&region=GB
- * OR
- *   - itemGroupId=<group>&region=GB
- * Returns best deep link for that region; falls back to original global item link.
+ * Either:
+ *   ?globalItemId=<id>&region=GB      (preferred)
+ * or:
+ *   ?itemGroupId=<group>&region=GB
+ * Returns: { link, region, network, source }
  */
 router.get(
   "/awin/resolve-link",
@@ -267,7 +267,7 @@ router.get(
       let original = null;
 
       if (globalItemId) {
-        // Owner-scoped for now (future public share route can be unauth)
+        // auth’d because this route is behind router.use(auth)
         const gi = await GlobalItem.findOne({
           _id: globalItemId,
           owner: req.userId,
@@ -288,7 +288,6 @@ router.get(
           .json({ message: "Missing itemGroupId or globalItemId." });
       }
 
-      // Find best match for requested region
       const mo = await MerchantOffer.findOne({
         network: "awin",
         itemGroupId: String(group),
@@ -308,7 +307,6 @@ router.get(
         });
       }
 
-      // Fallback: return the original global item deeplink if any
       if (original?.link) {
         return res.json({
           link: original.link,

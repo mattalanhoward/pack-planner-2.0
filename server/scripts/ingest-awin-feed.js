@@ -146,11 +146,12 @@ function mapRow(row) {
   const sku = (pick(row, HDR.sku) || "").toString().trim();
   const itemGroupId = (pick(row, HDR.itemGroupId) || "").toString().trim();
 
-  // If merchant info exists in feed, use it; else fall back to CLI flags
-  const merchantId =
-    (pick(row, HDR.merchantId) || "").toString().trim() || MERCHANT_ID;
+  // Prefer CLI flags to keep region-specific labeling consistent in QA
+  // (Awin feeds are typically per-merchant anyway)
+  const merchantId = String(MERCHANT_ID);
   const merchantName =
-    (pick(row, HDR.merchantName) || "").toString().trim() || MERCHANT_NAME;
+    String(MERCHANT_NAME || "").trim() ||
+    (pick(row, HDR.merchantName) || "").toString().trim();
 
   return {
     network: "awin",

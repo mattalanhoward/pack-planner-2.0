@@ -1,6 +1,13 @@
 // client/src/services/affiliates.js
 import api from "./api";
 
+export async function resolveAwinLink({ globalItemId, itemGroupId, region }) {
+  const { data } = await api.get("/affiliates/awin/resolve-link", {
+    params: { globalItemId, itemGroupId, region },
+  });
+  return data; // { link, region, network, source }
+}
+
 // Search Awin products
 export async function searchAwinProducts(params) {
   const { data } = await api.get("/affiliates/awin/products", { params });

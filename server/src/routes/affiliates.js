@@ -12,6 +12,38 @@ const router = express.Router();
 // Protect all affiliate endpoints
 router.use(auth);
 
+// --- Simple in-memory TTL cache for resolve-link (no extra deps)
+// Key: `${itemGroupId}|${region}`
+const RESOLVE_CACHE = new Map();
+const MAX_CACHE_ENTRIES = 1000; // bounds memory
+const TTL_EXACT_MS = 6 * 60 * 60 * 1000; // 6h for exact-region hits
+const TTL_FALLBACK_MS = 15 * 60 * 1000; // 15m for fallback-original
+function cacheGet(key) {
+  const e = RESOLVE_CACHE.get(key);
+  if (!e) return null;
+  if (e.exp <= Date.now()) {
+    RESOLVE_CACHE.delete(key);
+    return null;
+  }
+  return e.val;
+}
+function cacheSet(key, val, ttlMs) {
+  if (RESOLVE_CACHE.size >= MAX_CACHE_ENTRIES) {
+    // naive eviction: delete first inserted key
+    const firstKey = RESOLVE_CACHE.keys().next().value;
+    if (firstKey) RESOLVE_CACHE.delete(firstKey);
+  }
+  RESOLVE_CACHE.set(key, { val, exp: Date.now() + ttlMs });
+}
+
+// Gentle per-IP limiter (defense-in-depth; you already limit other routes)
+const resolveLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120, // plenty for a page render
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Rate limit: 90 req / 5 min per IP for product search
 const searchLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -248,6 +280,7 @@ router.get(
  */
 router.get(
   "/awin/resolve-link",
+  resolveLimiter,
   [
     query("region").isString().isLength({ min: 2, max: 2 }).trim(),
     query("globalItemId").optional().isString().trim(),
@@ -288,6 +321,12 @@ router.get(
           .json({ message: "Missing itemGroupId or globalItemId." });
       }
 
+      const cacheKey = `${group}|${region}`;
+      const cached = cacheGet(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+
       const mo = await MerchantOffer.findOne({
         network: "awin",
         itemGroupId: String(group),
@@ -297,23 +336,27 @@ router.get(
         .lean();
 
       if (mo?.awDeepLink) {
-        return res.json({
+        const payload = {
           link: mo.awDeepLink,
           region: mo.region,
           network: mo.network,
           merchantId: mo.merchantId,
           merchantName: mo.merchantName,
           source: "exact-region",
-        });
+        };
+        cacheSet(cacheKey, payload, TTL_EXACT_MS);
+        return res.json(payload);
       }
 
       if (original?.link) {
-        return res.json({
+        const payload = {
           link: original.link,
           region: original.region,
           network: "awin",
           source: "fallback-original",
-        });
+        };
+        cacheSet(cacheKey, payload, TTL_FALLBACK_MS);
+        return res.json(payload);
       }
 
       return res.status(404).json({ message: "No link available." });

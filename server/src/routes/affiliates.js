@@ -14,10 +14,11 @@ router.use(auth);
 
 // --- Simple in-memory TTL cache for resolve-link (no extra deps)
 // Key: `${itemGroupId}|${region}`
+// --- Simple in-memory TTL cache for resolve-link
 const RESOLVE_CACHE = new Map();
-const MAX_CACHE_ENTRIES = 1000; // bounds memory
-const TTL_EXACT_MS = 6 * 60 * 60 * 1000; // 6h for exact-region hits
-const TTL_FALLBACK_MS = 15 * 60 * 1000; // 15m for fallback-original
+const MAX_CACHE_ENTRIES = 1000;
+const TTL_EXACT_MS = 6 * 60 * 60 * 1000; // 6h
+const TTL_FALLBACK_MS = 15 * 60 * 1000; // 15m
 function cacheGet(key) {
   const e = RESOLVE_CACHE.get(key);
   if (!e) return null;
@@ -29,7 +30,6 @@ function cacheGet(key) {
 }
 function cacheSet(key, val, ttlMs) {
   if (RESOLVE_CACHE.size >= MAX_CACHE_ENTRIES) {
-    // naive eviction: delete first inserted key
     const firstKey = RESOLVE_CACHE.keys().next().value;
     if (firstKey) RESOLVE_CACHE.delete(firstKey);
   }
@@ -272,11 +272,8 @@ router.get(
 
 /**
  * GET /api/affiliates/awin/resolve-link
- * Either:
- *   ?globalItemId=<id>&region=GB      (preferred)
- * or:
- *   ?itemGroupId=<group>&region=GB
- * Returns: { link, region, network, source }
+ * ?globalItemId=<id>&region=GB   (preferred)
+ * or ?itemGroupId=<group>&region=GB
  */
 router.get(
   "/awin/resolve-link",
@@ -300,7 +297,6 @@ router.get(
       let original = null;
 
       if (globalItemId) {
-        // auth’d because this route is behind router.use(auth)
         const gi = await GlobalItem.findOne({
           _id: globalItemId,
           owner: req.userId,
@@ -324,8 +320,12 @@ router.get(
       const cacheKey = `${group}|${region}`;
       const cached = cacheGet(cacheKey);
       if (cached) {
+        if (process.env.NODE_ENV !== "production")
+          console.log("resolve-link cache HIT", cacheKey);
         return res.json(cached);
       }
+      if (process.env.NODE_ENV !== "production")
+        console.log("resolve-link cache MISS", cacheKey);
 
       const mo = await MerchantOffer.findOne({
         network: "awin",

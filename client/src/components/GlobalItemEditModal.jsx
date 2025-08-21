@@ -32,8 +32,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   // use a stable key for deps
   const itemId = item ? item._id : null;
 
-  // Is this item backed by an affiliate product?
-  const isAffiliate = !!(item && item.affiliate && item.affiliate.network);
+  // affiliate-backed items (Awin)
+  const isAffiliate = Boolean(item?.affiliate?.network === "awin");
 
   // Effect A: hydrate fields when the item changes (once per item)
   useEffect(() => {
@@ -112,10 +112,16 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         quantity,
       };
 
-      // For affiliate-backed items, price/link are immutable (UI locked & server-enforced)
-      if (!isAffiliate) {
-        payload.price = Number(form.price);
-        payload.link = form.link.trim();
+      // Price/Link handling:
+      // - Affiliate-backed: never try to change price/link
+      // - Custom items: include values if present
+      if (isAffiliate) {
+        delete payload.price;
+        delete payload.link;
+      } else {
+        const p = Number(form.price);
+        if (!Number.isNaN(p)) payload.price = p;
+        if (form.link && form.link.trim()) payload.link = form.link.trim();
       }
 
       await api.patch(`/global/items/${item._id}`, payload);
@@ -200,7 +206,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               label="Link"
               placeholder="tarptent.com"
               required={false}
-              readOnly={isAffiliate}
+              disabled={isAffiliate}
             />
             {isAffiliate && (
               <button
@@ -241,7 +247,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
                   value={form.price}
                   onChange={(value) => setForm({ ...form, price: value })}
                   className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-                  readOnly={isAffiliate}
+                  disabled={isAffiliate}
                 />
                 {isAffiliate && (
                   <button

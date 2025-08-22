@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 const { GEARLIST_SWATCHES } = require("../config/colors");
 
-const gearListSchema = new mongoose.Schema(
+const GearListSchema = new mongoose.Schema(
   {
     owner: {
       type: mongoose.Types.ObjectId,
@@ -30,4 +30,4 @@ const gearListSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("GearList", gearListSchema);
+module.exports = mongoose.model("GearList", GearListSchema);

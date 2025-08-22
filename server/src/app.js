@@ -13,6 +13,7 @@ const categoriesRoutes = require("./routes/categories");
 const gearItemRoutes = require("./routes/gearItems");
 const globalItemsRoutes = require("./routes/globalItems");
 const settingsRouter = require("./routes/settings");
+const affiliatesRouter = require("./routes/affiliates");
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.use(
   gearItemRoutes
 );
 app.use("/api/global/items", authMiddleware, globalItemsRoutes);
+app.use("/api/affiliates", authMiddleware, affiliatesRouter); // auth required
 
 // Central error handler
 app.use((err, req, res, next) => {
@@ -97,10 +99,13 @@ if (!mongoURI) {
 
 mongoose
   .connect(mongoURI, {
+    dbName: process.env.MONGO_DB_NAME, // <— forces the DB even if URI lacks /dbname
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("✅ Connected to MongoDB"))
+  .then(() =>
+    console.log(`✅ Connected to MongoDB (db=${mongoose.connection.name})`)
+  )
   .catch((err) => console.error("❌ Mongo connection error:", err));
 
 module.exports = app;

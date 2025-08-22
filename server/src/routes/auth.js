@@ -35,18 +35,49 @@ const REFRESH_COOKIE_OPTS = {
 };
 
 // ---- Mailer ----
+const smtpPort = Number(process.env.SMTP_PORT || 465);
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true, // if you use port 587, set this to false
+  port: smtpPort,
+  secure: smtpPort === 465, // 465 = implicit TLS, 587 = STARTTLS
+  requireTLS: smtpPort === 587,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
+// --- Client URL selection (robust to comma-separated envs) ---
+function parseOriginsString(s) {
+  return (s || "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+function selectClientBaseUrl() {
+  const single = (process.env.CLIENT_URL || "").trim();
+  if (single) {
+    const first = single.includes(",") ? single.split(",")[0].trim() : single;
+    return first.replace(/\/+$/, "");
+  }
+  const list = parseOriginsString(process.env.CLIENT_URLS);
+  if (list.length) {
+    const isProd = process.env.NODE_ENV === "production";
+    const pick = isProd
+      ? list.find((u) => u.startsWith("https://")) || list[0]
+      : list.find((u) => u.includes("localhost")) || list[0];
+    return pick.replace(/\/+$/, "");
+  }
+  return "http://localhost:5173";
+}
+const CLIENT_BASE_URL = selectClientBaseUrl();
+function clientUrl(pathAndQuery) {
+  const path = pathAndQuery.startsWith("/") ? pathAndQuery : `/${pathAndQuery}`;
+  return `${CLIENT_BASE_URL}${path}`;
+}
+
 async function sendVerificationEmail(email, token) {
-  const url = `${CLIENT_URL}/verify-email?token=${token}`;
+  const url = clientUrl(`/verify-email?token=${token}`);
   await transporter.sendMail({
     from: `"PackPlanner" <${process.env.SMTP_USER}>`,
     to: email,
@@ -56,7 +87,7 @@ async function sendVerificationEmail(email, token) {
 }
 
 async function sendPasswordResetEmail(email, token) {
-  const url = `${CLIENT_URL}/reset-password?token=${token}`;
+  const url = clientUrl(`/reset-password?token=${token}`);
   const expSec = Number(process.env.RESET_TOKEN_EXP) || 3600; // default 1h
   const expHrs = expSec / 3600;
   await transporter.sendMail({

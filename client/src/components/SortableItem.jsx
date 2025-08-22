@@ -12,6 +12,8 @@ import {
   FaEllipsisH,
 } from "react-icons/fa";
 import { useWeight } from "../hooks/useWeight";
+import ResolvedAffiliateLink from "../components/ResolvedAffiliateLink";
+import ExternalItemLink from "../components/ExternalItemLink";
 
 export default function SortableItem({
   item,
@@ -162,6 +164,10 @@ export default function SortableItem({
     transition,
   };
 
+  // BUY BUTTON In CASE YOU WANT TO ADD ONE IT CAN BE WRAPPED THE SAME WAY.
+  // <ResolvedAffiliateLink item={item} href={item.link} className="btn btn-secondary">
+  //   View
+  // </ResolvedAffiliateLink>
   return (
     <div
       ref={setNodeRef}
@@ -200,14 +206,12 @@ export default function SortableItem({
           <span>{weightText}</span>
           {item.price != null &&
             (item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ExternalItemLink
+                item={item}
                 className="inline-block text-primary"
               >
-                €{item.price}
-              </a>
+                <span>€{item.price}</span>
+              </ExternalItemLink>
             ) : (
               <span>€{item.price}</span>
             ))}
@@ -261,15 +265,13 @@ export default function SortableItem({
           {/* 3) Name/link */}
           <div className="truncate text-primary">
             {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ExternalItemLink
+                item={item}
                 className="inline-block w-full text-primary"
               >
                 {item.brand && <span className="mr-1">{item.brand}</span>}
                 {item.name}
-              </a>
+              </ExternalItemLink>
             ) : (
               <>
                 {item.brand && <span className="mr-1">{item.brand}</span>}
@@ -319,14 +321,12 @@ export default function SortableItem({
           <div className="text-primary justify-self-end">
             {item.price != null &&
               (item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <ExternalItemLink
+                  item={item}
                   className="inline-block text-primary"
                 >
-                  €{item.price}
-                </a>
+                  <span>€{item.price}</span>{" "}
+                </ExternalItemLink>
               ) : (
                 <span>€{item.price}</span>
               ))}
@@ -396,16 +396,14 @@ export default function SortableItem({
           {/* Row 2: Brand - Name */}
           <div className="grid grid-cols-[auto_1fr] items-center">
             {item.link ? (
-              <a
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ExternalItemLink
+                item={item}
                 className="inline-block w-full text-primary"
               >
                 <span className="font-medium text-sm text-primary mr-1">
                   {item.brand}
                 </span>
-              </a>
+              </ExternalItemLink>
             ) : (
               <span className="font-medium text-sm text-primary mr-1">
                 {item.brand}
@@ -414,14 +412,14 @@ export default function SortableItem({
 
             <div className="truncate text-sm text-primary">
               {item.link ? (
-                <a
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <ExternalItemLink
+                  item={item}
                   className="inline-block w-full text-primary"
                 >
-                  {item.name}
-                </a>
+                  <span className="font-medium text-sm text-primary mr-1">
+                    {item.name}
+                  </span>
+                </ExternalItemLink>
               ) : (
                 item.name
               )}
@@ -435,14 +433,14 @@ export default function SortableItem({
               <span className="text-sm text-primary">{weightText}</span>
               {item.price != null &&
                 (item.link ? (
-                  <a
-                    href={item.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <ExternalItemLink
                     className="text-sm text-primary"
+                    item={item}
                   >
-                    €{item.price}
-                  </a>
+                    <span className="font-medium text-sm text-primary mr-1">
+                      {item.price}
+                    </span>
+                  </ExternalItemLink>
                 ) : (
                   <span className="text-sm text-primary">€{item.price}</span>
                 ))}

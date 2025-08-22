@@ -7,7 +7,12 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --detectOpenHandles --runInBand --coverage"
+    "test": "jest --detectOpenHandles --runInBand --coverage",
+    "db:ensure-indexes": "node scripts/ensure-indexes.js",
+    "ingest:awin": "node scripts/ingest-awin-feed.js",
+    "db:backfill-affiliate-derived:dry": "node scripts/backfill-affiliate-derived.js --dry-run",
+    "db:backfill-affiliate-derived": "node scripts/backfill-affiliate-derived.js",
+    "db:backfill-globalitem-itemgroupid": "node scripts/backfill-globalitem-itemGroupId.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -35,8 +40,11 @@
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.0.1",
+    "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.3.1",

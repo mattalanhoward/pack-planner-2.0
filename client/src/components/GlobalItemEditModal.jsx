@@ -32,6 +32,9 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   // use a stable key for deps
   const itemId = item ? item._id : null;
 
+  // affiliate-backed items (Awin)
+  const isAffiliate = Boolean(item?.affiliate?.network === "awin");
+
   // Effect A: hydrate fields when the item changes (once per item)
   useEffect(() => {
     if (!item) return;
@@ -69,8 +72,9 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     const parsed = trimmed === "" ? null : parseInput(trimmed);
     if (trimmed !== "" && parsed == null) return "Enter a valid weight.";
     if (parsed != null && parsed < 0) return "Weight cannot be negative.";
-    if (Number(form.price) < 0) return "Price cannot be negative.";
-    if (form.link && !/^https?:\/\//.test(form.link))
+    if (!isAffiliate && Number(form.price) < 0)
+      return "Price cannot be negative.";
+    if (!isAffiliate && form.link && !/^https?:\/\//.test(form.link))
       return "Link must be a valid URL.";
     return "";
   };
@@ -93,7 +97,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     setSaving(true);
     setError("");
     try {
-      await api.patch(`/global/items/${item._id}`, {
+      const payload = {
         category: form.category,
         itemType: form.itemType,
         name: form.name.trim(),
@@ -103,12 +107,24 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           String(displayWeight ?? "").trim() === ""
             ? null
             : parseInput(displayWeight), // integer grams
-        price: Number(form.price),
-        link: form.link.trim(),
         worn,
         consumable,
         quantity,
-      });
+      };
+
+      // Price/Link handling:
+      // - Affiliate-backed: never try to change price/link
+      // - Custom items: include values if present
+      if (isAffiliate) {
+        delete payload.price;
+        delete payload.link;
+      } else {
+        const p = Number(form.price);
+        if (!Number.isNaN(p)) payload.price = p;
+        if (form.link && form.link.trim()) payload.link = form.link.trim();
+      }
+
+      await api.patch(`/global/items/${item._id}`, payload);
       toast.success("Global item updated");
       onSaved();
       onClose();
@@ -140,6 +156,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         </div>
         {/* Optional error message */}
         {error && <div className="text-error mb-2">{error}</div>}
+
         {/* Grid of fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {/* Item Type */}
@@ -181,15 +198,30 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
           </div>
 
-          {/* Link */}
-          <div>
+          {/* Link (locked for affiliate-backed) */}
+          <div className="relative">
             <LinkInput
               value={form.link}
               onChange={(newLink) => setForm((f) => ({ ...f, link: newLink }))}
               label="Link"
               placeholder="tarptent.com"
               required={false}
+              disabled={isAffiliate}
             />
+            {isAffiliate && (
+              <button
+                type="button"
+                aria-label="Link is locked"
+                title="Link is locked"
+                className="absolute inset-0 cursor-not-allowed bg-transparent"
+                onClick={(e) => e.preventDefault()}
+              />
+            )}
+            {isAffiliate ? (
+              <p className="mt-1 text-[11px] text-primary/80">
+                Link is set by the merchant for imported items.
+              </p>
+            ) : null}
           </div>
 
           {/* Weight + Price (always side-by-side) */}
@@ -210,11 +242,28 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
                 Price (€)
               </label>
-              <CurrencyInput
-                value={form.price}
-                onChange={(value) => setForm({ ...form, price: value })}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-              />
+              <div className="relative">
+                <CurrencyInput
+                  value={form.price}
+                  onChange={(value) => setForm({ ...form, price: value })}
+                  className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                  disabled={isAffiliate}
+                />
+                {isAffiliate && (
+                  <button
+                    type="button"
+                    aria-label="Price is locked"
+                    title="Price is locked"
+                    className="absolute inset-0 cursor-not-allowed bg-transparent"
+                    onClick={(e) => e.preventDefault()}
+                  />
+                )}
+              </div>
+              {isAffiliate ? (
+                <p className="mt-1 text-[11px] text-primary/80">
+                  Price is set by the merchant for imported items.
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -232,6 +281,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
           </div>
         </div>
+
         {/* Worn / Consumable */}
         <div className="flex items-center space-x-4 mt-2">
           <label className="inline-flex items-center text-xs sm:text-sm text-primary">
@@ -253,6 +303,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Consumable
           </label>
         </div>
+
         <div className="mt-4 flex justify-between items-center">
           {/* Delete button */}
           <button
@@ -283,7 +334,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             </button>
           </div>
         </div>
-        {/* Confirm delete dialog */}
+
+        {/* Apply changes confirm dialog */}
         <ConfirmDialog
           isOpen={confirmOpen}
           title="Apply changes to every instance?"
@@ -292,7 +344,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           onConfirm={handleConfirm}
           onCancel={handleCancelConfirm}
         />
-        {/* ── Confirm delete dialog ── */}
+
+        {/* Delete confirm dialog */}
         <ConfirmDialog
           isOpen={deleteConfirmOpen}
           title="Delete this Gear Item?"
@@ -300,13 +353,10 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           confirmText="Delete Item"
           cancelText="Cancel"
           onConfirm={async () => {
-            // close the delete dialog
             setDeleteConfirmOpen(false);
             try {
-              // perform the API delete
               await api.delete(`/global/items/${item._id}`);
               toast.success("Item deleted");
-              // re-fetch & close modal
               onSaved();
               onClose();
             } catch (err) {

@@ -146,3 +146,72 @@ export function parseWeightLocalized(
 export function formatWeight(grams, unitPref, locale = getBrowserLocale()) {
   return formatWeightDisplay(grams, unitPref, locale);
 }
+
+// -------- Heuristic extraction (title/description) --------
+// Finds weights like: "200 g", "0.2 kg", "7 oz", "1 lb 4 oz", "1lb 4oz", "2lbs"
+// Returns integer grams or null (if not found).
+export function extractWeightGrams(str) {
+  if (!str || typeof str !== "string") return null;
+  const s = str.toLowerCase();
+
+  const toNum = (x) => {
+    const n = Number(String(x).replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // 1) Compound pounds + ounces: "1 lb 4 oz", "1lb 4oz"
+  {
+    const re =
+      /(\d+(?:[\.,]\d+)?)\s*(?:lb|lbs|pounds?)\s*(\d+(?:[\.,]\d+)?)\s*(?:oz|ounces?)/i;
+    const m = s.match(re);
+    if (m) {
+      const lb = toNum(m[1]);
+      const oz = toNum(m[2]);
+      if (lb != null && oz != null) {
+        return Math.round(lb * (GRAMS_PER_OUNCE * 16) + oz * GRAMS_PER_OUNCE);
+      }
+    }
+  }
+
+  // 2) Kilograms: "0.23 kg"
+  {
+    const re = /(\d+(?:[\.,]\d+)?)\s*(?:kg|kilograms?)/i;
+    const m = s.match(re);
+    if (m) {
+      const kg = toNum(m[1]);
+      if (kg != null) return Math.round(kg * 1000);
+    }
+  }
+
+  // 3) Grams: "230 g"
+  {
+    const re = /(\d+(?:[\.,]\d+)?)\s*(?:g|grams?)/i;
+    const m = s.match(re);
+    if (m) {
+      const g = toNum(m[1]);
+      if (g != null) return Math.round(g);
+    }
+  }
+
+  // 4) Pounds only: "1.5 lb"
+  {
+    const re = /(\d+(?:[\.,]\d+)?)\s*(?:lb|lbs|pounds?)/i;
+    const m = s.match(re);
+    if (m) {
+      const lb = toNum(m[1]);
+      if (lb != null) return Math.round(lb * (GRAMS_PER_OUNCE * 16));
+    }
+  }
+
+  // 5) Ounces only: "7 oz"
+  {
+    const re = /(\d+(?:[\.,]\d+)?)\s*(?:oz|ounces?)/i;
+    const m = s.match(re);
+    if (m) {
+      const oz = toNum(m[1]);
+      if (oz != null) return Math.round(oz * GRAMS_PER_OUNCE);
+    }
+  }
+
+  return null;
+}

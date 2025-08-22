@@ -24,7 +24,7 @@ const { parse } = require("csv-parse");
 const mongoose = require("mongoose");
 
 const AffiliateProduct = require("../src/models/affiliateProduct");
-const MerchantOffer = require("../src/models/MerchantOffer");
+const MerchantOffer = require("../src/models/merchantOffer");
 
 function deriveItemType(categoryPath, category, categories) {
   const pickLast = (arr) =>

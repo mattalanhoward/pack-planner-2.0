@@ -188,20 +188,9 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
 
         {/* Row 2: Brand – Name */}
         <div className="grid grid-cols-[auto_1fr] items-center">
-          {item.link ? (
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block w-full font-medium text-sm text-secondary mr-1"
-            >
-              {item.brand}
-            </a>
-          ) : (
-            <span className="font-medium text-sm text-secondary mr-1">
-              {item.brand}
-            </span>
-          )}
+          <span className="font-medium text-sm text-secondary mr-1">
+            {item.brand}ddd
+          </span>
           <div className="truncate text-sm text-secondary">{item.name}</div>
         </div>
 

@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa";
 import { useWeight } from "../hooks/useWeight";
 import ResolvedAffiliateLink from "../components/ResolvedAffiliateLink";
+import ExternalItemLink from "../components/ExternalItemLink";
 
 export default function SortableItem({
   item,
@@ -205,14 +206,12 @@ export default function SortableItem({
           <span>{weightText}</span>
           {item.price != null &&
             (item.link ? (
-              <ResolvedAffiliateLink
+              <ExternalItemLink
                 item={item}
-                href={item.link}
                 className="inline-block text-primary"
-                region="DE"
               >
-                <span>€TTTT{item.price}</span>
-              </ResolvedAffiliateLink>
+                <span>€{item.price}</span>
+              </ExternalItemLink>
             ) : (
               <span>€{item.price}</span>
             ))}
@@ -266,14 +265,13 @@ export default function SortableItem({
           {/* 3) Name/link */}
           <div className="truncate text-primary">
             {item.link ? (
-              <ResolvedAffiliateLink
+              <ExternalItemLink
                 item={item}
-                href={item.link}
                 className="inline-block w-full text-primary"
               >
                 {item.brand && <span className="mr-1">{item.brand}</span>}
                 {item.name}
-              </ResolvedAffiliateLink>
+              </ExternalItemLink>
             ) : (
               <>
                 {item.brand && <span className="mr-1">{item.brand}</span>}
@@ -323,13 +321,12 @@ export default function SortableItem({
           <div className="text-primary justify-self-end">
             {item.price != null &&
               (item.link ? (
-                <ResolvedAffiliateLink
+                <ExternalItemLink
                   item={item}
-                  href={item.link}
                   className="inline-block text-primary"
                 >
                   <span>€{item.price}</span>{" "}
-                </ResolvedAffiliateLink>
+                </ExternalItemLink>
               ) : (
                 <span>€{item.price}</span>
               ))}
@@ -399,15 +396,14 @@ export default function SortableItem({
           {/* Row 2: Brand - Name */}
           <div className="grid grid-cols-[auto_1fr] items-center">
             {item.link ? (
-              <ResolvedAffiliateLink
+              <ExternalItemLink
                 item={item}
-                href={item.link}
                 className="inline-block w-full text-primary"
               >
                 <span className="font-medium text-sm text-primary mr-1">
                   {item.brand}
                 </span>
-              </ResolvedAffiliateLink>
+              </ExternalItemLink>
             ) : (
               <span className="font-medium text-sm text-primary mr-1">
                 {item.brand}
@@ -416,15 +412,14 @@ export default function SortableItem({
 
             <div className="truncate text-sm text-primary">
               {item.link ? (
-                <ResolvedAffiliateLink
+                <ExternalItemLink
                   item={item}
-                  href={item.link}
                   className="inline-block w-full text-primary"
                 >
                   <span className="font-medium text-sm text-primary mr-1">
                     {item.name}
                   </span>
-                </ResolvedAffiliateLink>
+                </ExternalItemLink>
               ) : (
                 item.name
               )}
@@ -438,15 +433,14 @@ export default function SortableItem({
               <span className="text-sm text-primary">{weightText}</span>
               {item.price != null &&
                 (item.link ? (
-                  <ResolvedAffiliateLink
-                    item={item}
-                    href={item.link}
+                  <ExternalItemLink
                     className="text-sm text-primary"
+                    item={item}
                   >
                     <span className="font-medium text-sm text-primary mr-1">
                       {item.price}
                     </span>
-                  </ResolvedAffiliateLink>
+                  </ExternalItemLink>
                 ) : (
                   <span className="text-sm text-primary">€{item.price}</span>
                 ))}

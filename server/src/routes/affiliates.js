@@ -5,7 +5,7 @@ const rateLimit = require("express-rate-limit");
 const auth = require("../middleware/auth");
 const AffiliateProduct = require("../models/affiliateProduct");
 const GlobalItem = require("../models/globalItem");
-const MerchantOffer = require("../models/MerchantOffer");
+const MerchantOffer = require("../models/merchantOffer");
 
 const router = express.Router();
 

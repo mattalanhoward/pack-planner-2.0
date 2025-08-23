@@ -33,7 +33,7 @@ export default function DropdownMenu({
         leaveTo="transform opacity-0 scale-95"
       >
         <Menu.Items
-          className={`absolute right-0 mt-2 ${menuWidth} bg-base-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50 ${menuClassName}`}
+          className={`absolute right-0 mt-2 ${menuWidth} bg-base-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-70 ${menuClassName}`}
         >
           {items.map((item) =>
             item.render ? (

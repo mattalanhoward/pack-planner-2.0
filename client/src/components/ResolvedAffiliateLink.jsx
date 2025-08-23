@@ -1,7 +1,8 @@
 // client/src/components/ResolvedAffiliateLink.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveAwinLink } from "../services/affiliates";
-import { detectRegion } from "../utils/region";
+import { detectRegion, normalizeRegion } from "../utils/region";
+import { useUserSettings } from "../contexts/UserSettings";
 
 // per-session in-memory cache
 const cache = new Map(); // key: `${id}|${region}` -> link
@@ -26,7 +27,11 @@ export default function ResolvedAffiliateLink({
   const [loading, setLoading] = useState(false);
   const mounted = useRef(true);
 
-  const region = useMemo(() => detectRegion(regionOverride), [regionOverride]);
+  const { region: settingsRegion } = useUserSettings();
+
+  const region = normalizeRegion(
+    regionOverride || settingsRegion || detectRegion()
+  );
 
   useEffect(() => {
     mounted.current = true;

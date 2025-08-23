@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import { FaSignOutAlt, FaCheck } from "react-icons/fa";
 import logo from "../assets/images/logo.png";
 import { useUserSettings } from "../contexts/UserSettings";
+import { normalizeRegion } from "../utils/region";
 import AccountModal from "./AccountModal";
 import ViewToggle from "./ViewToggle";
 
@@ -45,12 +45,11 @@ export default function TopBar({ title, openSettings }) {
     user.trailname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-base-100 border-b">
+    <header className="sticky top-0 z-[60] flex items-center justify-between px-4 py-2 bg-base-100 border-b">
       <div className="flex items-center space-x-3">
         <img src={logo} alt="Logo" className="h-8" />
         <h1 className="text-xl font-semibold">{title}</h1>
       </div>
-
       <div className="flex items-center space-x-4">
         <DropdownMenu
           trigger={
@@ -196,7 +195,6 @@ export default function TopBar({ title, openSettings }) {
                 </div>
               ),
             },
-
             // Region
             {
               key: "region",
@@ -207,17 +205,18 @@ export default function TopBar({ title, openSettings }) {
                 >
                   <span>Region</span>
                   <select
-                    value={region}
+                    value={normalizeRegion(region)}
                     onChange={(e) => setRegion(e.target.value)}
                     className="ml-2 bg-transparent focus:outline-none"
                   >
-                    <option value="nl">NL</option>
-                    <option value="us">USA</option>
-                    <option value="ca">CDN</option>
-                    <option value="gb">GB</option>
-                    <option value="fr">FR</option>
-                    <option value="it">IT</option>
-                    <option value="es">ES</option>
+                    <option value="GB">UK</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="ES">Spain</option>
+                    <option value="IT">Italy</option>
+                    <option value="US">USA</option>
+                    <option value="CA">Canada</option>
                   </select>
                 </div>
               ),

@@ -36,3 +36,21 @@ export function detectRegion(preferredRegion) {
   };
   return langMap[lang] || "GB";
 }
+
+// Map messy labels to ISO alpha-2 we use everywhere
+export function normalizeRegion(code) {
+  const k = String(code || "")
+    .trim()
+    .toUpperCase();
+  const map = {
+    USA: "US",
+    UNITED_STATES: "US",
+    US: "US",
+    CDN: "CA",
+    CANADA: "CA",
+    CA: "CA",
+    UK: "GB",
+    GB: "GB",
+  };
+  return map[k] || (/^[A-Z]{2}$/.test(k) ? k : "GB");
+}

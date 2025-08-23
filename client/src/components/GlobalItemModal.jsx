@@ -9,6 +9,8 @@ import LinkInput from "../components/LinkInput";
 import { useUnit } from "../hooks/useUnit";
 import { useWeightInput } from "../hooks/useWeightInput";
 import AffiliateProductPicker from "./AffiliateProductPicker";
+import { useUserSettings } from "../contexts/UserSettings";
+import { detectRegion, normalizeRegion } from "../utils/region";
 import { createGlobalItemFromAffiliate } from "../services/affiliates";
 import { extractWeightGrams } from "../utils/weight";
 
@@ -95,18 +97,9 @@ export default function GlobalItemModal({
     }
   }
 
-  ///////////////////
-  // TEMP: force GB so the seeded products show up. Replace with detected region once other regions are ingested.
-  const regionForSearch = "GB";
-  ///////////////////
-
-  // Region: derive from browser locale (fallback GB). Later we can read from user settings.
-  const detectedRegion =
-    (
-      typeof navigator !== "undefined" &&
-      navigator.language &&
-      navigator.language.split("-")[1]
-    )?.toUpperCase() || "GB";
+  // Region: prefer user setting, then browser, always normalized to ISO-2
+  const { region: settingsRegion } = useUserSettings();
+  const regionForSearch = normalizeRegion(settingsRegion || detectRegion());
 
   // Friendly popup when a locked field is focused
   const showLockedPopup = () =>

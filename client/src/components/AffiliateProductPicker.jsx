@@ -214,6 +214,9 @@ export default function AffiliateProductPicker({
                   ? ` • ${p.price} ${p.currency || ""}`
                   : ""}
               </div>
+              <div className="text-xs opacity-70">
+                {p.merchantName || p.merchantId} · {p.region}
+              </div>
             </div>
             <button
               type="button"

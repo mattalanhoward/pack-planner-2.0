@@ -12,7 +12,9 @@
     "ingest:awin": "node scripts/ingest-awin-feed.js",
     "db:backfill-affiliate-derived:dry": "node scripts/backfill-affiliate-derived.js --dry-run",
     "db:backfill-affiliate-derived": "node scripts/backfill-affiliate-derived.js",
-    "db:backfill-globalitem-itemgroupid": "node scripts/backfill-globalitem-itemGroupId.js"
+    "db:backfill-globalitem-itemgroupid": "node scripts/backfill-globalitem-itemGroupId.js",
+    "seed:affiliates:generate": "node scripts/generate-sample-awin-feeds.js",
+    "seed:affiliates:clean": "node scripts/cleanup-test-affiliates.js --prefix=TEST-GL-"
   },
   "jest": {
     "testEnvironment": "node",

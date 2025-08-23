@@ -3,9 +3,9 @@ import React, { useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import { FaSignOutAlt, FaCheck } from "react-icons/fa";
 import logo from "../assets/images/logo.png";
 import { useUserSettings } from "../contexts/UserSettings";
+import { normalizeRegion } from "../utils/region";
 import AccountModal from "./AccountModal";
 import ViewToggle from "./ViewToggle";
 
@@ -196,7 +196,6 @@ export default function TopBar({ title, openSettings }) {
                 </div>
               ),
             },
-
             // Region
             {
               key: "region",
@@ -207,17 +206,18 @@ export default function TopBar({ title, openSettings }) {
                 >
                   <span>Region</span>
                   <select
-                    value={region}
+                    value={normalizeRegion(region)}
                     onChange={(e) => setRegion(e.target.value)}
                     className="ml-2 bg-transparent focus:outline-none"
                   >
-                    <option value="nl">NL</option>
-                    <option value="us">USA</option>
-                    <option value="ca">CDN</option>
-                    <option value="gb">GB</option>
-                    <option value="fr">FR</option>
-                    <option value="it">IT</option>
-                    <option value="es">ES</option>
+                    <option value="GB">UK</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="ES">Spain</option>
+                    <option value="IT">Italy</option>
+                    <option value="US">USA</option>
+                    <option value="CA">Canada</option>
                   </select>
                 </div>
               ),

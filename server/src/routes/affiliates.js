@@ -93,7 +93,7 @@ router.get(
     }
 
     try {
-      const {
+      let {
         region,
         merchantId,
         q = "",
@@ -101,6 +101,7 @@ router.get(
         itemType = "",
         limit = 50,
       } = req.query;
+      region = String(region).toUpperCase();
 
       const match = { network: "awin", region };
       if (merchantId) match.merchantId = Number(merchantId);
@@ -194,7 +195,7 @@ router.get(
     }
 
     try {
-      const {
+      let {
         region,
         merchantId,
         brand = "",
@@ -207,6 +208,8 @@ router.get(
         limit = 24,
         sort = q ? "relevance" : "-updated",
       } = req.query;
+
+      region = String(region).toUpperCase();
 
       const pageNum = Math.max(1, parseInt(page, 10));
       const pageSize = Math.min(50, Math.max(1, parseInt(limit, 10)));
@@ -291,7 +294,8 @@ router.get(
         .json({ error: { code: "BAD_QUERY", details: errors.array() } });
     }
     try {
-      const { region, globalItemId, itemGroupId } = req.query;
+      let { region, globalItemId, itemGroupId } = req.query;
+      region = String(region).toUpperCase();
 
       let group = itemGroupId || null;
       let original = null;

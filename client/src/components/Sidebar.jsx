@@ -216,7 +216,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed((c) => !c)}
           className={
-            `absolute top-2.5 bg-error text-primary rounded-full p-1 shadow-lg transform ` +
+            `absolute top-2.5 bg-primaryAlt text-base-100 hover:bg-primaryAlt/80 rounded-full p-1 shadow-lg transform ` +
             (collapsed ? "right-[-1rem] translate-x-full" : "right-4")
           }
         >

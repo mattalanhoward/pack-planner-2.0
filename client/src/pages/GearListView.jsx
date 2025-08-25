@@ -635,9 +635,10 @@ export default function GearListView({
     toast("Share feature coming soon");
   };
 
-  // Checklist (placeholder)
+  // Checklist View
   const handleCheckList = () => {
-    toast("Checklist feature coming soon");
+    if (!listId) return;
+    navigate(`/dashboard/${listId}/checklist`);
   };
 
   // Delete list

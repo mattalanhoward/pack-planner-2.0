@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 // import GearListView from "./pages/GearListView";
 import SharedView from "./pages/SharedView";
 import Landing from "./pages/Landing";
+import ChecklistView from "./pages/ChecklistView";
 
 // function PrivateRoute({ children }) {
 //   const { isAuthenticated } = useAuth();
@@ -50,6 +51,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/dashboard/:listId/checklist"
+        element={
+          <PrivateRoute>
+            <ChecklistView />
           </PrivateRoute>
         }
       />

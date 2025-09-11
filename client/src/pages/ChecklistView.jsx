@@ -14,7 +14,9 @@ import useChecklistProgress from "../hooks/useChecklistProgress";
 import logo from "../assets/images/logo.png";
 
 /**
- * v1: local-only checklist, 2-column screen + print, icons for worn/consumable.
+ * Screen: interactive checklist (2-col grid)
+ * Print: dedicated two-column table DOM (mobile & desktop consistent),
+ *        repeating header, totals-only, blank checkboxes, no split categories.
  */
 export default function ChecklistView() {
   const { listId } = useParams();
@@ -50,7 +52,6 @@ export default function ChecklistView() {
   }, [listId]);
 
   const revision = useMemo(() => {
-    // Use updatedAt + item count as a simple, idempotent revision key
     const u = full.list?.updatedAt || "";
     return `${u}:${full.items?.length || 0}`;
   }, [full.list?.updatedAt, full.items]);
@@ -67,7 +68,6 @@ export default function ChecklistView() {
     for (const it of full.items) {
       if (map.has(it.category)) map.get(it.category).items.push(it);
     }
-    // Only render categories that have items
     return [...map.values()].filter((g) => g.items.length > 0);
   }, [full.categories, full.items]);
 
@@ -98,7 +98,27 @@ export default function ChecklistView() {
     document.title = `${tripMeta.title} · Checklist`;
   }, [tripMeta.title]);
 
-  // ---- Skeleton while loading (2 columns, grey boxes) ----
+  // Build the print columns (must be before any early returns to keep hook order stable)
+  const { leftCols, rightCols } = useMemo(() => {
+    // Greedy balance by item counts for similar column heights
+    const left = [];
+    const right = [];
+    const totalItems = grouped.reduce((a, g) => a + g.items.length, 0);
+    const target = totalItems / 2;
+    let acc = 0;
+    for (const g of grouped) {
+      if (acc <= target) {
+        left.push(g);
+        acc += g.items.length;
+      } else {
+        right.push(g);
+      }
+    }
+    if (left.length === 0 && right.length > 0) left.push(right.shift());
+    return { leftCols: left, rightCols: right };
+  }, [grouped]);
+
+  // ---- Skeleton while loading ----
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral/50 text-primary">
@@ -161,8 +181,8 @@ export default function ChecklistView() {
 
   return (
     <div className="min-h-screen bg-neutral/50 text-primary">
-      {/* Header: brand + actions (actions hidden when printing) */}
-      <header className="border-b bg-base-100 print:border-none print:pb-2">
+      {/* Header: brand + actions (screen only) */}
+      <header className="border-b bg-base-100 print:hidden">
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
           <button
             onClick={() => navigate(`/dashboard/${listId}`)}
@@ -205,7 +225,8 @@ export default function ChecklistView() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 print:py-4">
+      {/* ---------- SCREEN CONTENT (interactive) ---------- */}
+      <main className="mx-auto max-w-5xl px-4 py-6 print:hidden">
         {/* Title + progress */}
         <section className="mb-6">
           <div className="flex items-end justify-between gap-4">
@@ -226,20 +247,15 @@ export default function ChecklistView() {
               </p>
             </div>
             <div className="text-right">
-              {/* Screen: packed/total + progress bar */}
-              <div className="text-sm font-medium print:hidden">
+              <div className="text-sm font-medium">
                 Packed {packed} / {total}
               </div>
-              <div className="mt-1 h-2 w-48 overflow-hidden rounded-full bg-base-200 print:hidden">
+              <div className="mt-1 h-2 w-48 overflow-hidden rounded-full bg-base-200">
                 <div
                   className="h-full bg-emerald-600"
                   style={{ width: `${pct}%` }}
                   aria-label={`Progress ${pct}%`}
                 />
-              </div>
-              {/* Print: only total count */}
-              <div className="hidden text-sm font-medium print:block">
-                Total items: {total}
               </div>
             </div>
           </div>
@@ -255,25 +271,22 @@ export default function ChecklistView() {
           </div>
         </section>
 
-        {/* 2-column categories */}
-        <div className="grid gap-4 md:grid-cols-2 print-two-col">
+        {/* 2-column categories (screen) */}
+        <div className="grid gap-4 md:grid-cols-2">
           {grouped.map(({ cat, items }) => {
             const cTotal = items.length;
             const cPacked = items.filter((i) => checked[i._id]).length;
             return (
-              <section key={cat._id} className="category break-inside-avoid">
+              <section key={cat._id} className="break-inside-avoid">
                 <div className="mb-2 flex items-center justify-between">
                   <h2 className="text-lg font-semibold">
                     {cat.title || cat.name}
                   </h2>
                   <div className="text-sm text-secondary">
-                    <span className="print:hidden">
-                      {cPacked} / {cTotal}
-                    </span>
-                    <span className="hidden print:inline">Total: {cTotal}</span>
+                    {cPacked} / {cTotal}
                   </div>
                 </div>
-                <ul className="divide-y divide-base-200 rounded-xl border bg-base-100 print:border-0 print:divide-base-300">
+                <ul className="divide-y divide-base-200 rounded-xl border bg-base-100">
                   {items.map((item) => {
                     const label = `${
                       item.itemType ? item.itemType + " - " : ""
@@ -281,20 +294,14 @@ export default function ChecklistView() {
                     return (
                       <li
                         key={item._id}
-                        className="row flex items-center gap-2 px-3 py-2"
+                        className="flex items-center gap-2 px-3 py-2"
                       >
-                        {/* Screen: real interactive checkbox */}
                         <input
                           id={`cb-${item._id}`}
                           type="checkbox"
-                          className="h-4 w-4 rounded border-base-300 text-emerald-600 focus:ring-emerald-600 print:hidden"
+                          className="h-4 w-4 rounded border-base-300 text-emerald-600 focus:ring-emerald-600"
                           checked={!!checked[item._id]}
                           onChange={() => toggle(item._id)}
-                        />
-                        {/* Print: always show a blank square, regardless of state */}
-                        <span
-                          className="hidden print:inline-block checkbox-print"
-                          aria-hidden
                         />
                         <label
                           htmlFor={`cb-${item._id}`}
@@ -328,21 +335,182 @@ export default function ChecklistView() {
         </div>
       </main>
 
-      {/* Print tweaks (scoped) */}
+      {/* ---------- PRINT CONTENT (two-column table, totals only, blank boxes) ---------- */}
+      <div className="hidden print:block px-4">
+        <table className="w-full print-table">
+          <thead>
+            <tr>
+              <th colSpan={2} className="align-bottom">
+                {/* Brand strip + list meta (repeats on every page) */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={logo}
+                      alt="TrekList logo"
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "9999px",
+                      }}
+                    />
+                    <div className="leading-tight">
+                      <div
+                        className="font-semibold"
+                        style={{ fontSize: "12pt" }}
+                      >
+                        TrekList
+                      </div>
+                      <div
+                        className="text-secondary"
+                        style={{ fontSize: "8.5pt" }}
+                      >
+                        treklist.co
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold" style={{ fontSize: "12pt" }}>
+                      {tripMeta.title}
+                    </div>
+                    <div className="text-secondary" style={{ fontSize: "9pt" }}>
+                      {tripMeta.dates}
+                      {tripMeta.nights != null &&
+                        ` · ${tripMeta.nights} ${
+                          tripMeta.nights === 1 ? "night" : "nights"
+                        }`}
+                      {tripMeta.location && ` · ${tripMeta.location}`}
+                    </div>
+                    <div className="mt-1" style={{ fontSize: "10pt" }}>
+                      Total items: {total}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ height: "10mm" }} />{" "}
+                {/* breathing room under header */}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {/* LEFT COLUMN */}
+              <td className="align-top" style={{ width: "50%" }}>
+                {leftCols.map(({ cat, items }) => (
+                  <section
+                    key={cat._id}
+                    className="print-category"
+                    style={{ marginBottom: "8px" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h2 style={{ fontSize: "11.5pt", fontWeight: 600 }}>
+                        {cat.title || cat.name}
+                      </h2>
+                      <div
+                        className="text-secondary"
+                        style={{ fontSize: "9.5pt" }}
+                      >
+                        Total: {items.length}
+                      </div>
+                    </div>
+                    <ul className="print-ul">
+                      {items.map((item) => {
+                        const label = `${
+                          item.itemType ? item.itemType + " - " : ""
+                        }${item.name}`;
+                        return (
+                          <li key={item._id} className="print-row">
+                            <span className="checkbox-print" aria-hidden />
+                            <span className="font-medium">{label}</span>
+                            {item.quantity > 1 && (
+                              <span className="qty">×{item.quantity}</span>
+                            )}
+                            <span className="icons">
+                              {item.worn && <span className="ico">👕</span>}
+                              {item.consumable && (
+                                <span className="ico">🍴</span>
+                              )}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </td>
+
+              {/* RIGHT COLUMN */}
+              <td className="align-top" style={{ width: "50%" }}>
+                {rightCols.map(({ cat, items }) => (
+                  <section
+                    key={cat._id}
+                    className="print-category"
+                    style={{ marginBottom: "8px" }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h2 style={{ fontSize: "11.5pt", fontWeight: 600 }}>
+                        {cat.title || cat.name}
+                      </h2>
+                      <div
+                        className="text-secondary"
+                        style={{ fontSize: "9.5pt" }}
+                      >
+                        Total: {items.length}
+                      </div>
+                    </div>
+                    <ul className="print-ul">
+                      {items.map((item) => {
+                        const label = `${
+                          item.itemType ? item.itemType + " - " : ""
+                        }${item.name}`;
+                        return (
+                          <li key={item._id} className="print-row">
+                            <span className="checkbox-print" aria-hidden />
+                            <span className="font-medium">{label}</span>
+                            {item.quantity > 1 && (
+                              <span className="qty">×{item.quantity}</span>
+                            )}
+                            <span className="icons">
+                              {item.worn && <span className="ico">👕</span>}
+                              {item.consumable && (
+                                <span className="ico">🍴</span>
+                              )}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Print styles (scoped) */}
       <style>{`
-        @page { margin: 8mm; }
+        @page { margin: 14mm 12mm; } /* generous top & side margins for mobile/desktop */
         @media print {
-          .no-print { display: none !important; }
-          /* 2 columns on print (override grid) */
-          .print-two-col { display: block !important; column-count: 2; column-gap: 16px; }
-          .print-two-col > .category { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px; }
-          .row { padding-top: 2px !important; padding-bottom: 2px !important; }
-          body { background: #fff; font-size: 9.5pt; }
-          h1 { font-size: 15pt; }
-          h2 { font-size: 11.5pt; }
-          /* Fallback: hide any checkbox that slipped through without print:hidden */
-          input[type="checkbox"] { display: none !important; }
-          .checkbox-print { width: 12px; height: 12px; border: 1px solid #000; margin-right: 8px; }
+          /* Two-column table that works on iOS/Android/desktop */
+          table.print-table {
+            border-collapse: separate;    /* allow a real gutter */
+            border-spacing: 12mm 0;       /* center gutter width */
+            width: 100%;
+          }
+          table.print-table thead { display: table-header-group; } /* repeat each page */
+          table.print-table th, table.print-table td { border: none !important; padding: 0; }
+
+          /* Keep each category intact; if it won't fit, move to next page */
+          .print-category { break-inside: avoid-page; page-break-inside: avoid; }
+
+          /* Compact rows to fit ~50 items per page */
+          .print-ul { list-style: none; margin: 0; padding: 0; }
+          .print-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-size: 9.5pt; }
+          .checkbox-print { width: 12px; height: 12px; border: 1px solid #000; margin-right: 6px; display: inline-block; }
+          .qty { margin-left: 8px; font-size: 8.5pt; color: #555; }
+          .icons { margin-left: auto; display: inline-flex; gap: 6px; color: #555; font-size: 10pt; }
+          .ico { line-height: 1; }
+
+          body { background: #fff; }
           * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}</style>

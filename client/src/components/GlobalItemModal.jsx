@@ -174,15 +174,18 @@ export default function GlobalItemModal({
           if (weightSource === "heuristic") payload.weightSource = "heuristic";
         }
 
-        if (price !== "" && price != null) {
+        if (price === "" || price == null) {
+          payload.price = null; // clearing the field sends null
+        } else {
           const p = Number(price);
           if (Number.isNaN(p) || p < 0) {
             toast.error("Enter a valid price.");
             setLoading(false);
             return;
           }
-          payload.price = p;
+          payload.price = p; // keep 0 if entered
         }
+
         if (link.trim()) payload.link = link.trim();
 
         payload.worn = worn;

@@ -371,4 +371,85 @@ router.get(
   }
 );
 
+/**
+ * GET /api/affiliates/resolve
+ * Query: itemId=<globalItemId>&region=<nl|us|gb|fr|it|ca|de>
+ * Returns: { amount, currency, merchant, deeplink, source: "offer" | "product" } | null
+ * Note: This route is auth-protected by router.use(auth); change if you want it public.
+ */
+router.get(
+  "/resolve",
+  [
+    query("itemId").isString().isLength({ min: 8 }).trim(),
+    query("region").isString().isLength({ min: 2, max: 2 }).trim(),
+  ],
+  async (req, res) => {
+    try {
+      const { itemId, region } = req.query;
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res
+          .status(400)
+          .json({ error: { code: "BAD_QUERY", details: errors.array() } });
+      }
+      // At this point itemId/region are present per validator; normalize:
+      const REGION = String(region).toUpperCase();
+
+      const item = await GlobalItem.findById(itemId).lean();
+      if (!item || !item.affiliate || item.affiliate.network !== "awin") {
+        return res.json(null);
+      }
+
+      const groupId =
+        item.affiliate.itemGroupId ||
+        item.affiliate.productId ||
+        item.affiliate.groupId;
+      if (!groupId) return res.json(null);
+
+      // 1) Try a region-matched merchant offer (cheapest first)
+      const offer = await MerchantOffer.findOne({
+        network: "awin",
+        itemGroupId: String(groupId),
+        region: REGION,
+      })
+        .sort({ price: 1 })
+        .lean();
+
+      if (offer) {
+        return res.json({
+          amount: offer.price,
+          currency: offer.currency,
+          merchant: offer.merchantName || offer.merchantId || null,
+          deeplink: offer.awDeepLink || null,
+          source: "offer",
+        });
+      }
+
+      // 2) Fallback to a region-matched product record
+      const prod = await AffiliateProduct.findOne({
+        network: "awin",
+        itemGroupId: String(groupId),
+        region: REGION,
+      }).lean();
+
+      if (prod && typeof prod.price === "number") {
+        return res.json({
+          amount: prod.price,
+          currency: prod.currency,
+          merchant: prod.merchantName || prod.brand || null,
+          deeplink: prod.awDeepLink || null,
+          source: "product",
+        });
+      }
+
+      return res.json(null);
+    } catch (err) {
+      console.error("GET /affiliates/resolve error:", err);
+      return res
+        .status(500)
+        .json({ message: "Failed to resolve affiliate price." });
+    }
+  }
+);
+
 module.exports = router;

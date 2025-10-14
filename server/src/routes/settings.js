@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
       theme: theme || "desert",
       weightUnit: weightUnit || "g",
       language: language || "en",
-      region: region || "eu",
+      region: (region && String(region).toLowerCase()) || "nl",
     });
   } catch (err) {
     console.error("GET /settings error:", err);
@@ -53,9 +53,29 @@ router.get("/", async (req, res) => {
 router.patch("/", async (req, res) => {
   try {
     const updates = req.body;
+    // normalize region to lowercase if present
+    if (updates.region && typeof updates.region === "string") {
+      updates.region = updates.region.toLowerCase();
+    }
+    // disallow email updates via this endpoint
+    if (Object.prototype.hasOwnProperty.call(updates, "email")) {
+      delete updates.email;
+    }
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found." });
 
+    // --- IMPORTANT: normalize the existing user's region too ---
+    // Even if region isn't part of the PATCH, legacy uppercase values will fail enum validation.
+    if (
+      typeof user.region === "string" &&
+      user.region !== user.region.toLowerCase()
+    ) {
+      user.region = user.region.toLowerCase();
+    }
+    // Provide a sane default if region is missing/null
+    if (!user.region) {
+      user.region = "nl";
+    }
     // If they’re changing password, handle separately
     if (updates.password) {
       if (!updates.currentPassword) {
@@ -74,7 +94,6 @@ router.patch("/", async (req, res) => {
 
     // Whitelist what can be updated:
     const editable = [
-      "email",
       "trailname",
       "viewMode",
       "locale",
@@ -94,6 +113,14 @@ router.patch("/", async (req, res) => {
     res.json({ message: "Settings updated." });
   } catch (err) {
     console.error("PATCH /settings error:", err);
+    if (err && err.name === "ValidationError") {
+      return res.status(400).json({
+        message: "Invalid settings payload.",
+        errors: Object.fromEntries(
+          Object.entries(err.errors || {}).map(([k, v]) => [k, v?.message])
+        ),
+      });
+    }
     res.status(500).json({ message: "Could not update settings." });
   }
 });

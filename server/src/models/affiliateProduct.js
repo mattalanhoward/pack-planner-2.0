@@ -40,6 +40,15 @@ const AffiliateProductSchema = new Schema(
   { timestamps: true }
 );
 
+// Normalize/derive fields
+AffiliateProductSchema.pre("save", function normalize(next) {
+  if (this.region) this.region = String(this.region).toUpperCase();
+  if (this.brand) this.brandLC = String(this.brand).toLowerCase().trim();
+  if (this.itemType) this.itemType = String(this.itemType).trim();
+  if (this.itemGroupId != null) this.itemGroupId = String(this.itemGroupId);
+  next();
+});
+
 // Uniqueness per network/region/merchant/product
 AffiliateProductSchema.index(
   { network: 1, region: 1, merchantId: 1, externalProductId: 1 },
@@ -53,5 +62,12 @@ AffiliateProductSchema.index({ region: 1, merchantId: 1, price: 1 });
 AffiliateProductSchema.index({ network: 1, region: 1, brandLC: 1 });
 AffiliateProductSchema.index({ network: 1, region: 1, itemType: 1 });
 AffiliateProductSchema.index({ network: 1, region: 1, merchantId: 1 });
+// For /affiliates/resolve fallback by group+region
+AffiliateProductSchema.index({
+  network: 1,
+  itemGroupId: 1,
+  region: 1,
+  updatedAt: -1,
+});
 
 module.exports = model("AffiliateProduct", AffiliateProductSchema);

@@ -16,11 +16,23 @@ const MerchantOfferSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Normalize before save
+MerchantOfferSchema.pre("save", function normalize(next) {
+  if (this.region) this.region = String(this.region).toUpperCase();
+  if (this.itemGroupId != null) this.itemGroupId = String(this.itemGroupId);
+  if (this.merchantId != null) this.merchantId = String(this.merchantId);
+  next();
+});
+
 MerchantOfferSchema.index(
   { network: 1, itemGroupId: 1, region: 1, merchantId: 1 },
   { unique: true }
 );
+
 // Helpful lookup by group+region
 MerchantOfferSchema.index({ network: 1, itemGroupId: 1, region: 1 });
+
+// Support "cheapest first" queries in /affiliates/resolve
+MerchantOfferSchema.index({ network: 1, itemGroupId: 1, region: 1, price: 1 });
 
 module.exports = mongoose.model("MerchantOffer", MerchantOfferSchema);

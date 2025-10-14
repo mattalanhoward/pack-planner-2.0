@@ -12,28 +12,11 @@ import {
   FaTshirt,
   FaTimes,
   FaEllipsisH,
+  FaShoppingCart,
 } from "react-icons/fa";
 import { useWeight } from "../hooks/useWeight";
-import ExternalItemLink from "../components/ExternalItemLink";
 import { useResolvedPrice } from "../hooks/useResolvedPrice";
 import { formatCurrency } from "../utils/formatCurrency";
-
-/** Small, consistent “Buy” pill used in all views */
-function BuyButton({ href, children = "Buy", className = "" }) {
-  if (!href) return null; // ← don’t render anything when no link
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`inline-flex items-center justify-center h-6 px-2 rounded-md text-xs bg-secondary text-white hover:bg-secondary/80 ${className}`}
-      title="Open store page"
-    >
-      {children}
-    </a>
-  );
-}
 
 export default function SortableItem({
   item,
@@ -86,6 +69,20 @@ export default function SortableItem({
 
   // choose link per priority: user link > resolved deeplink > none
   const finalLink = item.link || resolved?.deeplink || null;
+
+  const CartIconLink = ({ href, className = "" }) =>
+    href ? (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open product page"
+        className={`text-secondary hover:text-secondary/70 ${className}`}
+        aria-label="Open product page"
+      >
+        <FaShoppingCart />
+      </a>
+    ) : null;
 
   // make sure useSortable() never comes back undefined
   const sortable =
@@ -249,13 +246,12 @@ export default function SortableItem({
         <div className="row-start-2 col-span-2 grid grid-cols-[1fr_auto] items-center">
           {/* Left group */}
           <div className="flex items-center space-x-3 text-primary">
-            <span>{weightText}</span>
-            <span>{priceText}</span>
+            <span className="tabular-nums">{weightText}</span>
+            <span className="tabular-nums">{priceText}</span>
           </div>
 
-          {/* Right group: Buy | 🍴 | 👕 | qty */}
+          {/* Right group (mobile): 🍴 | 👕 | qty | 🛒 */}
           <div className="flex items-center gap-3">
-            <BuyButton href={finalLink} />
             <FaUtensils
               title="Toggle consumable"
               onClick={handleConsumableClick}
@@ -278,6 +274,7 @@ export default function SortableItem({
               itemId={item._id}
               fetchItems={fetchItems}
             />
+            <CartIconLink href={finalLink} />
           </div>
         </div>
       </div>
@@ -286,7 +283,7 @@ export default function SortableItem({
       {isListMode && (
         <div
           className="hidden sm:grid items-center text-sm
-            grid-cols-[32px,120px,minmax(240px,1fr),120px,64px,24px,24px,48px,24px,24px] gap-x-2"
+      grid-cols-[32px,120px,minmax(260px,1fr),96px,112px,24px,24px,48px,24px,24px] gap-x-2"
         >
           {/* 1) Drag */}
           <div
@@ -302,21 +299,20 @@ export default function SortableItem({
             {item.itemType || "—"}
           </div>
 
-          {/* 3) Name/brand (narrowed a bit to free space right) */}
+          {/* 3) Name/brand */}
           <div className="truncate text-primary">
             {item.brand && <span className="mr-1">{item.brand}</span>}
             {item.name}
           </div>
 
-          {/* 4) Weight · Price */}
-          <div className="text-primary justify-self-end">
-            <span className="mr-3">{weightText}</span>
-            <span>{priceText}</span>
+          {/* 4) Weight (fixed width, right-aligned, tabular nums) */}
+          <div className="justify-self-end tabular-nums text-primary w-[96px] text-right">
+            {weightText}
           </div>
 
-          {/* 5) Buy */}
-          <div className="justify-self-end">
-            <BuyButton href={finalLink} />
+          {/* 5) Price (fixed width, right-aligned, tabular nums) */}
+          <div className="justify-self-end tabular-nums text-primary w-[112px] text-right">
+            {priceText}
           </div>
 
           {/* 6) Consumable */}
@@ -353,15 +349,9 @@ export default function SortableItem({
             />
           </div>
 
-          {/* 9) Ellipsis */}
+          {/* 9) Cart */}
           <div className="justify-self-center">
-            <a
-              href="#"
-              title="See details"
-              className="text-secondary hover:text-secondary/50"
-            >
-              <FaEllipsisH />
-            </a>
+            <CartIconLink href={finalLink} />
           </div>
 
           {/* 10) Delete */}
@@ -406,23 +396,24 @@ export default function SortableItem({
               <FaTimes />
             </button>
           </div>
-
-          {/* Row 2: Brand/Name (left) · Buy (right) */}
-          <div className="grid grid-cols-[1fr_auto] items-center">
+          {/* Row 2: Brand/Name (left) */}
+          <div className="grid grid-cols-[1fr] items-center">
             <div className="truncate text-sm text-primary">
               {item.brand && (
                 <span className="font-medium mr-1">{item.brand}</span>
               )}
               {item.name}
             </div>
-            <BuyButton href={finalLink} />
           </div>
-
           {/* Row 3: Left (weight+price) — Right (🍴 · 👕 · Qty · …) */}
           <div className="grid grid-cols-[1fr_auto] items-center">
             <div className="flex items-center space-x-3">
-              <span className="text-sm text-primary">{weightText}</span>
-              <span className="text-sm text-primary">{priceText}</span>
+              <span className="text-sm text-primary tabular-nums">
+                {weightText}
+              </span>
+              <span className="text-sm text-primary tabular-nums">
+                {priceText}
+              </span>
             </div>
             <div className="grid grid-cols-[16px_16px_auto_16px] items-center justify-end gap-x-3">
               <FaUtensils
@@ -451,13 +442,7 @@ export default function SortableItem({
                 itemId={item._id}
                 fetchItems={fetchItems}
               />
-              <a
-                href="#"
-                title="See details"
-                className="text-secondary hover:text-secondary/50"
-              >
-                <FaEllipsisH />
-              </a>
+              <CartIconLink href={finalLink} />
             </div>
           </div>
         </div>

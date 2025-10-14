@@ -59,7 +59,11 @@ router.patch("/", async (req, res) => {
     }
     // disallow email updates via this endpoint
     if (Object.prototype.hasOwnProperty.call(updates, "email")) {
-      delete updates.email;
+      return res.status(400).json({
+        message:
+          "Email cannot be changed here. Contact support to update your email.",
+        code: "EMAIL_READ_ONLY",
+      });
     }
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found." });

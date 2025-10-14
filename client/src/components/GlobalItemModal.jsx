@@ -74,7 +74,8 @@ export default function GlobalItemModal({
     setName(p?.name || "");
     setBrand(p?.brand || p?.merchantName || "");
     setDescription(p?.description || "");
-    setPrice(typeof p?.price === "number" ? String(p.price) : "");
+    // keep price as a number for CurrencyInput; empty string otherwise
+    setPrice(typeof p?.price === "number" ? p.price : "");
     setLink(p?.awDeepLink || "");
     const derived =
       deriveItemTypeFromCategoryPath(p?.categoryPath) ||
@@ -98,7 +99,10 @@ export default function GlobalItemModal({
   }
 
   // Region: prefer user setting, then browser, always normalized to ISO-2
-  const { region: settingsRegion } = useUserSettings();
+  // Region/Currency/Locale from settings
+  const { region: settingsRegion, currency, locale } = useUserSettings();
+  const CURRENCY_SYMBOL = { USD: "$", EUR: "€", GBP: "£" };
+  const currencySymbol = CURRENCY_SYMBOL[currency] || "";
   const regionForSearch = normalizeRegion(settingsRegion || detectRegion());
 
   // Friendly popup when a locked field is focused
@@ -391,12 +395,14 @@ export default function GlobalItemModal({
               </div>
               <div className="flex-1">
                 <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                  Price (€)
+                  Price ({currencySymbol})
                 </label>
                 <div className="relative">
                   <CurrencyInput
                     value={price}
-                    onChange={(value) => setPrice(value)}
+                    currency={currency}
+                    locale={locale}
+                    onChange={(val) => setPrice(val)}
                     readOnly={!!affProduct}
                     onFocus={affProduct ? showLockedPopup : undefined}
                   />

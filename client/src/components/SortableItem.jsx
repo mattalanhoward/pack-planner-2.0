@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useUserSettings } from "../contexts/UserSettings";
+import { formatCurrency } from "../utils/formatCurrency";
 import api from "../services/api";
 import { toast } from "react-hot-toast";
 
@@ -26,10 +28,16 @@ export default function SortableItem({
   fetchItems,
   onQuantityChange,
 }) {
+  const { currency, locale } = useUserSettings();
   const [wornLocal, setWornLocal] = useState(item.worn);
   const [consumableLocal, setConsumableLocal] = useState(item.consumable);
   const weightText = useWeight(item.weight);
   const itemKey = `item-${catId}-${item._id}`;
+  // Pre-compute the formatted price for reuse in all views
+  const priceLabel =
+    item?.price !== null && item?.price !== undefined && item?.price !== ""
+      ? formatCurrency(item.price, { currency, locale, symbolOnly: true })
+      : null;
   // make sure useSortable() never comes back undefined
   const sortable =
     useSortable({
@@ -204,16 +212,16 @@ export default function SortableItem({
         {/* ROW 2, COL 1: Weight & Price */}
         <div className="row-start-2 col-start-1 flex items-center space-x-2 text-primary">
           <span>{weightText}</span>
-          {item.price != null &&
+          {priceLabel != null &&
             (item.link ? (
               <ExternalItemLink
                 item={item}
                 className="inline-block text-primary"
               >
-                <span>€{item.price}</span>
+                <span>{priceLabel}</span>
               </ExternalItemLink>
             ) : (
-              <span>€{item.price}</span>
+              <span>{priceLabel}</span>
             ))}
         </div>
 
@@ -319,16 +327,16 @@ export default function SortableItem({
 
           {/* 8) Price */}
           <div className="text-primary justify-self-end">
-            {item.price != null &&
+            {priceLabel != null &&
               (item.link ? (
                 <ExternalItemLink
                   item={item}
                   className="inline-block text-primary"
                 >
-                  <span>€{item.price}</span>{" "}
+                  <span>{priceLabel}</span>{" "}
                 </ExternalItemLink>
               ) : (
-                <span>€{item.price}</span>
+                <span>{priceLabel}</span>
               ))}
           </div>
 
@@ -431,18 +439,18 @@ export default function SortableItem({
             {/* Left group */}
             <div className="flex items-center space-x-3">
               <span className="text-sm text-primary">{weightText}</span>
-              {item.price != null &&
+              {priceLabel != null &&
                 (item.link ? (
                   <ExternalItemLink
                     className="text-sm text-primary"
                     item={item}
                   >
                     <span className="font-medium text-sm text-primary mr-1">
-                      {item.price}
+                      {priceLabel}
                     </span>
                   </ExternalItemLink>
                 ) : (
-                  <span className="text-sm text-primary">€{item.price}</span>
+                  <span className="text-sm text-primary">{priceLabel}</span>
                 ))}
             </div>
             {/* Right group */}

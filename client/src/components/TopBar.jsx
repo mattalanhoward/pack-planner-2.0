@@ -163,9 +163,9 @@ export default function TopBar({ title, openSettings }) {
                     onChange={(e) => setCurrency(e.target.value)}
                     className="ml-2 bg-transparent focus:outline-none"
                   >
-                    <option value="€">€</option>
-                    <option value="$">$</option>
-                    <option value="£">£</option>
+                    <option value="EUR">€</option>
+                    <option value="USD">$</option>
+                    <option value="GBP">£</option>
                   </select>
                 </div>
               ),
@@ -205,18 +205,17 @@ export default function TopBar({ title, openSettings }) {
                 >
                   <span>Region</span>
                   <select
-                    value={normalizeRegion(region)}
-                    onChange={(e) => setRegion(e.target.value)}
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value.toLowerCase())}
                     className="ml-2 bg-transparent focus:outline-none"
                   >
-                    <option value="GB">UK</option>
-                    <option value="NL">Netherlands</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                    <option value="ES">Spain</option>
-                    <option value="IT">Italy</option>
-                    <option value="US">USA</option>
-                    <option value="CA">Canada</option>
+                    <option value="ca">Canada</option>
+                    <option value="fr">France</option>
+                    <option value="de">Germany</option>
+                    <option value="it">Italy</option>
+                    <option value="nl">Netherlands</option>
+                    <option value="gb">United Kingdom</option>
+                    <option value="us">United States</option>
                   </select>
                 </div>
               ),

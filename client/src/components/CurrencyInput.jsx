@@ -1,40 +1,105 @@
-import React, { useState } from "react";
-import { formatEuro, parseEuro } from "../utils/formatCurrency";
+// client/src/components/CurrencyInput.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { formatCurrency } from "../utils/formatCurrency";
 
-export default function CurrencyInput({ value, onChange, label }) {
-  // We’ll keep two pieces of state:
-  // 1) `display`, which is the string shown in the input (e.g. “1.234,56 €”)
-  // 2) We rely on `value` (prop) as the “raw numeric” (e.g. 1234.56)
-  const [display, setDisplay] = useState(formatEuro(value));
+/**
+ * Currency-aware input with "raw on focus, formatted on blur" UX.
+ * - value: number | "" (controlled by parent)
+ * - onChange: (number | "") => void  (fires on blur)
+ * - currency: ISO code e.g. "EUR" | "USD" | "GBP"
+ * - locale: BCP47 e.g. "en-US" | "nl-NL" | "en-GB"
+ */
+export default function CurrencyInput({
+  value,
+  onChange,
+  locale = "en-US",
+  label,
+  placeholder = "0.00",
+  className = "mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm",
+  "aria-label": ariaLabel = "Price",
+  readOnly = false,
+  onFocus,
+  ...rest
+}) {
+  const [display, setDisplay] = useState(value ?? "");
+  const [focused, setFocused] = useState(false);
 
-  // When parent changes `value` (e.g. on reset), update our display:
-  React.useEffect(() => {
-    setDisplay(formatEuro(value));
-  }, [value]);
+  // decimal separator for the current locale (used for nicer placeholder)
+  const decimalSymbol = useMemo(() => {
+    const p = new Intl.NumberFormat(locale).format(1.1);
+    return p.includes(",") ? "," : ".";
+  }, [locale]);
 
-  // Called on every keystroke:
+  // helper: number-only formatting (no currency symbol)
+  const formatNumberOnly = (n) =>
+    new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number(n));
+
+  // keep local text in sync when external value changes
+  useEffect(() => {
+    if (value === "" || value == null) {
+      setDisplay("");
+      return;
+    }
+    // If not focused, show formatted number; if focused, show raw for editing
+    setDisplay(focused ? String(value) : formatNumberOnly(value));
+  }, [value, focused, locale]);
+
+  // Robust-ish parse for user-typed strings across locales
+  function parseToNumber(raw) {
+    if (raw == null || raw === "") return "";
+    const s = String(raw)
+      .trim()
+      .replace(/\s/g, "")
+      // remove currency symbols and letters
+      .replace(/[^\d,.\-]/g, "");
+
+    // Heuristic: if both separators exist, assume last one is decimal
+    const lastComma = s.lastIndexOf(",");
+    const lastDot = s.lastIndexOf(".");
+    let normalized = s;
+
+    if (lastComma !== -1 && lastDot !== -1) {
+      if (lastComma > lastDot) {
+        // comma as decimal, strip dots
+        normalized = s.replace(/\./g, "").replace(",", ".");
+      } else {
+        // dot as decimal, strip commas
+        normalized = s.replace(/,/g, "");
+      }
+    } else if (lastComma !== -1) {
+      // only comma present -> treat as decimal
+      normalized = s.replace(/\./g, "").replace(",", ".");
+    } else {
+      // only dot or none -> dots fine as decimal, remove any stray commas
+      normalized = s.replace(/,/g, "");
+    }
+
+    const n = Number(normalized);
+    return Number.isNaN(n) ? "" : n;
+  }
+
   const handleChange = (e) => {
-    // Always store *exactly* what the user typed, so the cursor doesn’t jump.
     setDisplay(e.target.value);
   };
 
-  // Called when the user “blurs” the input (leaves the field):
-  const handleBlur = () => {
-    // Parse the displayed string back to a raw number:
-    const parsed = parseEuro(display);
-    // If invalid, parsed = '' (we’ll pass 0 or empty)
-    onChange(parsed);
-    // Now re‐format the display using our helper:
-    setDisplay(formatEuro(parsed));
+  const handleFocus = () => {
+    // When locked, keep formatted display; do not switch to raw
+    if (readOnly) return;
+    setFocused(true);
+    // Show raw numeric (so cursor behavior is predictable for editing)
+    if (value !== "" && value != null) {
+      setDisplay(String(value));
+    }
   };
 
-  // Called when the user focuses that field (e.g. to begin editing):
-  // We want to strip away currency formatting so they can type a raw number:
-  const handleFocus = () => {
-    // Show only the raw numeric (no thousand separators or “€” suffix).
-    if (value !== "" && value != null) {
-      setDisplay(value.toString());
-    }
+  const handleBlur = () => {
+    if (readOnly) return; // don't mutate/display on blur if field is locked
+    const parsed = parseToNumber(display);
+    onChange?.(parsed);
+    setFocused(false); // effect above will format once parent value updates
   };
 
   return (
@@ -46,12 +111,20 @@ export default function CurrencyInput({ value, onChange, label }) {
       )}
       <input
         type="text"
+        inputMode="decimal"
         value={display}
         onChange={handleChange}
         onBlur={handleBlur}
-        onFocus={handleFocus}
-        className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-        placeholder="0,00 €"
+        onFocus={(e) => {
+          // allow parent to show a popup (e.g., locked field info)
+          onFocus?.(e);
+          handleFocus();
+        }}
+        className={className}
+        aria-label={ariaLabel}
+        placeholder={`0${decimalSymbol}00`}
+        readOnly={readOnly}
+        {...rest}
       />
     </div>
   );

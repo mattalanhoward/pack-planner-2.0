@@ -1,24 +1,30 @@
-// utils/formatCurrency.js
-export function formatEuro(value) {
-  if (value === "" || value == null) return "";
-  // Convert the raw numeric value to a locale‐aware string with currency
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+export function formatCurrency(
+  value,
+  {
+    currency = "EUR",
+    locale = "en-US",
+    minimumFractionDigits = 2,
+    symbolOnly = false,
+  } = {}
+) {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  if (Number.isNaN(n)) return "";
+  if (symbolOnly) {
+    const sym = { USD: "$", EUR: "€", GBP: "£" }[currency] || "";
+    const num = new Intl.NumberFormat(locale, {
+      minimumFractionDigits,
+      maximumFractionDigits: 2,
+    }).format(n);
+    return `${sym}${num}`;
+  }
 
-// If you ever need to parse back from a formatted string “1.234,56 €” to 1234.56,
-// you can do something like:
-export function parseEuro(formatted) {
-  // Remove any non‐digit, non‐comma, non‐dot chars:
-  let cleaned = formatted.replace(/[^\d.,-]/g, "");
-  // In "de-DE" format, thousand‐separator is ".", decimal is ","
-  // So swap "," → "." and remove any "." used for grouping:
-  cleaned = cleaned.replace(/\./g, "");
-  cleaned = cleaned.replace(",", ".");
-  const asNumber = parseFloat(cleaned);
-  return isNaN(asNumber) ? "" : asNumber;
+  // default: use Intl currency with narrowSymbol where possible
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits,
+    maximumFractionDigits: 2,
+  }).format(n);
 }

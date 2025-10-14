@@ -7,6 +7,7 @@ import LinkInput from "../components/LinkInput";
 import ConfirmDialog from "./ConfirmDialog";
 import { useUnit } from "../hooks/useUnit";
 import { useWeightInput } from "../hooks/useWeightInput";
+import { useUserSettings } from "../contexts/UserSettings";
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -31,7 +32,9 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   // use a stable key for deps
   const itemId = item ? item._id : null;
-
+  const { currency, locale } = useUserSettings();
+  const CURRENCY_SYMBOL = { EUR: "€", USD: "$", GBP: "£" };
+  const currencySymbol = CURRENCY_SYMBOL[currency] || currency;
   // affiliate-backed items (Awin)
   const isAffiliate = Boolean(item?.affiliate?.network === "awin");
 
@@ -240,14 +243,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             </div>
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Price (€)
+                Price ({currencySymbol}){" "}
               </label>
               <div className="relative">
                 <CurrencyInput
                   value={form.price}
-                  onChange={(value) => setForm({ ...form, price: value })}
-                  className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
-                  disabled={isAffiliate}
+                  currency={currency}
+                  locale={locale}
+                  onChange={(val) => setForm((f) => ({ ...f, price: val }))}
                 />
                 {isAffiliate && (
                   <button

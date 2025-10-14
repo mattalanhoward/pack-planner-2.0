@@ -16,13 +16,13 @@ export function SettingsProvider({ children }) {
     () => localStorage.getItem("theme") || "desert"
   );
   const [currency, setCurrency] = useState(
-    () => localStorage.getItem("currency") || "€"
+    () => localStorage.getItem("currency") || "EUR"
   );
   const [language, setLanguage] = useState(
     () => localStorage.getItem("language") || "en"
   );
   const [region, setRegion] = useState(
-    () => localStorage.getItem("region") || "US"
+    () => localStorage.getItem("region") || "nl"
   );
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem("viewMode") || "column"
@@ -31,6 +31,16 @@ export function SettingsProvider({ children }) {
   // ─── derive a single locale code, e.g. "en-US" ────────────
   //    (we uppercase the region to match BCP-47 syntax)
   const locale = `${language}-${region.toUpperCase()}`;
+  // one-time normalization for legacy symbol-based currency values
+  useEffect(() => {
+    const map = { "€": "EUR", $: "USD", "£": "GBP" };
+    if (map[currency]) {
+      setCurrency(map[currency]);
+    }
+    if (region && region.length === 2 && region !== region.toLowerCase()) {
+      setRegion(region.toLowerCase());
+    }
+  }, []);
 
   // ─── mirror to localStorage & apply DOM side‐effects ───────
   useEffect(() => {

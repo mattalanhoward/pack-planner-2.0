@@ -57,9 +57,10 @@ export default function AccountModal({ isOpen, onClose }) {
     // build payload
     const payload = {};
     if (tab === "Profile") {
-      ["email", "trailname"].forEach((k) => {
-        if (form[k] !== settings[k]) payload[k] = form[k];
-      });
+      // Email is read-only; only allow trailname to be updated
+      if (form.trailname !== settings.trailname) {
+        payload.trailname = form.trailname;
+      }
     }
     if (tab === "Security") {
       if (!form.currentPassword) {
@@ -150,9 +151,15 @@ export default function AccountModal({ isOpen, onClose }) {
                       name="email"
                       type="email"
                       value={form.email}
-                      onChange={handleChange}
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2"
+                      readOnly
+                      disabled
+                      aria-disabled="true"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                      title="Email can’t be changed here"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      To change your email, contact support.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">

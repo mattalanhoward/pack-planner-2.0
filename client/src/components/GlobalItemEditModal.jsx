@@ -20,6 +20,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     price: "",
     link: "",
   });
+
   const unit = useUnit();
   const { unitLabel, formatInput, parseInput } = useWeightInput(unit);
   const [displayWeight, setDisplayWeight] = useState("");
@@ -30,15 +31,17 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // use a stable key for deps
+
   const itemId = item ? item._id : null;
+
   const { currency, locale } = useUserSettings();
   const CURRENCY_SYMBOL = { EUR: "€", USD: "$", GBP: "£" };
   const currencySymbol = CURRENCY_SYMBOL[currency] || currency;
+
   // affiliate-backed items (Awin)
   const isAffiliate = Boolean(item?.affiliate?.network === "awin");
 
-  // Effect A: hydrate fields when the item changes (once per item)
+  // Hydrate when item changes
   useEffect(() => {
     if (!item) return;
     const initialGrams = item.weight ?? "";
@@ -49,7 +52,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
       brand: item.brand || "",
       description: item.description || "",
       weight: initialGrams,
-      price: item.price || "",
+      price: item.price ?? "", // keep empty string if none
       link: item.link || "",
     });
     setWorn(!!item.worn);
@@ -57,7 +60,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     setQuantity(item.quantity || 1);
   }, [itemId]);
 
-  // Effect B: recalc the input display when item or unit changes
+  // Recalc display weight when unit or item changes
   useEffect(() => {
     if (!item) return;
     const initialGrams = item.weight ?? "";
@@ -75,14 +78,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     const parsed = trimmed === "" ? null : parseInput(trimmed);
     if (trimmed !== "" && parsed == null) return "Enter a valid weight.";
     if (parsed != null && parsed < 0) return "Weight cannot be negative.";
-    if (!isAffiliate && Number(form.price) < 0)
+    if (!isAffiliate && form.price !== "" && Number(form.price) < 0)
       return "Price cannot be negative.";
     if (!isAffiliate && form.link && !/^https?:\/\//.test(form.link))
       return "Link must be a valid URL.";
     return "";
   };
 
-  // 1) Validate & open confirmation
+  // Step 1: validate -> open confirm
   const handleSave = (e) => {
     e.preventDefault();
     const err = validate();
@@ -94,7 +97,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     setConfirmOpen(true);
   };
 
-  // 2) After user clicks “Yes, update all”
+  // Step 2: user confirmed
   const handleConfirm = async () => {
     setConfirmOpen(false);
     setSaving(true);
@@ -116,21 +119,23 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
       };
 
       // Price/Link handling:
-      // - Affiliate-backed: never try to change price/link
-      // - Custom items: include values if present
       if (isAffiliate) {
         delete payload.price;
         delete payload.link;
       } else {
-        const p = Number(form.price);
-        if (!Number.isNaN(p)) payload.price = p;
+        if (form.price === "" || form.price == null) {
+          payload.price = null; // clear price when input is empty
+        } else {
+          const p = Number(form.price);
+          if (!Number.isNaN(p)) payload.price = p; // keep 0 if they typed 0
+        }
         if (form.link && form.link.trim()) payload.link = form.link.trim();
       }
 
       await api.patch(`/global/items/${item._id}`, payload);
       toast.success("Global item updated");
-      onSaved();
-      onClose();
+      onSaved?.();
+      onClose?.();
     } catch (e) {
       console.error("Error saving global item:", e);
       const msg =
@@ -141,9 +146,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
     }
   };
 
-  const handleCancelConfirm = () => {
-    setConfirmOpen(false);
-  };
+  const handleCancelConfirm = () => setConfirmOpen(false);
 
   return (
     <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
@@ -157,10 +160,10 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Edit Global Item
           </h2>
         </div>
-        {/* Optional error message */}
+
         {error && <div className="text-error mb-2">{error}</div>}
 
-        {/* Grid of fields */}
+        {/* Fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {/* Item Type */}
           <div>
@@ -227,7 +230,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             ) : null}
           </div>
 
-          {/* Weight + Price (always side-by-side) */}
+          {/* Weight + Price */}
           <div className="flex space-x-1 sm:space-x-2 col-span-1 sm:col-span-2">
             <div className="flex-1">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
@@ -241,9 +244,10 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
                 className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
               />
             </div>
-            <div className="flex-1">
+
+            <div className="flex-1 relative">
               <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
-                Price ({currencySymbol}){" "}
+                Price ({currencySymbol})
               </label>
               <div className="relative">
                 <CurrencyInput
@@ -270,7 +274,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             </div>
           </div>
 
-          {/* Description (full width) */}
+          {/* Description */}
           <div className="sm:col-span-2">
             <label className="block text-xs sm:text-sm font-medium text-primary mb-0.5">
               Description
@@ -307,8 +311,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           </label>
         </div>
 
+        {/* Actions */}
         <div className="mt-4 flex justify-between items-center">
-          {/* Delete button */}
           <button
             type="button"
             onClick={() => setDeleteConfirmOpen(true)}
@@ -318,7 +322,6 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             Delete Item
           </button>
 
-          {/* Cancel / Save */}
           <div className="flex space-x-2">
             <button
               type="button"
@@ -360,8 +363,8 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             try {
               await api.delete(`/global/items/${item._id}`);
               toast.success("Item deleted");
-              onSaved();
-              onClose();
+              onSaved?.();
+              onClose?.();
             } catch (err) {
               toast.error(err.response?.data?.message || "Delete failed");
             }

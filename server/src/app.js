@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/auth");
 const gearListRoutes = require("./routes/gearLists");
+const publicShareRoutes = require("./routes/publicShare");
 const authMiddleware = require("./middleware/auth");
 const categoriesRoutes = require("./routes/categories");
 const gearItemRoutes = require("./routes/gearItems");
@@ -81,6 +82,7 @@ app.use(
   authMiddleware,
   gearItemRoutes
 );
+app.use("/api/public/share", publicShareRoutes);
 app.use("/api/global/items", authMiddleware, globalItemsRoutes);
 app.use("/api/affiliates", authMiddleware, affiliatesRouter); // auth required
 

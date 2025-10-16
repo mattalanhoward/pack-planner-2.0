@@ -9,9 +9,10 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 // import GearListView from "./pages/GearListView";
-import SharedView from "./pages/SharedView";
+// import SharedView from "./pages/SharedView";
 import Landing from "./pages/Landing";
 import ChecklistView from "./pages/ChecklistView";
+import PublicGearList from "./pages/PublicGearList";
 
 // function PrivateRoute({ children }) {
 //   const { isAuthenticated } = useAuth();
@@ -32,6 +33,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/auth/register" element={<Landing />} />
+      <Route path="/auth/login" element={<Landing />} />
       {/* <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} /> */}
       <Route path="/verify-email" element={<VerifyEmail />} />
@@ -63,7 +66,8 @@ export default function App() {
         }
       />
       {/* Public, read-only shared view */}
-      <Route path="/share/:token" element={<SharedView />} />
+      {/* <Route path="/share/:token" element={<SharedView />} /> */}
+      <Route path="/share/:token" element={<PublicGearList />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

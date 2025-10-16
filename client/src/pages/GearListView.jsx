@@ -25,6 +25,7 @@ import SortableColumn from "../components/SortableColumn";
 import SortableSection from "../components/SortableSection";
 import { GEARLIST_SWATCHES as swatches } from "../config/colors";
 import { defaultBackgrounds } from "../config/defaultBackgrounds";
+import ShareMenu from "../components/ShareMenu";
 
 export default function GearListView({
   listId,
@@ -872,9 +873,12 @@ export default function GearListView({
               },
               { key: "copy", label: "Copy gear list", onClick: handleCopyList },
               {
-                key: "share",
-                label: "Share gear list",
-                onClick: handleShareList,
+                key: "sep-share",
+                render: () => <div className="border-t border-gray-200 my-2" />,
+              },
+              {
+                key: "share-menu",
+                render: () => <ShareMenu listId={listId} />,
               },
               {
                 key: "delete",

@@ -128,6 +128,24 @@ export default function Landing() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // NEW: auto-open modal when routed to /auth/register or /auth/login,
+  // or when arriving with a ?next= param (share → auth flow).
+  useEffect(() => {
+    const path = location.pathname;
+    const params = new URLSearchParams(location.search);
+    const hasNext = !!params.get("next");
+
+    if (path === "/auth/register" || (hasNext && !authOpen)) {
+      setAuthMode("register");
+      setAuthOpen(true);
+      return;
+    }
+    if (path === "/auth/login") {
+      setAuthMode("login");
+      setAuthOpen(true);
+    }
+  }, [location.pathname, location.search]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const auth = location.state?.auth; // "login" | "register"
     const reason = location.state?.reason; // "protected" | "expired" | undefined
@@ -513,7 +531,11 @@ export default function Landing() {
         onClose={closeAuth}
         onAuthed={() => {
           closeAuth();
-          navigate("/dashboard", { replace: true });
+          // honor ?next=... if present
+          const params = new URLSearchParams(location.search);
+          const rawNext = params.get("next");
+          const next = rawNext && rawNext.startsWith("/") ? rawNext : null;
+          navigate(next || "/dashboard", { replace: true });
         }}
       />
     </div>

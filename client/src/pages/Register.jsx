@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 import { toast } from "react-hot-toast";
 
@@ -9,14 +9,25 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getNext = () => {
+    const params = new URLSearchParams(location.search);
+    const n = params.get("next");
+    return n && n.startsWith("/") ? n : null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/auth/register", { email, trailname, password });
+      const params = new URLSearchParams(location.search);
+      const next = params.get("next"); // e.g. "/share/<token>?copy=1"
+      await api.post("/auth/register", { email, trailname, password, next });
       toast.success("Registered! Check your email to verify.");
-      navigate("/login");
+      navigate(next ? `/login?next=${encodeURIComponent(next)}` : "/login", {
+        replace: true,
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {

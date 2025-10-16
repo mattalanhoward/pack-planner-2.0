@@ -1,6 +1,6 @@
 //src/pages/Login.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
 export default function Login() {
@@ -8,13 +8,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState("");
+
+  const sanitizeNext = (n) => {
+    if (!n || typeof n !== "string") return null;
+    // prevent open redirects; only allow same-origin paths
+    return n.startsWith("/") ? n : null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate("/dashboard");
+      const params = new URLSearchParams(location.search);
+      const next = sanitizeNext(params.get("next"));
+      navigate(next || "/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }

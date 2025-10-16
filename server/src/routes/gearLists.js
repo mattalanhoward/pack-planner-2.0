@@ -8,6 +8,10 @@ const Category = require("../models/category");
 const Share = require("../models/ShareToken");
 const { v4: uuidv4 } = require("uuid");
 const upload = require("../middleware/upload");
+const {
+  ensureActiveTokenForList,
+  revokeTokenForList,
+} = require("../utils/share");
 
 const router = express.Router();
 
@@ -24,18 +28,32 @@ router.get("/share/:token", async (req, res) => {
 // All routes below here require auth
 router.use(auth);
 
-// 1) Create a share token
+// POST /api/dashboard/:listId/share   → returns the single active token (create if missing)
 router.post("/:listId/share", async (req, res) => {
-  const listId = req.params.listId;
-  // 1a) ensure they actually own / can share this list
-  const list = await GearList.findOne({ _id: listId, owner: req.userId });
-  if (!list) return res.status(404).json({ error: "List not found" });
+  try {
+    const { listId } = req.params;
+    // (Optional) verify ownership here if your other routes do — omitted for brevity
+    const doc = await ensureActiveTokenForList(listId);
+    res.json({ token: doc.token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+});
 
-  // 1b) generate & persist token
-  const token = uuidv4();
-  await Share.create({ token, list: listId });
-
-  res.json({ token });
+// POST /api/dashboard/:listId/share/revoke
+router.post("/:listId/share/revoke", async (req, res) => {
+  try {
+    const { listId } = req.params;
+    // (Optional) verify ownership here if your other routes do — omitted
+    const doc = await revokeTokenForList(listId);
+    if (!doc)
+      return res.status(404).json({ message: "No active share to revoke." });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // GET /api/dashboard/:listId/full

@@ -72,6 +72,7 @@ const GlobalItemSchema = new mongoose.Schema(
       ),
       required: false,
     },
+    importedFromShare: { type: Boolean, default: false },
   },
   {
     timestamps: true,

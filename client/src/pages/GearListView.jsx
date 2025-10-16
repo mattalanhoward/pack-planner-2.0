@@ -25,7 +25,7 @@ import SortableColumn from "../components/SortableColumn";
 import SortableSection from "../components/SortableSection";
 import { GEARLIST_SWATCHES as swatches } from "../config/colors";
 import { defaultBackgrounds } from "../config/defaultBackgrounds";
-import ShareMenu from "../components/ShareMenu";
+import ShareModal from "../components/ShareModal";
 
 export default function GearListView({
   listId,
@@ -62,6 +62,9 @@ export default function GearListView({
   // ⚡️ Optimistic UI for background color
   const [bgColor, setBgColor] = useState(list.backgroundColor);
   const [bgImage, setBgImage] = useState(list.backgroundImageUrl);
+  const [shareOpen, setShareOpen] = useState(false);
+  const closeShare = () => setShareOpen(false);
+  const [busy, setBusy] = React.useState(false);
 
   useEffect(() => {
     setBgImage(list.backgroundImageUrl);
@@ -121,6 +124,11 @@ export default function GearListView({
     worn: wornItems,
     consumable: consumableItems,
     total: totalItems,
+  };
+
+  const handleOpenShareModal = () => {
+    if (busy) return;
+    if (typeof onOpenShare === "function") onOpenShare();
   };
 
   function computeStats(itemsMap) {
@@ -863,7 +871,7 @@ export default function GearListView({
               },
               {
                 key: "details",
-                label: "View / Edit details",
+                label: "View / Edit Details",
                 onClick: () => setShowDetailsModal(true),
               },
               {
@@ -871,18 +879,16 @@ export default function GearListView({
                 label: "View as Checklist",
                 onClick: handleCheckList,
               },
-              { key: "copy", label: "Copy gear list", onClick: handleCopyList },
+              { key: "copy", label: "Copy Gear List", onClick: handleCopyList },
               {
-                key: "sep-share",
-                render: () => <div className="border-t border-gray-200 my-2" />,
-              },
-              {
-                key: "share-menu",
-                render: () => <ShareMenu listId={listId} />,
+                key: "sharelist",
+                label: "Share Gear List",
+                onClick: () => setShareOpen(true),
+                disabled: busy,
               },
               {
                 key: "delete",
-                label: "Delete gear list",
+                label: "Delete Gear List",
                 onClick: openDeleteListConfirm,
                 className: "text-error",
               },
@@ -890,6 +896,8 @@ export default function GearListView({
           />
         </div>
       </div>
+
+      <ShareModal listId={listId} isOpen={shareOpen} onClose={closeShare} />
 
       {/* ───── Wrap everything in one DndContextWrapper ───── */}
       <DndContextWrapper

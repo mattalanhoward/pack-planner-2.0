@@ -8,6 +8,7 @@ export default function ShareModal({ listId, isOpen, onClose }) {
   const [busy, setBusy] = React.useState(false);
   const [token, setToken] = React.useState("");
   const inputRef = React.useRef(null);
+  const embedRef = React.useRef(null);
 
   const shareUrl = token ? `${window.location.origin}/share/${token}` : "";
 
@@ -68,6 +69,60 @@ export default function ShareModal({ listId, isOpen, onClose }) {
   async function onCopyUrl() {
     if (!shareUrl) return;
     await copyToClipboard(shareUrl);
+  }
+
+  const embedCode = token
+    ? `<iframe src="${window.location.origin}/share/${token}" style="width:100%;height:600px;border:0;" loading="lazy"></iframe>`
+    : "";
+
+  async function onCopyEmbed() {
+    if (!token) return;
+    // try fast path
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(embedCode);
+        toast.success("Embed copied!");
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    // fallback select+copy on the textarea
+    try {
+      if (embedRef.current) {
+        embedRef.current.focus();
+        embedRef.current.select();
+        document.execCommand("copy");
+        toast.success("Embed copied!");
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+    toast.error("Copy not supported on this device.");
+  }
+
+  async function onDownloadCsv() {
+    if (!token) return;
+    try {
+      setBusy(true);
+      // Get a direct download URL to the CSV endpoint (no auth required)
+      const csvUrl = `${
+        import.meta.env.VITE_API_URL?.replace(/\/+$/, "") || ""
+      }/api/public/share/${token}/csv`;
+      // Kick off a browser download via a temporary <a>
+      const a = document.createElement("a");
+      a.href = csvUrl;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not download CSV");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onRevoke() {
@@ -161,35 +216,35 @@ export default function ShareModal({ listId, isOpen, onClose }) {
           {/* (Future) Embed snippet */}
           <div>
             <label className="block text-sm text-secondary mb-1">
-              Embeddable snippet (coming soon)
+              Embeddable snippet
             </label>
             <div className="flex gap-2">
               <textarea
+                ref={embedRef}
                 className="flex-1 textarea textarea-bordered"
                 rows={2}
                 readOnly
-                value={
-                  token
-                    ? `<iframe src="${window.location.origin}/share/${token}" style="width:100%;height:600px;border:0;" loading="lazy"></iframe>`
-                    : ""
-                }
-                placeholder="Not available yet"
+                value={embedCode}
+                placeholder={busy ? "Generating…" : "No active link"}
               />
               <button
-                className="btn btn-ghost flex items-center gap-2"
-                disabled
+                className="btn btn-secondary flex items-center gap-2"
+                onClick={onCopyEmbed}
+                disabled={busy || !token}
               >
                 <FaCode /> Copy
               </button>
             </div>
           </div>
 
-          {/* (Future) CSV */}
+          {/* CSV Export*/}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-secondary">
-              Export CSV (coming soon)
-            </div>
-            <button className="btn btn-ghost flex items-center gap-2" disabled>
+            <div className="text-sm text-secondary">Export CSV</div>
+            <button
+              className="btn btn-outline flex items-center gap-2"
+              onClick={onDownloadCsv}
+              disabled={busy || !token}
+            >
               <FaFileCsv /> Download
             </button>
           </div>

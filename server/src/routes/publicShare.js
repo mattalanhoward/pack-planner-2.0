@@ -89,6 +89,113 @@ router.get("/:token/full", async (req, res) => {
   });
 });
 
+// GET /api/public/share/:token/csv  → returns CSV of the list
+router.get("/:token/csv", async (req, res) => {
+  try {
+    const tokenDoc = await resolveActiveToken(req.params.token);
+    if (!tokenDoc) {
+      return res
+        .status(404)
+        .type("text/plain")
+        .send("Invalid or revoked token");
+    }
+    const listId = tokenDoc.list;
+    if (!mongoose.Types.ObjectId.isValid(listId)) {
+      return res.status(400).type("text/plain").send("Invalid list");
+    }
+
+    const [list, categories, items] = await Promise.all([
+      GearList.findById(listId).select({ _id: 1, title: 1 }).lean(),
+      Category.find({ gearList: listId })
+        .sort({ position: 1 })
+        .select({ _id: 1, title: 1, position: 1 })
+        .lean(),
+      Item.find({ gearList: listId })
+        .sort({ position: 1 })
+        .select({
+          _id: 1,
+          category: 1,
+          itemType: 1,
+          brand: 1,
+          name: 1,
+          weight: 1,
+          consumable: 1,
+          worn: 1,
+          quantity: 1,
+          price: 1,
+          affiliate: 1,
+          link: 1,
+          position: 1,
+        })
+        .lean(),
+    ]);
+    if (!list) {
+      return res.status(404).type("text/plain").send("List not found");
+    }
+
+    const catById = new Map(categories.map((c) => [c._id.toString(), c.title]));
+
+    const rows = items.map((i) => ({
+      Category: i.category ? catById.get(i.category.toString()) || "" : "",
+      "Gear List Item": i.itemType || "",
+      Brand: i.brand || "",
+      Name: i.name || "",
+      "Weight (g)": typeof i.weight === "number" ? i.weight : "",
+      Consumable: i.consumable ? "Yes" : "",
+      Worn: i.worn ? "Yes" : "",
+      Qty: i.quantity ?? 1,
+      "Price (USD)": typeof i.price === "number" ? i.price : "",
+      Link: (i.affiliate && i.affiliate.url) || i.link || "",
+    }));
+
+    const headers = Object.keys(
+      rows[0] || {
+        Category: "",
+        "Gear List Item": "",
+        Brand: "",
+        Name: "",
+        "Weight (g)": "",
+        Consumable: "",
+        Worn: "",
+        Qty: "",
+        "Price (USD)": "",
+        Link: "",
+      }
+    );
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return "";
+      const s = String(val);
+      // quote if contains comma, quote or newline
+      if (/[",\n]/.test(s)) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
+    const lines = [
+      headers.join(","),
+      ...rows.map((r) => headers.map((h) => escapeCsv(r[h])).join(",")),
+    ];
+    const csv = lines.join("\n");
+
+    const safeTitle =
+      (list.title || "gear-list").trim().replace(/[^\w.-]+/g, "_") +
+      "_share.csv";
+
+    res
+      .status(200)
+      .set({
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeTitle}"`,
+      })
+      .send(csv);
+  } catch (err) {
+    console.error("GET /api/public/share/:token/csv failed:", err);
+    res.status(500).type("text/plain").send("Internal error");
+  }
+});
+
 // POST /api/public/share/:token/copy  (auth required)
 router.post("/:token/copy", auth, async (req, res) => {
   try {

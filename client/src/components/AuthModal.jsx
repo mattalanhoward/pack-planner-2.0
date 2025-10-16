@@ -1,5 +1,6 @@
 // src/components/AuthModal.jsx
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { FaTimes } from "react-icons/fa";
 import useAuth from "../hooks/useAuth";
 import api from "../services/api";
@@ -19,6 +20,10 @@ export default function AuthModal({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [trailname, setTrailname] = useState("");
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const rawNext = params.get("next");
+  const next = rawNext && rawNext.startsWith("/") ? rawNext : null;
 
   const { login } = useAuth();
   const firstFieldRef = useRef(null);
@@ -78,7 +83,7 @@ export default function AuthModal({
     setErr("");
     setLoading(true);
     try {
-      await api.post("/auth/register", { email, trailname, password });
+      await api.post("/auth/register", { email, trailname, password, next });
       toast.success("Registered! Check your email to verify.");
       switchTo("login");
     } catch (e) {

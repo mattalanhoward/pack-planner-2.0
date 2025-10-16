@@ -25,7 +25,10 @@ export default function VerifyEmail() {
     verifyEmail(token)
       .then((data) => {
         toast.success(data.message); // “Email verified—thank you!”
-        navigate("/dashboard"); // or “/dashboard”
+        const params2 = new URLSearchParams(location.search);
+        const rawNext = params2.get("next");
+        const next = rawNext && rawNext.startsWith("/") ? rawNext : null;
+        navigate(next || "/dashboard", { replace: true });
       })
       .catch((err) => {
         // show the error *once*

@@ -10,7 +10,7 @@ const BASE_HOST = (import.meta.env.VITE_API_URL || "")
   .trim()
   .replace(/\/+$/, ""); // strip trailing slash
 const BASE_URL = `${BASE_HOST}/api`;
-if (!BASE_URL) {
+if (!BASE_HOST) {
   // eslint-disable-next-line no-console
   console.warn("VITE_API_URL is not set; requests will likely fail.");
 }
@@ -77,46 +77,60 @@ async function refreshAccessTokenOnce() {
   return refreshPromise;
 }
 
+// Exported helper so specific pages can ask for a silent refresh
+export async function refreshAccessToken() {
+  return refreshAccessTokenOnce();
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const original = error?.config;
+    const original = error.config || {};
     const status = error?.response?.status;
 
-    // If no response or not a 401, just bubble it up
-    if (!status || status !== 401) {
-      return Promise.reject(error);
-    }
-
-    // Don't try to refresh if the original request was the refresh endpoint
-    const url = (original?.url || "").toString();
-    if (url.endsWith("/auth/refresh")) {
-      // refresh failed → treat as logged-out
-      setAccessToken("");
-      return Promise.reject(error);
-    }
-
-    // If we've already retried this request once, don't loop forever
-    if (original && original._retry) {
-      setAccessToken("");
-      return Promise.reject(error);
-    }
-
-    try {
-      const newToken = await refreshAccessTokenOnce();
-      // retry original request with the new token
-      if (original) {
-        original._retry = true;
-        original.headers = original.headers || {};
-        original.headers.Authorization = `Bearer ${newToken}`;
-        return api(original);
+    if (status === 401) {
+      // 1) Respect per-request opt-out so pages can handle 401 themselves
+      if (original.__noGlobal401) {
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
-    } catch (e) {
-      // Refresh failed → clear token; caller (AuthContext/route guard) can redirect to login
-      setAccessToken("");
-      return Promise.reject(e);
+
+      // If no response or not a 401, just bubble it up
+      // if (!status || status !== 401) {
+      //   return Promise.reject(error);
+      // }
+
+      // Don't try to refresh if the original request was the refresh endpoint
+      const url = (original?.url || "").toString();
+      if (url.endsWith("/auth/refresh")) {
+        // refresh failed → treat as logged-out
+        setAccessToken("");
+        return Promise.reject(error);
+      }
+
+      // If we've already retried this request once, don't loop forever
+      if (original && original._retry) {
+        setAccessToken("");
+        return Promise.reject(error);
+      }
+
+      try {
+        const newToken = await refreshAccessTokenOnce();
+        // retry original request with the new token
+        if (original) {
+          original._retry = true;
+          original.headers = original.headers || {};
+          original.headers.Authorization = `Bearer ${newToken}`;
+          return api(original);
+        }
+        return Promise.reject(error);
+      } catch (e) {
+        // Refresh failed → clear token; caller (AuthContext/route guard) can redirect to login
+        setAccessToken("");
+        return Promise.reject(e);
+      }
     }
+    // non-401 errors: bubble up
+    return Promise.reject(error);
   }
 );
 

@@ -76,8 +76,20 @@ function clientUrl(pathAndQuery) {
   return `${CLIENT_BASE_URL}${path}`;
 }
 
-async function sendVerificationEmail(email, token) {
-  const url = clientUrl(`/verify-email?token=${token}`);
+// Only allow same-origin paths for `next` to avoid open-redirects.
+function sanitizeNextParam(n) {
+  if (!n || typeof n !== "string") return null;
+  if (!n.startsWith("/")) return null; // must be a relative path
+  if (n.length > 1024) return null; // basic length guard
+  return n;
+}
+
+async function sendVerificationEmail(email, token, nextPath) {
+  const safeNext = sanitizeNextParam(nextPath);
+  const query = safeNext
+    ? `?token=${encodeURIComponent(token)}&next=${encodeURIComponent(safeNext)}`
+    : `?token=${encodeURIComponent(token)}`;
+  const url = clientUrl(`/verify-email${query}`);
   await transporter.sendMail({
     from: `"PackPlanner" <${process.env.SMTP_USER}>`,
     to: email,
@@ -183,7 +195,7 @@ router.post("/reset-password", async (req, res) => {
 // Register
 router.post("/register", async (req, res) => {
   try {
-    const { email, trailname, password } = req.body;
+    const { email, trailname, password, next } = req.body;
     if (!email || !trailname || !password) {
       return res
         .status(400)
@@ -201,7 +213,9 @@ router.post("/register", async (req, res) => {
     user.verifyEmailExpires = Date.now() + 24 * 60 * 60 * 1000;
     await user.save();
 
-    await sendVerificationEmail(email, verifyToken);
+    // Include a safe `next` so the client can bounce straight back into the flow after verification.
+    const safeNext = sanitizeNextParam(next);
+    await sendVerificationEmail(email, verifyToken, safeNext);
     res.status(201).json({ message: "Registered! Check your email." });
   } catch (err) {
     console.error(err);

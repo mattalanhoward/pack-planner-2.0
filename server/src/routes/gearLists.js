@@ -33,7 +33,7 @@ router.post("/:listId/share", async (req, res) => {
   try {
     const { listId } = req.params;
     // (Optional) verify ownership here if your other routes do — omitted for brevity
-    const doc = await ensureActiveTokenForList(listId);
+    const doc = await ensureActiveTokenForList(listId, req.userId);
     res.json({ token: doc.token });
   } catch (err) {
     console.error(err);
@@ -46,7 +46,7 @@ router.post("/:listId/share/revoke", async (req, res) => {
   try {
     const { listId } = req.params;
     // (Optional) verify ownership here if your other routes do — omitted
-    const doc = await revokeTokenForList(listId);
+    const doc = await revokeTokenForList(listId, req.userId);
     if (!doc)
       return res.status(404).json({ message: "No active share to revoke." });
     res.json({ ok: true });

@@ -429,13 +429,13 @@ export default function Landing() {
               title: "Alta Via 1",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752432593/gear-list-backgrounds/docilcoaiwytxccqcc4c.jpg",
               alt: "Alta Via 1 gear list in the Dolomites, Italy",
-              link: "/gearlist/alta-via-1",
+              link: "/share/nRzKO28MKhPseJAs/",
             },
             {
               title: "Camino de Santiago",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752415040/gear-list-backgrounds/foqdt3vgogiubrizfe0s.jpg",
               alt: "Camino de Santiago gear list for walking across Spain",
-              link: "/gearlist/camino-de-santiago",
+              link: "/share/ZomUglZRjmMLnpPg/",
             },
             {
               title: "Tour du Mont Blanc",

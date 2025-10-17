@@ -1,16 +1,23 @@
-// models/ShareToken.js
+// server/src/models/ShareToken.js
 const mongoose = require("mongoose");
-const ShareToken = new mongoose.Schema({
-  token: { type: String, required: true, unique: true },
-  list: { type: mongoose.Types.ObjectId, ref: "GearList", required: true },
-  createdAt: { type: Date, default: Date.now },
-  revokedAt: { type: Date, default: null },
-});
 
-// One active token per list (enforced at app layer; index helps querying)
-ShareToken.index(
+const ShareTokenSchema = new mongoose.Schema(
+  {
+    token: { type: String, required: true, unique: true, index: true },
+    list: { type: mongoose.Types.ObjectId, ref: "GearList", required: true },
+    owner: { type: mongoose.Types.ObjectId, ref: "User", required: true },
+    // Use revokedAt to represent inactive tokens (null = active)
+    revokedAt: { type: Date, default: null, index: true },
+  },
+  {
+    timestamps: { createdAt: true, updatedAt: true },
+  }
+);
+
+// Enforce: at most one *active* token per list (active = revokedAt == null)
+ShareTokenSchema.index(
   { list: 1 },
   { unique: true, partialFilterExpression: { revokedAt: null } }
 );
 
-module.exports = mongoose.model("ShareToken", ShareToken);
+module.exports = mongoose.model("ShareToken", ShareTokenSchema);

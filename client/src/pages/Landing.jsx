@@ -5,6 +5,18 @@ import mobileColumnScreenshot from "../assets/images/treklist-column-mobile.png"
 import desktopColumnScreenshot from "../assets/images/treklist-column-desktop-1.png";
 import AuthModal from "../components/AuthModal"; // new
 
+// helper to build share path safely
+const sharePath = (token) => (token ? `/share/${token}/` : null);
+// Featured list tokens from env (rotate without code changes)
+const FEATURED_TOKENS = {
+  av1: import.meta.env.VITE_SHARE_AV1_TOKEN,
+  camino: import.meta.env.VITE_SHARE_CAMINO_TOKEN,
+  tmb: import.meta.env.VITE_SHARE_TMB_TOKEN,
+  whw: import.meta.env.VITE_SHARE_WHW_TOKEN,
+  kungsleden: import.meta.env.VITE_SHARE_KUNGSLEDEN_TOKEN,
+  gr20: import.meta.env.VITE_SHARE_GR20_TOKEN,
+};
+
 // Cloudinary responsive hero image URLs
 const heroOspreySources = {
   768: "https://res.cloudinary.com/packplanner/image/upload/c_fill,g_auto,f_auto,q_auto:eco,dpr_auto,w_768/v1754767083/gear-list-hero-images/hero-hiker-blue-osprey_nm7lte.jpg",
@@ -429,58 +441,82 @@ export default function Landing() {
               title: "Alta Via 1",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752432593/gear-list-backgrounds/docilcoaiwytxccqcc4c.jpg",
               alt: "Alta Via 1 gear list in the Dolomites, Italy",
-              link: "/share/nRzKO28MKhPseJAs/",
+              link: sharePath(FEATURED_TOKENS.av1) ?? "/gearlist/alta-via-1",
             },
             {
               title: "Camino de Santiago",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752415040/gear-list-backgrounds/foqdt3vgogiubrizfe0s.jpg",
               alt: "Camino de Santiago gear list for walking across Spain",
-              link: "/share/ZomUglZRjmMLnpPg/",
+              link:
+                sharePath(FEATURED_TOKENS.camino) ??
+                "/gearlist/camino-de-santiago",
             },
             {
               title: "Tour du Mont Blanc",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1752609809/gear-list-backgrounds/u726utxdhmmmk5p6npuz.jpg",
-              alt: "Tour du Mont Blanc gear list for trekking around Mont Blanc in France, Italy, and Switzerland",
-              link: "/gearlist/tour-du-mont-blanc",
+              alt: "Tour du Mont Blanc gear list",
+              link:
+                sharePath(FEATURED_TOKENS.tmb) ??
+                "/gearlist/tour-du-mont-blanc",
             },
             {
               title: "West Highland Way",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772966/gear-list-landing/gear-list-west-highland-way_d8d7bq.jpg",
-              alt: "West Highland Way gear list for hiking across the Scottish Highlands",
-              link: "/gearlist/west-highland-way",
+              alt: "West Highland Way gear list",
+              link:
+                sharePath(FEATURED_TOKENS.whw) ?? "/gearlist/west-highland-way",
             },
             {
               title: "Kungsleden",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772965/gear-list-landing/gear-list-kungsleden_yultsg.jpg",
-              alt: "Kungsleden gear list for trekking through Swedish Lapland",
-              link: "/gearlist/kungsleden",
+              alt: "Kungsleden gear list",
+              link:
+                sharePath(FEATURED_TOKENS.kungsleden) ?? "/gearlist/kungsleden",
             },
             {
               title: "GR20 Corsica",
               img: "https://res.cloudinary.com/packplanner/image/upload/f_auto,q_auto,w_800/v1754772963/gear-list-landing/gear-list-gr20_azn4uu.jpg",
-              alt: "GR20 gear list for the rugged mountain traverse in Corsica, France",
-              link: "/gearlist/gr20-corsica",
+              alt: "GR20 gear list",
+              link: sharePath(FEATURED_TOKENS.gr20) ?? "/gearlist/gr20-corsica",
             },
-          ].map(({ title, img, alt, link }) => (
-            <a
-              key={title}
-              href={link}
-              className="relative group overflow-hidden rounded-xl shadow-md aspect-[4/3] transition"
-            >
-              <img
-                src={img}
-                alt={alt}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/35 group-hover:bg-black/45 transition" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-                <h3 className="text-xl font-bold text-white">{title}</h3>
-                <span className="inline-block mt-2 text-sm font-medium text-white bg-blue-600 px-3 py-1 rounded-full">
-                  View Gear List
-                </span>
-              </div>
-            </a>
-          ))}
+          ].map(({ title, img, alt, link }) => {
+            const isInternal = typeof link === "string" && link.startsWith("/");
+            const CardInner = (
+              <>
+                <img
+                  src={img}
+                  alt={alt}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/45 transition" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                  <h3 className="text-xl font-bold text-white">{title}</h3>
+                  <span className="inline-block mt-2 text-sm font-medium text-white bg-blue-600 px-3 py-1 rounded-full">
+                    View Gear List
+                  </span>
+                </div>
+              </>
+            );
+            return isInternal ? (
+              <Link
+                key={title}
+                to={link}
+                aria-label={`Open ${title} gear list`}
+                className="relative group overflow-hidden rounded-xl shadow-md aspect-[4/3] transition"
+              >
+                {CardInner}
+              </Link>
+            ) : (
+              <a
+                key={title}
+                href={link}
+                aria-label={`Open ${title} gear list`}
+                className="relative group overflow-hidden rounded-xl shadow-md aspect-[4/3] transition"
+              >
+                {CardInner}
+              </a>
+            );
+          })}
         </div>
 
         {/* Affiliate disclosure */}

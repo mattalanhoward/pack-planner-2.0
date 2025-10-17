@@ -41,48 +41,121 @@ export default function AffiliateProductPicker({
   const limit = pageSize;
   const sentinelRef = useRef(null);
   const listRef = useRef(null); // scroll container for IO root
+  const reqSeq = useRef(0); // guards against out-of-order responses
 
-  // Load facets (independent of q)
-  const loadFacets = useCallback(async () => {
-    try {
-      const res = await getAwinFacets({
-        region,
-        ...(merchantId && { merchantId }),
-        limit: 50,
+  // Load BRAND facet options constrained by current itemType (symmetry)
+  const loadBrandFacets = useCallback(
+    async (currentItemType = "") => {
+      try {
+        const res = await getAwinFacets({
+          region,
+          ...(merchantId && { merchantId }),
+          ...(currentItemType && { itemType: currentItemType }),
+          limit: 50,
+        });
+        const next = (res.brands || []).filter((b) => b?.value && b?.count > 0);
+        setBrandOpts(next);
+      } catch (e) {
+        console.warn("brand facets error", e?.message || e);
+      }
+    },
+    [region, merchantId]
+  );
+
+  // Load ITEM TYPE facet options constrained by current brand (symmetry)
+  const loadTypeFacets = useCallback(
+    async (currentBrand = "") => {
+      try {
+        const res = await getAwinFacets({
+          region,
+          ...(merchantId && { merchantId }),
+          ...(currentBrand && { brand: currentBrand }),
+          limit: 50,
+        });
+        const next = (res.itemTypes || []).filter(
+          (t) => t?.value && t?.count > 0
+        );
+        setTypeOpts(next);
+      } catch (e) {
+        console.warn("type facets error", e?.message || e);
+      }
+    },
+    [region, merchantId]
+  );
+
+  // normalize strings for tolerant comparisons (pads vs pad, case, symbols)
+  const norm = useCallback((s = "") => {
+    return String(s)
+      .toLowerCase()
+      .replace(/\s*&\s*/g, " and ")
+      .replace(/[^a-z0-9]+/gi, " ")
+      .trim()
+      .replace(/s\b/g, ""); // basic plural->singular (pads->pad)
+  }, []);
+
+  // Local safety filter to mirror selected facets (covers API mismatch)
+  const applyLocalFilter = useCallback(
+    (list) => {
+      const wantBrand = norm(brand);
+      const wantType = norm(itemType);
+      return list.filter((it) => {
+        const brandOk = !wantBrand || norm(it.brand) === wantBrand; // itemType can live either on it.itemType or as the leaf of categoryPath
+        const leaf = it.categoryPath?.slice?.(-1)?.[0];
+        const typeVal = it.itemType || leaf || "";
+        const typeOk = !wantType || norm(typeVal) === wantType;
+        return brandOk && typeOk;
       });
-      setBrandOpts(res.brands || []);
-      setTypeOpts(res.itemTypes || []);
-    } catch (e) {
-      // Non-fatal for UI
-      console.warn("facets error", e?.message || e);
-    }
-  }, [region, merchantId]);
+    },
+    [brand, itemType, norm]
+  );
 
+  // Initial facet loads (no constraints)
   useEffect(() => {
-    loadFacets();
-  }, [loadFacets]);
+    loadBrandFacets("");
+    loadTypeFacets("");
+  }, [loadBrandFacets, loadTypeFacets]);
+
+  // When itemType changes, narrow BRAND options
+  useEffect(() => {
+    loadBrandFacets(itemType);
+  }, [itemType, loadBrandFacets]);
+
+  // When brand changes, narrow ITEM TYPE options
+  useEffect(() => {
+    loadTypeFacets(brand);
+  }, [brand, loadTypeFacets]);
 
   // Search with current q + filters (fresh page)
   const runSearch = useCallback(
     async (pageNum = 1) => {
       setBusy(true);
       setError("");
+      const seq = ++reqSeq.current;
       try {
         const params = {
           q: debouncedQ || "",
           region,
           ...(merchantId && { merchantId }),
+          // Send canonical keys...
           ...(brand && { brand }),
           ...(itemType && { itemType }),
+          // ...and common aliases some backends expect:
+          ...(brand && { brandExact: brand }),
+          ...(itemType && { categoryLeaf: itemType }),
           page: pageNum,
           limit,
           sort: debouncedQ ? "relevance" : "-updated",
         };
         const res = await searchAwinProducts(params);
+        // If a newer request finished, ignore this response
+        if (seq !== reqSeq.current) return;
+
+        const pageItems = Array.isArray(res.items) ? res.items : [];
+        const filtered = applyLocalFilter(pageItems);
         if (pageNum === 1) {
-          setItems(res.items);
+          setItems(filtered);
         } else {
-          setItems((prev) => [...prev, ...res.items]);
+          setItems((prev) => [...prev, ...filtered]);
         }
         setTotal(res.total);
         setPage(res.page);
@@ -93,11 +166,16 @@ export default function AffiliateProductPicker({
         setBusy(false);
       }
     },
-    [debouncedQ, region, merchantId, brand, itemType, limit]
+    [debouncedQ, region, merchantId, brand, itemType, limit, applyLocalFilter]
   );
 
   // Reset to page 1 when q or filters change
   useEffect(() => {
+    // Clear list & scroll to top to avoid mixing old/new pages
+    setItems([]);
+    setPage(1);
+    setHasMore(false);
+    listRef.current?.scrollTo?.({ top: 0, behavior: "auto" });
     runSearch(1);
   }, [runSearch]);
 
@@ -156,6 +234,11 @@ export default function AffiliateProductPicker({
                 </option>
               ) : null
             )}
+            {brandOpts.length === 0 && (
+              <option value="" disabled>
+                No brands for this selection
+              </option>
+            )}
           </select>
         </div>
         <div>
@@ -175,6 +258,11 @@ export default function AffiliateProductPicker({
                 </option>
               ) : null
             )}
+            {typeOpts.length === 0 && (
+              <option value="" disabled>
+                No item types for this selection
+              </option>
+            )}
           </select>
         </div>
       </div>
@@ -184,43 +272,48 @@ export default function AffiliateProductPicker({
       {/* Results (fixed height to avoid modal jumping) */}
       <div
         ref={listRef}
-        className="grid grid-cols-1 gap-2 h-56 sm:h-64 overflow-auto border border-primary/30 rounded-md p-2"
+        className="flex flex-col gap-1.5 h-64 sm:h-72 overflow-auto border border-primary/30 rounded-md p-1.5"
       >
+        {!busy && items.length === 0 && (
+          <div className="text-sm text-primary/70 p-2">
+            No results for that selection.
+          </div>
+        )}
         {items.map((p) => (
           <div
             key={p._id || p.externalProductId}
-            className="flex gap-3 items-center border border-primary/20 rounded-md p-2"
+            className="flex gap-2 items-center border border-primary/20 rounded p-1.5"
           >
             {p.imageUrl ? (
               <img
                 src={p.imageUrl}
                 alt={p.name}
-                className="w-14 h-14 object-cover rounded"
+                className="w-7 h-7 object-cover rounded"
                 onError={(e) => {
                   e.currentTarget.style.visibility = "hidden";
                 }}
               />
             ) : (
-              <div className="w-14 h-14 rounded bg-primary/10" />
+              <div className="w-8 h-8 rounded bg-primary/10" />
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-primary line-clamp-2">
+              <div className="text-sm font-sm text-primary line-clamp-1">
                 {p.name}
               </div>
-              <div className="text-xs text-primary/80 truncate">
+              {/* <div className="text-xs text-primary/80 truncate">
                 {p.brand || p.merchantName} •{" "}
                 {p.itemType || (p.categoryPath?.slice?.(-1)[0] ?? "")}
                 {typeof p.price === "number"
                   ? ` • ${p.price} ${p.currency || ""}`
                   : ""}
-              </div>
-              <div className="text-xs opacity-70">
+              </div> */}
+              {/* <div className="text-xs opacity-70">
                 {p.merchantName || p.merchantId} · {p.region}
-              </div>
+              </div> */}
             </div>
             <button
               type="button"
-              className="p-2 rounded bg-secondary text-white hover:bg-secondary-700"
+              className="p-1 rounded bg-secondary text-white hover:bg-secondary-700"
               aria-label="Use this product"
               title="Use this product"
               onClick={() => onPick(p)}

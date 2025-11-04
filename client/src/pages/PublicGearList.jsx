@@ -6,9 +6,12 @@ import {
   FaUtensils,
   FaTshirt,
   FaShoppingCart,
-  FaDollarSign,
+  FaEdit,
 } from "react-icons/fa";
+import { BsBackpack4 } from "react-icons/bs";
+
 import api, { refreshAccessToken } from "../services/api";
+
 // tiny class combiner to avoid pulling in classnames
 const cx = (...parts) => parts.filter(Boolean).join(" ");
 
@@ -18,16 +21,55 @@ function gToOz(g) {
   return g / 28.349523125;
 }
 
-function formatCurrencyUSD(value) {
-  if (typeof value !== "number") return "";
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
-  } catch {
-    return `$${value.toFixed(2)}`;
+// display helpers for mobile cards
+function fmtWeight(g, unit) {
+  if (g == null || Number.isNaN(g)) return "";
+  if (unit === "oz") return `${(gToOz(Number(g)) ?? 0).toFixed(2)} oz`;
+  return `${Math.round(Number(g))} g`;
+}
+
+// header stat formatting: grams -> kg when large; ounces -> lb when large
+function fmtHeaderStat(valueG, unit) {
+  if (!Number.isFinite(valueG)) return "—";
+  if (unit === "g") {
+    if (valueG >= 1000) return `${(valueG / 1000).toFixed(1)} kg`;
+    return `${Math.round(valueG)} g`;
   }
+  const oz = gToOz(valueG) ?? 0;
+  if (oz >= 16) return `${(oz / 16).toFixed(1)} lb`;
+  return `${oz.toFixed(1)} oz`;
+}
+
+function fmtPrice(
+  item,
+  fallbackSymbol = "€",
+  { placeholder = " -", zeroIsMissing = true } = {}
+) {
+  // Prefer preformatted price if present (assumed intentional formatting)
+  if (typeof item.priceFormatted === "string" && item.priceFormatted.trim()) {
+    return item.priceFormatted;
+  }
+  const n = Number(item.price);
+  if (!Number.isFinite(n) || (zeroIsMissing && n <= 0)) return placeholder;
+  const symbol = item.currencySymbol || fallbackSymbol;
+  return `${symbol}${n.toFixed(2)}`;
+}
+
+function catTotalG(items) {
+  // mirror computeStatsPublic's total contribution rule, but per category (in grams)
+  let base = 0,
+    worn = 0,
+    cons = 0;
+  for (const it of items) {
+    const w = Number(it.weight_g) || 0;
+    const q = Number(it.qty ?? 1) || 1;
+    if (it.consumable) cons += w * q;
+    else if (it.worn) {
+      worn += w;
+      if (q > 1) base += w * (q - 1);
+    } else base += w * q;
+  }
+  return base + worn + cons;
 }
 
 export default function PublicGearList() {
@@ -132,6 +174,91 @@ export default function PublicGearList() {
     };
   }, [data]);
 
+  // ---- Compute stats for PackStats (grams in, component handles display) ----
+  function computeStatsPublic(items = []) {
+    let baseWeight = 0;
+    let wornWeight = 0;
+    let consumableWeight = 0;
+
+    items.forEach((it) => {
+      const w = Number(it.weight_g) || 0;
+      const qty = Number(it.qty ?? 1) || 1;
+      if (it.consumable) {
+        consumableWeight += w * qty;
+      } else if (it.worn) {
+        // one counts as worn; extras count toward base
+        wornWeight += w;
+        if (qty > 1) baseWeight += w * (qty - 1);
+      } else {
+        baseWeight += w * qty;
+      }
+    });
+    return {
+      base: baseWeight,
+      worn: wornWeight,
+      consumable: consumableWeight,
+      total: baseWeight + wornWeight + consumableWeight,
+    };
+  }
+
+  // Build breakdown arrays for PackStats hover (disabled here but harmless)
+  const breakdowns = React.useMemo(() => {
+    const base = [];
+    const worn = [];
+    const consumable = [];
+    const total = [];
+    (data?.items || []).forEach((it) => {
+      const record = {
+        name: it.name || "",
+        weight: Number(it.weight_g) || 0,
+        qty: Number(it.qty ?? 1) || 1,
+      };
+      total.push(record);
+      if (it.consumable) consumable.push(record);
+      else if (it.worn) worn.push(record);
+      else base.push(record);
+    });
+    return { base, worn, consumable, total };
+  }, [data]);
+
+  const stats = computeStatsPublic(data?.items || []);
+
+  // compact, icon-only stats row that follows the unit toggle
+  function StatsRow({ className = "" }) {
+    const chips = [
+      { key: "base", title: "Base", icon: BsBackpack4, value: stats.base },
+      { key: "worn", title: "Worn", icon: FaTshirt, value: stats.worn },
+      {
+        key: "consumable",
+        title: "Consumable",
+        icon: FaUtensils,
+        value: stats.consumable,
+      },
+      {
+        key: "total",
+        title: "Total",
+        icon: FaBalanceScale,
+        value: stats.total,
+      },
+    ];
+    return (
+      <div
+        className={cx("flex flex-wrap items-center gap-x-6 gap-y-2", className)}
+      >
+        {chips.map(({ key, title, icon: Icon, value }) => (
+          <div
+            key={key}
+            className="inline-flex items-center gap-2 text-primary tabular-nums"
+            title={title}
+          >
+            <Icon className="shrink-0" aria-hidden />
+            <span>{fmtHeaderStat(value, unit)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-secondary">
@@ -163,171 +290,392 @@ export default function PublicGearList() {
   ];
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="public-share-theme min-h-screen bg-neutral">
+      {/* Scoped palette for the public page only */}
+      <style>{PUBLIC_THEME_CSS}</style>{" "}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-end justify-between mb-4">
-          <h1 className="text-2xl font-semibold text-primary">
+        {/* ===== Header ===== */}
+        {/* Desktop (>= md): Row 1 = Title | CTA | Toggle; Row 2 = icon-only stats */}
+        <div className="hidden md:grid mb-4 gap-y-3">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+            <h1 className="text-3xl font-semibold text-primary truncate">
+              {data.list.title}
+            </h1>
+
+            {/* Right-side controls: toggle + big CTA */}
+            <div className="flex items-center gap-3">
+              {/* Unit toggle */}
+              <div
+                className="inline-flex border rounded overflow-hidden"
+                aria-live="polite"
+              >
+                <button
+                  className={cx(
+                    "px-3 py-1 text-sm",
+                    unit === "g" ? "bg-primary text-base-100" : "bg-base-100"
+                  )}
+                  onClick={() => setUnit("g")}
+                  aria-pressed={unit === "g"}
+                >
+                  g
+                </button>
+                <button
+                  className={cx(
+                    "px-3 py-1 text-sm",
+                    unit === "oz" ? "bg-primary text-base-100" : "bg-base-100"
+                  )}
+                  onClick={() => setUnit("oz")}
+                  aria-pressed={unit === "oz"}
+                >
+                  oz
+                </button>
+              </div>
+
+              {/* Primary CTA — strong visual affordance */}
+              <button
+                type="button"
+                onClick={attemptCopy}
+                className="
+          inline-flex items-center gap-2
+          px-3 py-1 rounded-lg
+          bg-[rgb(var(--color-accent-rgb))] text-[rgb(var(--color-base-100-rgb))]
+          shadow-md hover:shadow-lg
+          hover:bg-opacity-90 active:translate-y-[0.5px]
+          focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent-rgb))] focus:ring-offset-1
+          transition
+        "
+                aria-label="Customize this list"
+              >
+                <FaEdit aria-hidden />
+                <span className="font-sm">Customize This List</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: stats, full width */}
+          <StatsRow />
+        </div>
+
+        {/* Mobile (< md): Title (center) → CTA (full width) → Toggle (center) → Stats (center) */}
+        <div className="md:hidden mb-4">
+          <h1 className="text-2xl font-semibold text-primary text-center">
             {data.list.title}
           </h1>
-          {/* unit toggle */}
-          <div
-            className="inline-flex border rounded overflow-hidden"
-            aria-live="polite"
-          >
+
+          <div className="mt-2 flex justify-center">
             <button
-              className={cx(
-                "px-3 py-1 text-sm",
-                unit === "g" ? "bg-primary text-base-100" : "bg-base-100"
-              )}
-              onClick={() => setUnit("g")}
-              aria-pressed={unit === "g"}
+              type="button"
+              onClick={attemptCopy}
+              className="
+      inline-flex items-center gap-2 text-sm
+      px-3 py-2 rounded-lg
+      min-h-[44px] whitespace-nowrap
+      bg-[rgb(var(--color-accent-rgb))] text-[rgb(var(--color-base-100-rgb))]
+      shadow-md hover:shadow-lg
+      hover:bg-opacity-90 active:translate-y-[0.5px]
+      focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-accent-rgb))] focus:ring-offset-1
+      transition
+    "
+              aria-label="Customize this list"
             >
-              grams
-            </button>
-            <button
-              className={cx(
-                "px-3 py-1 text-sm",
-                unit === "oz" ? "bg-primary text-base-100" : "bg-base-100"
-              )}
-              onClick={() => setUnit("oz")}
-              aria-pressed={unit === "oz"}
-            >
-              ounces
+              <FaEdit aria-hidden />
+              <span className="font-sm">Customize This List</span>
             </button>
           </div>
-        </div>
 
-        <div className="overflow-x-auto rounded border bg-base-100">
-          <table className="min-w-full text-sm">
-            <caption className="sr-only">
-              Read-only gear list with weights, prices, and shopping links
-            </caption>
-            <thead className="bg-base-200 sticky top-0 z-10">
-              <tr className="text-left text-secondary">
-                <th scope="col" className="px-3 py-2 w-[140px]">
-                  Gear List Item
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Brand
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Name
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1">
-                    <FaBalanceScale aria-hidden /> Weight ({unit})
+          <div className="mt-3 flex justify-center">
+            <div
+              className="inline-flex border rounded overflow-hidden"
+              aria-live="polite"
+            >
+              <button
+                className={cx(
+                  "px-3 py-1 text-sm",
+                  unit === "g" ? "bg-primary text-base-100" : "bg-base-100"
+                )}
+                onClick={() => setUnit("g")}
+                aria-pressed={unit === "g"}
+              >
+                g
+              </button>
+              <button
+                className={cx(
+                  "px-3 py-1 text-sm",
+                  unit === "oz" ? "bg-primary text-base-100" : "bg-base-100"
+                )}
+                onClick={() => setUnit("oz")}
+                aria-pressed={unit === "oz"}
+              >
+                oz
+              </button>
+            </div>
+          </div>
+
+          <StatsRow className="justify-center mt-3" />
+        </div>
+        {/* ======= PUBLIC LIST MODE: MOBILE CARDS (< md) ======= */}
+        <div className="md:hidden">
+          {catOrder.map((catId) => {
+            const title =
+              catId === "__uncategorized__"
+                ? "Uncategorized"
+                : catById.get(catId) || "Category";
+            const items = grouped[catId] || [];
+            const totalG = catTotalG(items);
+
+            return (
+              <section key={catId} className="bg-neutral rounded-lg p-4 mb-6">
+                {/* Category header (no grabber / no X) */}
+                <div className="flex items-center mb-3 min-w-0">
+                  <h3 className="flex-1 min-w-0 truncate pr-2 text-primaryAlt">
+                    <span>{title}</span>
+                  </h3>
+                  <span className="pr-1 flex-shrink-0 text-primaryAlt tabular-nums">
+                    {fmtWeight(totalG, unit)}
                   </span>
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1">
-                    <FaUtensils aria-hidden /> Consumable
-                  </span>
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1">
-                    <FaTshirt aria-hidden /> Worn
-                  </span>
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  Qty
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1">
-                    <FaDollarSign aria-hidden /> Price (USD)
-                  </span>
-                </th>
-                <th scope="col" className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1">
-                    <FaShoppingCart aria-hidden /> Link
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {catOrder.map((catId) => {
-                const title =
-                  catId === "__uncategorized__"
-                    ? "Uncategorized"
-                    : catById.get(catId) || "Category";
-                const rows = grouped[catId] || [];
-                return (
-                  <React.Fragment key={catId}>
-                    {/* category header row spanning full width */}
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="bg-base-200 text-primary font-semibold px-3 py-2"
+                </div>
+
+                {/* Items */}
+                <ul>
+                  {items.map((it) => {
+                    const g = Number(it.weight_g) || 0;
+                    const linkHref =
+                      it.affiliate?.deepLink ||
+                      it.affiliate?.url ||
+                      it.link ||
+                      null;
+
+                    return (
+                      <li
+                        key={it.id || it._id}
+                        className="bg-base-100 px-3 py-2 rounded shadow mb-2"
                       >
-                        {title}
-                      </td>
-                    </tr>
-                    {rows.map((it) => {
-                      const weight =
-                        unit === "g"
-                          ? it.weight_g ?? null
-                          : it.weight_g != null
-                          ? gToOz(it.weight_g)
-                          : null;
-                      const weightText =
-                        weight == null
-                          ? ""
-                          : unit === "g"
-                          ? `${Math.round(weight)}`
-                          : `${weight.toFixed(2)}`;
-                      const priceText =
-                        it.price == null ? "" : formatCurrencyUSD(it.price);
-                      // prefer affiliate.deepLink (schema), then affiliate.url (if any), then plain link
-                      const linkHref =
-                        it.affiliate?.deepLink ||
-                        it.affiliate?.url ||
-                        it.link ||
-                        null;
+                        {/* Grid matches SortableItem mobile (minus ellipsis) */}
+                        <div className="grid grid-rows-[auto_auto] gap-y-1 gap-x-2 text-sm">
+                          {/* Row 1: type + brand/name (no ellipsis menu) */}
+                          <div className="row-start-1 col-span-2 flex items-center overflow-hidden">
+                            <div className="font-semibold text-primary flex-shrink-0 mr-1">
+                              {it.itemType || "—"}
+                            </div>
+                            <div className="truncate text-primary flex-1 overflow-hidden">
+                              {it.brand && (
+                                <span className="mr-1">{it.brand}</span>
+                              )}
+                              {it.name}
+                            </div>
+                          </div>
 
-                      return (
-                        <tr key={it.id} className="border-t">
-                          <td className="px-3 py-2">{it.itemType || ""}</td>
-                          <td className="px-3 py-2">{it.brand || ""}</td>
-                          <td className="px-3 py-2">{it.name || ""}</td>
-                          <td className="px-3 py-2 tabular-nums">
-                            {weightText}
-                          </td>
-                          <td className="px-3 py-2">
-                            {it.consumable ? "Yes" : ""}
-                          </td>
-                          <td className="px-3 py-2">{it.worn ? "Yes" : ""}</td>
-                          <td className="px-3 py-2">{it.qty ?? 1}</td>
-                          <td className="px-3 py-2">{priceText}</td>
-                          <td className="px-3 py-2">
-                            {linkHref ? (
-                              <a
-                                href={linkHref}
-                                target="_blank"
-                                rel="noopener noreferrer nofollow sponsored"
-                                className="text-primary underline"
+                          {/* Row 2: left (weight + price) · right (🍴 👕 qty 🛒) */}
+                          <div className="row-start-2 col-span-2 grid grid-cols-[1fr_auto] items-center">
+                            {/* Left: fixed-width columns so every card lines up */}
+                            <div className="grid grid-cols-[70px_75px] text-primary">
+                              <span className="tabular-nums text-left">
+                                {fmtWeight(g, unit)}
+                              </span>
+                              <span className="tabular-nums text-left">
+                                {fmtPrice(
+                                  it,
+                                  data?.list?.currencySymbol || "€",
+                                  { placeholder: "—" }
+                                )}
+                              </span>
+                            </div>
+
+                            {/* Right group: state icons + qty + cart (read-only) */}
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`${
+                                  it.consumable
+                                    ? "text-green-600"
+                                    : "opacity-30"
+                                }`}
+                                title="Consumable"
+                                aria-label="Consumable"
                               >
-                                View
-                              </a>
-                            ) : (
-                              ""
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                                <FaUtensils aria-hidden />
+                              </span>
+                              <span
+                                className={`${
+                                  it.worn ? "text-blue-600" : "opacity-30"
+                                }`}
+                                title="Worn"
+                                aria-label="Worn"
+                              >
+                                <FaTshirt aria-hidden />
+                              </span>
+                              <span
+                                className="text-xs text-primary tabular-nums"
+                                title="Quantity"
+                              >
+                                × {it.qty ?? 1}
+                              </span>
+                              {linkHref ? (
+                                <a
+                                  href={linkHref}
+                                  target="_blank"
+                                  rel="noopener noreferrer nofollow sponsored"
+                                  className="inline-flex items-center justify-center h-5 w-5 text-primary align-middle"
+                                  aria-label="View product"
+                                  title="View product"
+                                >
+                                  <FaShoppingCart
+                                    className="h-4 w-4"
+                                    aria-hidden
+                                  />
+                                </a>
+                              ) : (
+                                /* placeholder to keep row layout consistent */
+                                <span
+                                  className="inline-flex h-5 w-5 align-middle opacity-0"
+                                  aria-hidden
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
         </div>
 
-        {/* Customize CTA (Step 6 will wire this up) */}
-        <div className="mt-6 flex justify-end">
-          <button className="btn btn-primary" onClick={attemptCopy}>
-            Customize this list
-          </button>
+        {/* ======= PUBLIC LIST MODE: DESKTOP (≥ md) — match SortableItem list row, read-only ======= */}
+        <div className="hidden md:block">
+          {catOrder.map((catId) => {
+            const title =
+              catId === "__uncategorized__"
+                ? "Uncategorized"
+                : catById.get(catId) || "Category";
+            const items = grouped[catId] || [];
+            const totalG = catTotalG(items);
+
+            return (
+              <section key={catId} className="bg-neutral rounded-lg p-4 mb-6">
+                {/* Category header (no grabber / no X) */}
+                <div className="flex items-center mb-3 min-w-0">
+                  <h3 className="flex-1 min-w-0 truncate pr-2 text-primaryAlt">
+                    <span>{title}</span>
+                  </h3>
+                  <span className="pr-1 flex-shrink-0 text-primaryAlt tabular-nums">
+                    {fmtWeight(totalG, unit)}
+                  </span>
+                </div>
+
+                {/* Rows */}
+                <div className="space-y-2">
+                  {items.map((it) => {
+                    const g = Number(it.weight_g) || 0;
+                    const linkHref =
+                      it.affiliate?.deepLink ||
+                      it.affiliate?.url ||
+                      it.link ||
+                      null;
+
+                    return (
+                      <div
+                        key={it.id || it._id}
+                        className="grid items-center text-sm
+                  grid-cols-[120px,minmax(260px,1fr),96px,112px,24px,24px,48px,24px]
+                  gap-x-2 bg-base-100 px-3 py-2 rounded shadow"
+                      >
+                        {/* 1) Item type */}
+                        <div className="font-semibold text-primary truncate">
+                          {it.itemType || "—"}
+                        </div>
+
+                        {/* 2) Name/brand */}
+                        <div className="truncate text-primary">
+                          {it.brand && <span className="mr-1">{it.brand}</span>}
+                          {it.name}
+                        </div>
+
+                        {/* 3) Weight (right-aligned, tabular) */}
+                        <div className="justify-self-end tabular-nums text-primary w-[96px] text-right">
+                          {fmtWeight(g, unit)}
+                        </div>
+
+                        {/* 4) Price (right-aligned, tabular) */}
+                        <div className="justify-self-end tabular-nums text-primary w-[112px] text-right">
+                          {fmtPrice(it, data?.list?.currencySymbol || "€", {
+                            placeholder: "—",
+                          })}
+                        </div>
+
+                        {/* 5) Consumable */}
+                        <div className="justify-self-center">
+                          <span
+                            className={`${
+                              it.consumable ? "text-green-600" : "opacity-30"
+                            }`}
+                            title="Consumable"
+                            aria-label="Consumable"
+                          >
+                            <FaUtensils aria-hidden />
+                          </span>
+                        </div>
+
+                        {/* 6) Worn */}
+                        <div className="justify-self-center">
+                          <span
+                            className={`${
+                              it.worn ? "text-blue-600" : "opacity-30"
+                            }`}
+                            title="Worn"
+                            aria-label="Worn"
+                          >
+                            <FaTshirt aria-hidden />
+                          </span>
+                        </div>
+
+                        {/* 7) Qty */}
+                        <div className="justify-self-center tabular-nums text-primary">
+                          {it.qty ?? 1}
+                        </div>
+
+                        {/* 8) Cart */}
+                        <div className="justify-self-center">
+                          {linkHref ? (
+                            <a
+                              href={linkHref}
+                              target="_blank"
+                              rel="noopener noreferrer nofollow sponsored"
+                              className="text-primary hover:text-primary/80"
+                              aria-label="View product"
+                              title="View product"
+                            >
+                              <FaShoppingCart aria-hidden />
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
+
+// ── Fixed "public share" palette (scoped to this page only)
+// Uses the same CSS variable names your utility classes resolve to.
+const PUBLIC_THEME_CSS = `
+  .public-share-theme {
+    --color-primary-rgb: 23, 43, 77;      /* Navy — headings/buttons */
+    --color-primaryAlt-rgb: 23, 43, 77;
+    --color-secondary-rgb: 68, 84, 111;   /* Steel — secondary text */
+    --color-secondaryAlt-rgb: 68, 84, 111;
+    --color-accent-rgb: 12, 102, 228;     /* Electric blue — accent */
+    --color-neutral-rgb: 241, 242, 244;   /* Light gray — page/category bg */
+    --color-neutralAlt-rgb: 241, 242, 244;
+    --color-error-rgb: 239, 68, 68;       /* Red — errors */
+    --color-base-100-rgb: 255, 255, 255;  /* White — card background */
+    --color-base-100Alt-rgb: 255, 255, 255;
+  }
+  `;

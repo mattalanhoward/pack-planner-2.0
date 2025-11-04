@@ -58,14 +58,13 @@ export default function SortableItem({
   const chosenCurrency = currency || "EUR";
 
   const priceText = useMemo(() => {
-    return chosenAmount != null
-      ? formatCurrency(chosenAmount, {
-          currency: chosenCurrency,
-          locale,
-          symbolOnly: true,
-        })
-      : "–";
-  }, [chosenAmount, currency, locale]);
+    if (chosenAmount == null || chosenAmount <= 0) return "—";
+    return formatCurrency(chosenAmount, {
+      currency: chosenCurrency,
+      locale,
+      symbolOnly: true,
+    });
+  }, [chosenAmount, chosenCurrency, locale]);
 
   // choose link per priority: user link > resolved deeplink > none
   const finalLink = item.link || resolved?.deeplink || null;
@@ -77,12 +76,18 @@ export default function SortableItem({
         target="_blank"
         rel="noopener noreferrer"
         title="Open product page"
-        className={`text-secondary hover:text-secondary/70 ${className}`}
+        className={`inline-flex items-center justify-center h-5 w-5 align-middle text-secondary hover:text-secondary/70 ${className}`}
         aria-label="Open product page"
       >
-        <FaShoppingCart />
+        <FaShoppingCart className="w-4 h-4" />
       </a>
-    ) : null;
+    ) : (
+      /* placeholder keeps row height/baseline identical when no link */
+      <span
+        className={`inline-flex h-5 w-5 align-middle opacity-0 ${className}`}
+        aria-hidden
+      />
+    );
 
   // make sure useSortable() never comes back undefined
   const sortable =
@@ -244,10 +249,10 @@ export default function SortableItem({
 
         {/* Row 2: left (weight + price) · right (Buy · icons · qty) */}
         <div className="row-start-2 col-span-2 grid grid-cols-[1fr_auto] items-center">
-          {/* Left group */}
-          <div className="flex items-center space-x-3 text-primary">
-            <span className="tabular-nums">{weightText}</span>
-            <span className="tabular-nums">{priceText}</span>
+          {/* Left group (fixed column sizes) */}
+          <div className="grid grid-cols-[70px_75px] text-primary">
+            <span className="tabular-nums text-left">{weightText}</span>
+            <span className="tabular-nums text-left">{priceText}</span>
           </div>
 
           {/* Right group (mobile): 🍴 | 👕 | qty | 🛒 */}

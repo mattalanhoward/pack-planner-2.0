@@ -74,3 +74,44 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
+/* ── Modal sizing + scrolling that works on iOS (keyboard, address bar) ── */
+@layer utilities {
+  /* Fullscreen centered backdrop with padding around the panel */
+  .modal-backdrop {
+    @apply fixed inset-0 z-50 grid place-items-center p-4 sm:p-6;
+  }
+
+  /* Scroll inside the panel, never taller than the viewport */
+  .modal-panel {
+    @apply w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-xl;
+    /* Cap height to the dynamic viewport and account for safe areas + padding */
+    max-height: calc(
+      100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem
+    );
+    overscroll-behavior: contain; /* avoid background scroll bleed */
+    -webkit-overflow-scrolling: touch; /* smooth iOS scrolling */
+    scrollbar-gutter: stable both-edges; /* prevents layout shift on scrollbars */
+  }
+
+  /* Fallback for browsers without dvh support */
+  @supports not (height: 100dvh) {
+    .modal-panel {
+      max-height: calc(90vh - 2rem);
+    }
+  }
+
+  /* Optional helpers for sticky sections inside a scrolling panel */
+  .modal-header {
+    @apply sticky top-0 z-10 bg-white/95 backdrop-blur border-b;
+  }
+  .modal-footer {
+    @apply sticky bottom-0 z-10 bg-white/95 backdrop-blur border-t;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Tighter vertical rhythm on small screens for form rows */
+  .modal-form-compact {
+    @apply space-y-2 sm:space-y-4;
+  }
+}

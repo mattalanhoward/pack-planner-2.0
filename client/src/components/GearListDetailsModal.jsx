@@ -79,13 +79,13 @@ export default function GearListDetailsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSave}
-        className="modal-panel bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-6 py-6 overflow-auto"
+        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-6 py-6 overflow-auto"
       >
         {/* Header */}
-        <div className="modal-header flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold text-primary">
             Gear List Details
           </h2>
@@ -100,7 +100,7 @@ export default function GearListDetailsModal({
         </div>
 
         {/* Grid: 3 cols on md+ */}
-        <div className="modal-form-compact grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Weight Breakdown full row */}
           <div className="md:col-span-3 flex flex-col items-center py-2">
             <label className="block text-sm font-medium text-primary mb-3">
@@ -142,7 +142,7 @@ export default function GearListDetailsModal({
                 setTitle(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary md:text-sm"
+              className="w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
           {/* Placeholder */}
@@ -163,7 +163,7 @@ export default function GearListDetailsModal({
                 }}
                 dateFormat="P"
                 locale={dfnsLocale}
-                className="w-full border border-primary rounded p-2 text-primary md:text-sm"
+                className="w-full border border-primary rounded p-2 text-primary text-sm"
                 placeholderText="Select date"
               />
             </div>
@@ -180,7 +180,7 @@ export default function GearListDetailsModal({
                 }}
                 dateFormat="P"
                 locale={dfnsLocale}
-                className="w-full border border-primary rounded p-2 text-primary md:text-sm"
+                className="w-full border border-primary rounded p-2 text-primary text-sm"
                 placeholderText="Select date"
               />
             </div>
@@ -198,7 +198,7 @@ export default function GearListDetailsModal({
                 setLocation(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary md:text-sm"
+              className="w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
 
@@ -214,7 +214,7 @@ export default function GearListDetailsModal({
                 setNotes(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary md:text-sm"
+              className="w-full border border-primary rounded p-2 text-primary text-sm"
             />
           </div>
           {/* Stats */}
@@ -241,13 +241,13 @@ export default function GearListDetailsModal({
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary md:text-sm"
+            className="px-4 py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/80 md:text-sm"
+            className="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/80 text-sm"
           >
             Save
           </button>

@@ -55,3 +55,22 @@ a {
     @apply transition-transform duration-300 ease-in-out;
   }
 }
+
+/* iOS focus-zoom fix: keep interactive controls ≥16px.
+   Chrome/Safari on iOS share WebKit, so both benefit. */
+@layer base {
+  .no-ios-zoom input:not([type="checkbox"]):not([type="radio"]),
+  .no-ios-zoom select,
+  .no-ios-zoom textarea,
+  .no-ios-zoom button {
+    font-size: 16px; /* hard floor prevents iOS zoom */
+    font-size: max(16px, 1rem); /* follow root if larger */
+    line-height: 1.5;
+  }
+}
+
+html {
+  /* avoid Safari “smart” text zooming */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}

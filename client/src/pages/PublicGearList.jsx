@@ -9,6 +9,8 @@ import {
   FaEdit,
 } from "react-icons/fa";
 import { BsBackpack4 } from "react-icons/bs";
+import AffiliateGateLink from "../components/AffiliateGateLink";
+import AffiliateDisclosureNotice from "../components/AffiliateDisclosureNotice";
 
 import api, { refreshAccessToken } from "../services/api";
 
@@ -297,6 +299,8 @@ export default function PublicGearList() {
         {/* ===== Header ===== */}
         {/* Desktop (>= md): Row 1 = Title | CTA | Toggle; Row 2 = icon-only stats */}
         <div className="hidden md:grid mb-4 gap-y-3">
+          <AffiliateDisclosureNotice context="public" className="mb-2" />
+
           <div className="grid grid-cols-[1fr_auto] items-center gap-4">
             <h1 className="text-3xl font-semibold text-primary truncate">
               {data.list.title}
@@ -358,6 +362,8 @@ export default function PublicGearList() {
 
         {/* Mobile (< md): Title (center) → CTA (full width) → Toggle (center) → Stats (center) */}
         <div className="md:hidden mb-4">
+          <AffiliateDisclosureNotice context="public" className="mb-2" />
+
           <h1 className="text-2xl font-semibold text-primary text-center">
             {data.list.title}
           </h1>
@@ -510,19 +516,18 @@ export default function PublicGearList() {
                                 × {it.qty ?? 1}
                               </span>
                               {linkHref ? (
-                                <a
+                                <AffiliateGateLink
                                   href={linkHref}
-                                  target="_blank"
-                                  rel="noopener noreferrer nofollow sponsored"
-                                  className="inline-flex items-center justify-center h-5 w-5 text-primary align-middle"
-                                  aria-label="View product"
+                                  context="public"
+                                  className="text-primary"
                                   title="View product"
+                                  ariaLabel="View product (paid link)"
                                 >
                                   <FaShoppingCart
                                     className="h-4 w-4"
                                     aria-hidden
                                   />
-                                </a>
+                                </AffiliateGateLink>
                               ) : (
                                 /* placeholder to keep row layout consistent */
                                 <span
@@ -638,16 +643,15 @@ export default function PublicGearList() {
                         {/* 8) Cart */}
                         <div className="justify-self-center">
                           {linkHref ? (
-                            <a
+                            <AffiliateGateLink
                               href={linkHref}
-                              target="_blank"
-                              rel="noopener noreferrer nofollow sponsored"
+                              context="public"
                               className="text-primary hover:text-primary/80"
-                              aria-label="View product"
                               title="View product"
+                              ariaLabel="View product (paid link)"
                             >
                               <FaShoppingCart aria-hidden />
-                            </a>
+                            </AffiliateGateLink>
                           ) : null}
                         </div>
                       </div>

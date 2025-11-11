@@ -13,11 +13,11 @@ import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import ChecklistView from "./pages/ChecklistView";
 import PublicGearList from "./pages/PublicGearList";
-
-// function PrivateRoute({ children }) {
-//   const { isAuthenticated } = useAuth();
-//   return isAuthenticated ? children : <Navigate to="/login" />;
-// }
+import AffiliateDisclosurePage from "./pages/legal/AffiliateDisclosure";
+import PrivacyPage from "./pages/legal/Privacy";
+import CookiesPage from "./pages/legal/Cookies";
+import TermsPage from "./pages/legal/Terms";
+import ImprintPage from "./pages/legal/Imprint";
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -35,11 +35,17 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/auth/register" element={<Landing />} />
       <Route path="/auth/login" element={<Landing />} />
-      {/* <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} /> */}
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route
+        path="/legal/affiliate-disclosure"
+        element={<AffiliateDisclosurePage />}
+      />
+      <Route path="/legal/privacy" element={<PrivacyPage />} />
+      <Route path="/legal/cookies" element={<CookiesPage />} />
+      <Route path="/legal/terms" element={<TermsPage />} />
+      <Route path="/legal/imprint" element={<ImprintPage />} />
       {/* “root” of all editable lists */}
       <Route
         path="/dashboard"
@@ -66,7 +72,6 @@ export default function App() {
         }
       />
       {/* Public, read-only shared view */}
-      {/* <Route path="/share/:token" element={<SharedView />} /> */}
       <Route path="/share/:token" element={<PublicGearList />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -8,6 +8,7 @@ import { useUserSettings } from "../contexts/UserSettings";
 import { normalizeRegion } from "../utils/region";
 import AccountModal from "./AccountModal";
 import ViewToggle from "./ViewToggle";
+import LegalModal from "./LegalModal";
 
 const themes = [
   { name: "forest", label: "Forest", color: "#163A28" },
@@ -20,6 +21,7 @@ const themes = [
 
 export default function TopBar({ title, openSettings }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
   const { user, logout } = useAuth();
   const {
     weightUnit,
@@ -220,15 +222,17 @@ export default function TopBar({ title, openSettings }) {
                 </div>
               ),
             },
-
+            // ===== Legal (logged-in view) =====
             {
-              key: "sep-2",
+              key: "sep-legal",
               render: () => <div className="border-t border-gray-200" />,
             },
             {
-              key: "about",
-              label: "About",
-              onClick: () => navigate("/about"),
+              className:
+                "flex items-center justify-between text-sm text-secondary",
+              key: "legal",
+              label: "Legal & Policies",
+              onClick: () => setIsLegalOpen(true),
             },
             {
               key: "sep-3",
@@ -249,6 +253,7 @@ export default function TopBar({ title, openSettings }) {
           isOpen={isAccountOpen}
           onClose={() => setIsAccountOpen(false)}
         />
+        <LegalModal open={isLegalOpen} onClose={() => setIsLegalOpen(false)} />
       </div>
     </header>
   );

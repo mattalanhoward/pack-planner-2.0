@@ -14,6 +14,7 @@ import {
   FaEllipsisH,
   FaShoppingCart,
 } from "react-icons/fa";
+import AffiliateGateLink from "./AffiliateGateLink";
 import { useWeight } from "../hooks/useWeight";
 import { useResolvedPrice } from "../hooks/useResolvedPrice";
 import { formatCurrency } from "../utils/formatCurrency";
@@ -71,18 +72,16 @@ export default function SortableItem({
 
   const CartIconLink = ({ href, className = "" }) =>
     href ? (
-      <a
+      <AffiliateGateLink
         href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        context="private"
+        className={className}
         title="Open product page"
-        className={`inline-flex items-center justify-center h-5 w-5 align-middle text-secondary hover:text-secondary/70 ${className}`}
-        aria-label="Open product page"
+        ariaLabel="Open product page (paid link)"
       >
         <FaShoppingCart className="w-4 h-4" />
-      </a>
+      </AffiliateGateLink>
     ) : (
-      /* placeholder keeps row height/baseline identical when no link */
       <span
         className={`inline-flex h-5 w-5 align-middle opacity-0 ${className}`}
         aria-hidden

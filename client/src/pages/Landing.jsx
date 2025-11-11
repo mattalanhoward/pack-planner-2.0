@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import mobileSidebarScreenshot from "../assets/images/treklist-mobile-sidebar.png";
 import mobileColumnScreenshot from "../assets/images/treklist-column-mobile.png";
 import desktopColumnScreenshot from "../assets/images/treklist-column-desktop-1.png";
-import AuthModal from "../components/AuthModal"; // new
+import AuthModal from "../components/AuthModal";
+import FooterLegal from "../components/FooterLegal";
 
 // helper to build share path safely
 const sharePath = (token) => (token ? `/share/${token}/` : null);
@@ -544,23 +545,8 @@ export default function Landing() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto bg-gray-900 text-gray-400 py-8">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center px-6 space-y-4 md:space-y-0">
-          <p>© {new Date().getFullYear()} TrekList.co</p>
-          <div className="flex space-x-6">
-            <a href="/privacy" className="hover:text-white">
-              Privacy
-            </a>
-            <a href="/terms" className="hover:text-white">
-              Terms
-            </a>
-            <a href="/contact" className="hover:text-white">
-              Contact
-            </a>
-          </div>
-        </div>
-      </footer>
+      {/* Footer (public view) */}
+      <FooterLegal variant="dark" containerWidth="max-w-4xl" />
       <AuthModal
         isOpen={authOpen}
         defaultMode={authMode}

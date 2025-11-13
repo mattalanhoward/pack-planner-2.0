@@ -32,6 +32,14 @@ export function SettingsProvider({ children }) {
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem("viewMode") || "column"
   );
+  // Note: we still render instantly, then hydrate from /settings when logged in.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    // fallback to localStorage so unauth/first paint feels consistent
+    (() => {
+      const v = localStorage.getItem("sidebarCollapsed");
+      return v === "true" ? true : false;
+    })()
+  );
 
   // Track if we've hydrated from the server to avoid echo PATCH
   const [hydrated, setHydrated] = useState(false);
@@ -83,6 +91,10 @@ export function SettingsProvider({ children }) {
     localStorage.setItem("viewMode", viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", String(!!sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
   // ─── HYDRATE from server on mount/login ───
   const refreshSettings = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -96,6 +108,7 @@ export function SettingsProvider({ children }) {
       setLanguage(s.language || "en");
       setRegion((s.region || "nl").toLowerCase());
       setViewMode(s.viewMode || "column");
+      setSidebarCollapsed(Boolean(s.sidebarCollapsed));
       setHydrated(true);
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -117,7 +130,8 @@ export function SettingsProvider({ children }) {
       language,
       region: (region || "nl").toLowerCase(),
       viewMode,
-      locale, // derived
+      locale,
+      sidebarCollapsed,
     };
     api.patch("/settings", payload).catch((err) => {
       console.error("Failed to save settings:", err);
@@ -132,6 +146,7 @@ export function SettingsProvider({ children }) {
     region,
     viewMode,
     locale,
+    sidebarCollapsed,
   ]);
 
   // Optional helpers for screens that PATCH explicitly:
@@ -142,6 +157,8 @@ export function SettingsProvider({ children }) {
     if (partial.language != null) setLanguage(partial.language);
     if (partial.region != null) setRegion(String(partial.region).toLowerCase());
     if (partial.viewMode != null) setViewMode(partial.viewMode);
+    if (partial.sidebarCollapsed != null)
+      setSidebarCollapsed(Boolean(partial.sidebarCollapsed));
   }, []);
 
   return (
@@ -155,6 +172,7 @@ export function SettingsProvider({ children }) {
         region,
         locale,
         viewMode,
+        sidebarCollapsed,
         hydrated,
         // setters
         setWeightUnit,
@@ -163,6 +181,7 @@ export function SettingsProvider({ children }) {
         setLanguage,
         setRegion,
         setViewMode,
+        setSidebarCollapsed,
         // helpers
         refreshSettings,
         applySettings,

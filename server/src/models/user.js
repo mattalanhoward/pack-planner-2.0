@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema(
     },
     trailname: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     passwordHash: {
@@ -28,9 +28,10 @@ const UserSchema = new mongoose.Schema(
     verifyEmailExpires: Date,
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    sidebarCollapsed: { type: Boolean, default: false },
     viewMode: { type: String, enum: ["column", "list"], default: "column" },
-    locale: { type: String, default: "en-US" },
-    currency: { type: String, default: "USD" },
+    locale: { type: String, default: "en-NL" },
+    currency: { type: String, default: "EUR" },
     theme: { type: String, default: "desert" },
     weightUnit: { type: String, enum: ["g", "oz"], default: "g" },
     language: { type: String, default: "en" },

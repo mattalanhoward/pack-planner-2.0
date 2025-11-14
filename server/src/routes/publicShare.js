@@ -30,7 +30,9 @@ function withCopyLock(key, fn, ttlMs = 5000) {
 router.get("/:token/full", async (req, res) => {
   const tokenDoc = await resolveActiveToken(req.params.token);
   if (!tokenDoc)
-    return res.status(404).json({ error: "Invalid or revoked token" });
+    return res.status(404).json({
+      error: "This list has been deleted or the share token has been revoked",
+    });
   const listId = tokenDoc.list;
 
   if (!mongoose.Types.ObjectId.isValid(listId)) {
@@ -103,7 +105,7 @@ router.get("/:token/csv", async (req, res) => {
       return res
         .status(404)
         .type("text/plain")
-        .send("Invalid or revoked token");
+        .send("This list has been deleted or the share token has been revoked");
     }
     const listId = tokenDoc.list;
     if (!mongoose.Types.ObjectId.isValid(listId)) {

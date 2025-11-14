@@ -24,6 +24,7 @@ const GearListSchema = new mongoose.Schema(
       enum: [...GEARLIST_SWATCHES, null],
       default: GEARLIST_SWATCHES[0],
     },
+    region: { type: String, default: null },
   },
   {
     timestamps: true,

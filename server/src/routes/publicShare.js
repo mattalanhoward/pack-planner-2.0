@@ -38,7 +38,9 @@ router.get("/:token/full", async (req, res) => {
   }
 
   const [list, categories, items] = await Promise.all([
-    GearList.findById(listId).select({ _id: 1, title: 1 }).lean(),
+    GearList.findById(listId)
+      .select({ _id: 1, title: 1, region: 1, storeRegion: 1 })
+      .lean(),
     Category.find({ gearList: listId })
       .sort({ position: 1 })
       .select({ _id: 1, title: 1, position: 1 })
@@ -48,16 +50,16 @@ router.get("/:token/full", async (req, res) => {
       .select({
         _id: 1,
         category: 1,
-        itemType: 1, // "Gear List Item"
+        itemType: 1,
         brand: 1,
         name: 1,
-        weight: 1, // assume grams
+        weight: 1,
         consumable: 1,
         worn: 1,
         quantity: 1,
-        price: 1, // base price (may be per-item)
-        affiliate: 1, // expect structure with regional offers/links
-        link: 1, // fallback external link
+        price: 1,
+        affiliate: 1,
+        link: 1,
         position: 1,
       })
       .lean(),
@@ -65,9 +67,13 @@ router.get("/:token/full", async (req, res) => {
 
   if (!list) return res.status(404).json({ error: "List not found" });
 
-  // sanitize and shape response for the table
   res.json({
-    list: { id: list._id.toString(), title: list.title },
+    list: {
+      id: list._id.toString(),
+      title: list.title,
+      region: list.region || null,
+      storeRegion: list.storeRegion || null,
+    },
     categories: categories.map((c) => ({
       id: c._id.toString(),
       title: c.title,
@@ -82,7 +88,7 @@ router.get("/:token/full", async (req, res) => {
       consumable: !!i.consumable,
       worn: !!i.worn,
       qty: i.quantity ?? 1,
-      price: typeof i.price === "number" ? i.price : null, // base price only; region-specific handled client-side if present in affiliate
+      price: typeof i.price === "number" ? i.price : null,
       affiliate: i.affiliate || null,
       link: i.link || null,
     })),

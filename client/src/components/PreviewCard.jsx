@@ -54,7 +54,7 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
             />
             <FaTshirt className={item.worn ? "text-blue-600" : "opacity-30"} />
             <span className="text-secondary">
-              {item.price ? `€${item.price}` : ""}
+              {item.price ? `${item.price}` : ""}
             </span>
             <span className="border rounded px-2 py-0.5 bg-neutral">
               {item.quantity}
@@ -121,7 +121,7 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
 
           {/* 8) Price (64px) */}
           <div className="text-secondary justify-self-end">
-            {item.price != null && `€${item.price}`}
+            {item.price != null && `${item.price}`}
           </div>
 
           {/* 9) Ellipsis (32px) */}
@@ -201,7 +201,7 @@ export default function PreviewCard({ item, viewMode, isPreview }) {
               {item.weight != null ? `${item.weight}g` : ""}
             </span>
             {item.price != null && (
-              <span className="text-sm text-secondary">€{item.price}</span>
+              <span className="text-sm text-secondary">{item.price}</span>
             )}
           </div>
           <div className="grid grid-cols-[16px_16px_auto_16px] items-center justify-end gap-x-3">

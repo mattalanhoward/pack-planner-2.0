@@ -101,7 +101,15 @@ export default function GlobalItemModal({
   // Region: prefer user setting, then browser, always normalized to ISO-2
   // Region/Currency/Locale from settings
   const { region: settingsRegion, currency, locale } = useUserSettings();
-  const CURRENCY_SYMBOL = { USD: "$", EUR: "€", GBP: "£" };
+  const CURRENCY_SYMBOL = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    AUD: "A$",
+    CHF: "CHF",
+    SEK: "kr",
+  };
   const currencySymbol = CURRENCY_SYMBOL[currency] || "";
   const regionForSearch = normalizeRegion(settingsRegion || detectRegion());
 

@@ -99,11 +99,16 @@ router.get("/", async (req, res) => {
 // POST /api/dashboard — create a new gear list + one sample category
 router.post("/", async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, region } = req.body;
     if (!title) return res.status(400).json({ message: "Title is required." });
 
     // 1) create the gear list
-    const newList = await GearList.create({ owner: req.userId, title });
+    const newList = await GearList.create({
+      owner: req.userId,
+      title,
+      // region is optional; if client doesn’t send it we store null
+      region: region || null,
+    });
 
     // 2) seed exactly one category at position 0
     const sample = await Category.create({
@@ -265,10 +270,11 @@ router.post("/:listId/copy", async (req, res) => {
     });
     if (!orig) return res.status(404).json({ error: "List not found" });
 
-    // 2) Clone the GearList document (new title + null prefs)
+    // 2) Clone the GearList document (new title + same region)
     const copy = await GearList.create({
       owner: req.userId,
       title: `Copy of ${orig.title}`,
+      region: orig.region || null,
     });
 
     // 3) Clone categories + items

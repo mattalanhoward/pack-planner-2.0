@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import api from "../services/api";
 import useAuth from "../hooks/useAuth";
+import { currencyForRegion } from "../utils/region";
 
 const SettingsCtx = createContext();
 
@@ -19,9 +20,6 @@ export function SettingsProvider({ children }) {
   );
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "desert"
-  );
-  const [currency, setCurrency] = useState(
-    () => localStorage.getItem("currency") || "EUR"
   );
   const [language, setLanguage] = useState(
     () => localStorage.getItem("language") || "en"
@@ -46,21 +44,13 @@ export function SettingsProvider({ children }) {
 
   // Derived BCP-47 locale (always language-REGION)
   const locale = `${language}-${region.toUpperCase()}`;
-
-  // One-time normalization for legacy symbol-based currency
-  useEffect(() => {
-    const map = { "€": "EUR", $: "USD", "£": "GBP" };
-    if (map[currency]) setCurrency(map[currency]);
-  }, []); // eslint-disable-line
+  // NEW: currency is always derived from region
+  const currency = currencyForRegion(region);
 
   // ─── DOM side effects (theme) + mirror to localStorage ───
   useEffect(() => {
     localStorage.setItem("weightUnit", weightUnit);
   }, [weightUnit]);
-
-  useEffect(() => {
-    localStorage.setItem("currency", currency);
-  }, [currency]);
 
   useEffect(() => {
     localStorage.setItem("language", language);
@@ -104,7 +94,6 @@ export function SettingsProvider({ children }) {
       // Apply with sensible fallbacks + normalization
       setWeightUnit(s.weightUnit || "g");
       setTheme(s.theme || "desert");
-      setCurrency(s.currency || "EUR");
       setLanguage(s.language || "en");
       setRegion((s.region || "nl").toLowerCase());
       setViewMode(s.viewMode || "column");
@@ -126,7 +115,6 @@ export function SettingsProvider({ children }) {
     const payload = {
       weightUnit,
       theme,
-      currency,
       language,
       region: (region || "nl").toLowerCase(),
       viewMode,
@@ -141,7 +129,6 @@ export function SettingsProvider({ children }) {
     hydrated,
     weightUnit,
     theme,
-    currency,
     language,
     region,
     viewMode,
@@ -153,7 +140,6 @@ export function SettingsProvider({ children }) {
   const applySettings = useCallback((partial) => {
     if (partial.weightUnit != null) setWeightUnit(partial.weightUnit);
     if (partial.theme != null) setTheme(partial.theme);
-    if (partial.currency != null) setCurrency(partial.currency);
     if (partial.language != null) setLanguage(partial.language);
     if (partial.region != null) setRegion(String(partial.region).toLowerCase());
     if (partial.viewMode != null) setViewMode(partial.viewMode);
@@ -177,7 +163,6 @@ export function SettingsProvider({ children }) {
         // setters
         setWeightUnit,
         setTheme,
-        setCurrency,
         setLanguage,
         setRegion,
         setViewMode,

@@ -15,7 +15,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // ─── Sidebar collapsed state ───
-  const [collapsed, setCollapsed] = useState(false);
+  const { sidebarCollapsed: collapsed, setSidebarCollapsed } =
+    useUserSettings();
 
   // ─── Single‐source‐of‐truth for our `/full` payload ───
   const [fullData, setFullData] = useState({
@@ -134,7 +135,7 @@ export default function Dashboard() {
           currentListId={listId}
           categories={fullData?.categories || []}
           collapsed={collapsed}
-          setCollapsed={setCollapsed}
+          setCollapsed={setSidebarCollapsed}
           onSelectList={(id) => {
             if (id) {
               localStorage.setItem("lastListId", id);

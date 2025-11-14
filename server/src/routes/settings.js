@@ -27,6 +27,7 @@ router.get("/", async (req, res) => {
       weightUnit,
       language,
       region,
+      sidebarCollapsed,
     } = user;
 
     res.json({
@@ -39,6 +40,7 @@ router.get("/", async (req, res) => {
       weightUnit: weightUnit || "g",
       language: language || "en",
       region: (region && String(region).toLowerCase()) || "nl",
+      sidebarCollapsed: Boolean(sidebarCollapsed),
     });
   } catch (err) {
     console.error("GET /settings error:", err);
@@ -103,9 +105,10 @@ router.patch("/", async (req, res) => {
       "locale",
       "currency",
       "theme",
-      "weightUnit", // <-- new
-      "language", // <-- new
-      "region", // <-- new
+      "weightUnit",
+      "language",
+      "region",
+      "sidebarCollapsed",
     ];
     editable.forEach((key) => {
       if (updates[key] !== undefined) {

@@ -32,6 +32,8 @@ export default function Sidebar({
   const [confirmListOpen, setConfirmListOpen] = useState(false);
   const [pendingDeleteListId, setPendingDeleteListId] = useState(null);
 
+  const { region } = useUserSettings();
+
   // global gear items & debounced search
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,7 +75,7 @@ export default function Sidebar({
     if (!title) return toast.error("List name cannot be empty.");
 
     try {
-      const { data } = await api.post("/dashboard", { title });
+      const { data } = await api.post("/dashboard", { title, region });
       setNewListTitle("");
       await fetchLists();
       localStorage.setItem("lastListId", data.list._id);

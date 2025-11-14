@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import api from "../services/api";
 import useAuth from "../hooks/useAuth";
+import { currencyForRegion } from "../utils/region";
 
 const SettingsCtx = createContext();
 
@@ -20,9 +21,6 @@ export function SettingsProvider({ children }) {
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "desert"
   );
-  const [currency, setCurrency] = useState(
-    () => localStorage.getItem("currency") || "EUR"
-  );
   const [language, setLanguage] = useState(
     () => localStorage.getItem("language") || "en"
   );
@@ -32,27 +30,27 @@ export function SettingsProvider({ children }) {
   const [viewMode, setViewMode] = useState(
     () => localStorage.getItem("viewMode") || "column"
   );
+  // Note: we still render instantly, then hydrate from /settings when logged in.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    // fallback to localStorage so unauth/first paint feels consistent
+    (() => {
+      const v = localStorage.getItem("sidebarCollapsed");
+      return v === "true" ? true : false;
+    })()
+  );
 
   // Track if we've hydrated from the server to avoid echo PATCH
   const [hydrated, setHydrated] = useState(false);
 
   // Derived BCP-47 locale (always language-REGION)
   const locale = `${language}-${region.toUpperCase()}`;
-
-  // One-time normalization for legacy symbol-based currency
-  useEffect(() => {
-    const map = { "€": "EUR", $: "USD", "£": "GBP" };
-    if (map[currency]) setCurrency(map[currency]);
-  }, []); // eslint-disable-line
+  // NEW: currency is always derived from region
+  const currency = currencyForRegion(region);
 
   // ─── DOM side effects (theme) + mirror to localStorage ───
   useEffect(() => {
     localStorage.setItem("weightUnit", weightUnit);
   }, [weightUnit]);
-
-  useEffect(() => {
-    localStorage.setItem("currency", currency);
-  }, [currency]);
 
   useEffect(() => {
     localStorage.setItem("language", language);
@@ -83,6 +81,10 @@ export function SettingsProvider({ children }) {
     localStorage.setItem("viewMode", viewMode);
   }, [viewMode]);
 
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", String(!!sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
   // ─── HYDRATE from server on mount/login ───
   const refreshSettings = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -92,10 +94,10 @@ export function SettingsProvider({ children }) {
       // Apply with sensible fallbacks + normalization
       setWeightUnit(s.weightUnit || "g");
       setTheme(s.theme || "desert");
-      setCurrency(s.currency || "EUR");
       setLanguage(s.language || "en");
       setRegion((s.region || "nl").toLowerCase());
       setViewMode(s.viewMode || "column");
+      setSidebarCollapsed(Boolean(s.sidebarCollapsed));
       setHydrated(true);
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -113,11 +115,11 @@ export function SettingsProvider({ children }) {
     const payload = {
       weightUnit,
       theme,
-      currency,
       language,
       region: (region || "nl").toLowerCase(),
       viewMode,
-      locale, // derived
+      locale,
+      sidebarCollapsed,
     };
     api.patch("/settings", payload).catch((err) => {
       console.error("Failed to save settings:", err);
@@ -127,21 +129,22 @@ export function SettingsProvider({ children }) {
     hydrated,
     weightUnit,
     theme,
-    currency,
     language,
     region,
     viewMode,
     locale,
+    sidebarCollapsed,
   ]);
 
   // Optional helpers for screens that PATCH explicitly:
   const applySettings = useCallback((partial) => {
     if (partial.weightUnit != null) setWeightUnit(partial.weightUnit);
     if (partial.theme != null) setTheme(partial.theme);
-    if (partial.currency != null) setCurrency(partial.currency);
     if (partial.language != null) setLanguage(partial.language);
     if (partial.region != null) setRegion(String(partial.region).toLowerCase());
     if (partial.viewMode != null) setViewMode(partial.viewMode);
+    if (partial.sidebarCollapsed != null)
+      setSidebarCollapsed(Boolean(partial.sidebarCollapsed));
   }, []);
 
   return (
@@ -155,14 +158,15 @@ export function SettingsProvider({ children }) {
         region,
         locale,
         viewMode,
+        sidebarCollapsed,
         hydrated,
         // setters
         setWeightUnit,
         setTheme,
-        setCurrency,
         setLanguage,
         setRegion,
         setViewMode,
+        setSidebarCollapsed,
         // helpers
         refreshSettings,
         applySettings,

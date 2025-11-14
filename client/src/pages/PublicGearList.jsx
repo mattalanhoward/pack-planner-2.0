@@ -11,6 +11,8 @@ import {
 import { BsBackpack4 } from "react-icons/bs";
 import AffiliateGateLink from "../components/AffiliateGateLink";
 import AffiliateDisclosureNotice from "../components/AffiliateDisclosureNotice";
+import { currencyForRegion, normalizeRegion } from "../utils/region";
+import { formatCurrency as fmtCurrency } from "../utils/formatCurrency";
 
 import api, { refreshAccessToken } from "../services/api";
 
@@ -44,8 +46,12 @@ function fmtHeaderStat(valueG, unit) {
 
 function fmtPrice(
   item,
-  fallbackSymbol = "€",
-  { placeholder = " -", zeroIsMissing = true } = {}
+  {
+    defaultCurrency = "EUR",
+    locale = "en-US",
+    placeholder = "—",
+    zeroIsMissing = true,
+  } = {}
 ) {
   // Prefer preformatted price if present (assumed intentional formatting)
   if (typeof item.priceFormatted === "string" && item.priceFormatted.trim()) {
@@ -53,8 +59,14 @@ function fmtPrice(
   }
   const n = Number(item.price);
   if (!Number.isFinite(n) || (zeroIsMissing && n <= 0)) return placeholder;
-  const symbol = item.currencySymbol || fallbackSymbol;
-  return `${symbol}${n.toFixed(2)}`;
+  // Choose currency priority: item.currencyCode → item.currency → defaultCurrency
+  const currency =
+    item.currencyCode || item.currency || defaultCurrency || "EUR";
+  return fmtCurrency(n, {
+    currency,
+    locale,
+    minimumFractionDigits: 2,
+  });
 }
 
 function catTotalG(items) {
@@ -72,6 +84,61 @@ function catTotalG(items) {
     } else base += w * q;
   }
   return base + worn + cons;
+}
+
+function majorityCurrencyFromItems(items = []) {
+  const counts = new Map();
+  for (const it of items) {
+    const c = (it.currencyCode || it.currency || "").toUpperCase();
+    if (!c) continue;
+    counts.set(c, (counts.get(c) || 0) + 1);
+  }
+  let best = null,
+    max = 0;
+  for (const [c, n] of counts) {
+    if (n > max) {
+      best = c;
+      max = n;
+    }
+  }
+  return best; // e.g., "CAD" or undefined
+}
+
+function currencyFromAffiliateUrl(url = "") {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+    // Very light mapping; extend as needed
+    if (host.endsWith(".amazon.ca")) return "CAD";
+    if (host.endsWith(".amazon.com")) return "USD";
+    if (host.endsWith(".amazon.co.uk")) return "GBP";
+    if (host.endsWith(".amazon.de")) return "EUR";
+    if (host.endsWith(".amazon.fr")) return "EUR";
+    if (host.endsWith(".amazon.it")) return "EUR";
+    if (host.endsWith(".amazon.es")) return "EUR";
+    // Add Awin merchants if you like:
+    // if (host.includes("bergfreunde")) return "EUR";
+  } catch {}
+  return undefined;
+}
+
+function fallbackCurrencyFromLinks(items = []) {
+  const counts = new Map();
+  for (const it of items) {
+    const url = it?.affiliate?.deepLink || it?.affiliate?.url || it?.link || "";
+    const c = currencyFromAffiliateUrl(url);
+    if (!c) continue;
+    counts.set(c, (counts.get(c) || 0) + 1);
+  }
+  let best = null,
+    max = 0;
+  for (const [c, n] of counts) {
+    if (n > max) {
+      best = c;
+      max = n;
+    }
+  }
+  return best;
 }
 
 export default function PublicGearList() {
@@ -203,26 +270,6 @@ export default function PublicGearList() {
     };
   }
 
-  // Build breakdown arrays for PackStats hover (disabled here but harmless)
-  const breakdowns = React.useMemo(() => {
-    const base = [];
-    const worn = [];
-    const consumable = [];
-    const total = [];
-    (data?.items || []).forEach((it) => {
-      const record = {
-        name: it.name || "",
-        weight: Number(it.weight_g) || 0,
-        qty: Number(it.qty ?? 1) || 1,
-      };
-      total.push(record);
-      if (it.consumable) consumable.push(record);
-      else if (it.worn) worn.push(record);
-      else base.push(record);
-    });
-    return { base, worn, consumable, total };
-  }, [data]);
-
   const stats = computeStatsPublic(data?.items || []);
 
   // compact, icon-only stats row that follows the unit toggle
@@ -278,6 +325,34 @@ export default function PublicGearList() {
   if (!data) return null;
 
   const catById = new Map(data.categories.map((c) => [c.id, c.title]));
+
+  // Determine default currency for this shared list based on list region,
+  // with robust fallbacks to items and affiliate links.
+  const rawRegion = data?.list?.region || data?.list?.storeRegion || "";
+  // Only normalize if we actually have a region string
+
+  console.log("Raw region:", rawRegion);
+  const listRegion = rawRegion ? normalizeRegion(rawRegion) : "";
+
+  let defaultCurrency = listRegion ? currencyForRegion(listRegion) : undefined;
+
+  // 1) Try items' explicit currency (majority)
+  if (!defaultCurrency) {
+    defaultCurrency = majorityCurrencyFromItems(data?.items || []);
+  }
+
+  // 2) Try inferring from affiliate link TLDs
+  if (!defaultCurrency) {
+    defaultCurrency = fallbackCurrencyFromLinks(data?.items || []);
+  }
+
+  // 3) Final fallback: "EUR"
+  if (!defaultCurrency) {
+    defaultCurrency = "EUR";
+  }
+
+  const browserLocale =
+    Intl.DateTimeFormat().resolvedOptions().locale || "en-US";
 
   // items grouped by category (single table, category header rows)
   const grouped = data.items.reduce((acc, it) => {
@@ -479,11 +554,11 @@ export default function PublicGearList() {
                                 {fmtWeight(g, unit)}
                               </span>
                               <span className="tabular-nums text-left">
-                                {fmtPrice(
-                                  it,
-                                  data?.list?.currencySymbol || "€",
-                                  { placeholder: "—" }
-                                )}
+                                {fmtPrice(it, {
+                                  defaultCurrency,
+                                  locale: browserLocale,
+                                  placeholder: "—",
+                                })}
                               </span>
                             </div>
 
@@ -604,7 +679,9 @@ export default function PublicGearList() {
 
                         {/* 4) Price (right-aligned, tabular) */}
                         <div className="justify-self-end tabular-nums text-primary w-[112px] text-right">
-                          {fmtPrice(it, data?.list?.currencySymbol || "€", {
+                          {fmtPrice(it, {
+                            defaultCurrency,
+                            locale: browserLocale,
                             placeholder: "—",
                           })}
                         </div>

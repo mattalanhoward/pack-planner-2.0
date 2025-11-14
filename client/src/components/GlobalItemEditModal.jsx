@@ -35,7 +35,15 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const itemId = item ? item._id : null;
 
   const { currency, locale } = useUserSettings();
-  const CURRENCY_SYMBOL = { EUR: "€", USD: "$", GBP: "£" };
+  const CURRENCY_SYMBOL = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "C$",
+    AUD: "A$",
+    CHF: "CHF",
+    SEK: "kr",
+  };
   const currencySymbol = CURRENCY_SYMBOL[currency] || currency;
 
   // affiliate-backed items (Awin)

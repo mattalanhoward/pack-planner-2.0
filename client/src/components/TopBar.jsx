@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import logo from "../assets/images/logo.png";
 import { useUserSettings } from "../contexts/UserSettings";
-import { normalizeRegion } from "../utils/region";
 import AccountModal from "./AccountModal";
 import ViewToggle from "./ViewToggle";
 import LegalModal from "./LegalModal";
@@ -26,8 +25,6 @@ export default function TopBar({ title, openSettings }) {
   const {
     weightUnit,
     setWeightUnit,
-    currency,
-    setCurrency,
     language,
     setLanguage,
     region,
@@ -146,28 +143,6 @@ export default function TopBar({ title, openSettings }) {
                   >
                     <option value="g">g</option>
                     <option value="oz">oz</option>
-                  </select>
-                </div>
-              ),
-            },
-
-            // Currency
-            {
-              key: "currency",
-              render: () => (
-                <div
-                  className="flex items-center justify-between text-sm text-secondary"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span>Currency</span>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="ml-2 bg-transparent focus:outline-none"
-                  >
-                    <option value="EUR">€</option>
-                    <option value="USD">$</option>
-                    <option value="GBP">£</option>
                   </select>
                 </div>
               ),

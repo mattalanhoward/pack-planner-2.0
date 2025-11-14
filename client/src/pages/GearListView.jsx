@@ -66,6 +66,22 @@ export default function GearListView({
   const closeShare = () => setShareOpen(false);
   const [busy, setBusy] = React.useState(false);
 
+  // ─────────────────────────────────────────────────────────────
+  // Preload dropdown thumbnails so they appear instantly on open
+  // ─────────────────────────────────────────────────────────────
+  const preloadBackgroundThumbs = useCallback(() => {
+    // Avoid re-running if already done this page load
+    if (typeof window !== "undefined" && window.__pp_bg_preloaded) return;
+    if (typeof window !== "undefined") window.__pp_bg_preloaded = true;
+    try {
+      defaultBackgrounds.forEach(({ url }) => {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = url; // starts fetching into cache
+      });
+    } catch {}
+  }, []);
+
   useEffect(() => {
     setBgImage(list.backgroundImageUrl);
   }, [list.backgroundImageUrl]);
@@ -75,6 +91,11 @@ export default function GearListView({
   }, [list.backgroundColor]);
 
   useEffect(() => setTitleText(list.title), [list.title]);
+
+  // Kick off preload shortly after mount, so the first open feels instant
+  useEffect(() => {
+    preloadBackgroundThumbs();
+  }, [preloadBackgroundThumbs]);
 
   // For delete‐list confirmation:
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -751,6 +772,7 @@ export default function GearListView({
           <DropdownMenu
             trigger={
               <button
+                onMouseEnter={preloadBackgroundThumbs}
                 className="inline-flex items-center justify-center text-l text-primaryAlt hover:text-primaryAlt/80 leading-none"
                 aria-label="List options"
               >

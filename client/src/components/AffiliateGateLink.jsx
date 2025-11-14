@@ -65,7 +65,7 @@ function Modal({ titleId, onClose, onProceed, children }) {
       <div className="relative m-2 sm:m-0 w-full max-w-md rounded-lg bg-white shadow-lg outline-none">
         <div className="px-4 py-3 border-b">
           <h2 id={titleId} className="text-base font-semibold text-gray-900">
-            Affiliate link
+            Thanks for supporting TrekList!
           </h2>
         </div>
         <div className="px-4 py-3 text-sm text-gray-800">{children}</div>
@@ -83,7 +83,7 @@ function Modal({ titleId, onClose, onProceed, children }) {
             className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1"
             onClick={onProceed}
           >
-            Proceed to retailer (paid link)
+            Continue to retailer
           </button>
         </div>
       </div>
@@ -122,9 +122,11 @@ export default function AffiliateGateLink({
   const text =
     context === "public" ? (
       <>
-        This link may be an affiliate link. If you buy after clicking,
-        <strong> TrekList or the list owner</strong> may earn a commission at no
-        extra cost to you. <br />
+        TrekList is a free tool made possible through affiliate links. When you
+        purchase gear using these links,{" "}
+        <strong>TrekList or the list owner</strong> may earn a small commission
+        — at no extra cost to you. Your support helps keep the project running
+        and free for everyone. <br />
         <span className="inline-block mt-1">
           <strong>
             As an Amazon Associate, I earn from qualifying purchases.
@@ -142,8 +144,10 @@ export default function AffiliateGateLink({
       </>
     ) : (
       <>
-        If you buy after clicking, <strong>TrekList</strong> may earn a
-        commission at no extra cost to you. <br />
+        TrekList is a free service supported by affiliate links. If you decide
+        to buy something after clicking, <strong>TrekList</strong> may earn a
+        small commission — at no extra cost to you. Every purchase helps support
+        the project and future updates. <br />
         <span className="inline-block mt-1">
           <strong>
             As an Amazon Associate, I earn from qualifying purchases.

@@ -33,13 +33,13 @@ export default function ConfirmDialog({
         <div className="rounded-lg px-6 py-4 bg-neutralAlt flex justify-center space-x-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-neutralAlt text-primary rounded hover:bg-neutralAlt/90 focus:outline-none focus:ring-2 focus:ring-neutral"
+            className="px-2 py-1 bg-neutralAlt text-primary rounded hover:bg-neutralAlt/90 focus:outline-none focus:ring-2 focus:ring-neutral"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-error text-neutral font-semibold rounded shadow hover:bg-error/80 focus:outline-none focus:ring-2 focus:ring-error"
+            className="px-2 py-1 bg-error text-neutral font-semibold rounded shadow hover:bg-error/80 focus:outline-none focus:ring-2 focus:ring-error"
           >
             {confirmText}
           </button>

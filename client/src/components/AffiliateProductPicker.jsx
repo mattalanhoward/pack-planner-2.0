@@ -211,7 +211,7 @@ export default function AffiliateProductPicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Brand or product (e.g., Osprey pack)"
-          className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+          className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
         />
       </div>
 
@@ -224,7 +224,7 @@ export default function AffiliateProductPicker({
           <select
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
-            className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+            className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
           >
             <option value="">All</option>
             {brandOpts.map((b) =>
@@ -248,7 +248,7 @@ export default function AffiliateProductPicker({
           <select
             value={itemType}
             onChange={(e) => setItemType(e.target.value)}
-            className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+            className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
           >
             <option value="">All</option>
             {typeOpts.map((t) =>
@@ -272,17 +272,17 @@ export default function AffiliateProductPicker({
       {/* Results (fixed height to avoid modal jumping) */}
       <div
         ref={listRef}
-        className="flex flex-col gap-1.5 h-64 sm:h-72 overflow-auto border border-primary/30 rounded-md p-1.5"
+        className="flex flex-col gap-1.5 h-48 sm:h-64 overflow-auto border border-primary/30 rounded-md px-2 py-1"
       >
         {!busy && items.length === 0 && (
-          <div className="text-sm text-primary/70 p-2">
+          <div className="text-sm text-primary/70 px-2 py-1">
             No results for that selection.
           </div>
         )}
         {items.map((p) => (
           <div
             key={p._id || p.externalProductId}
-            className="flex gap-2 items-center border border-primary/20 rounded p-1.5"
+            className="flex gap-2 items-center border border-primary/20 rounded px-2 py-1"
           >
             {p.imageUrl ? (
               <img

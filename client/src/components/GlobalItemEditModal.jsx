@@ -163,7 +163,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
         className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-2 sm:mb-4">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
           <h2 className="text-lg sm:text-xl font-semibold text-primary">
             Edit Global Item
           </h2>
@@ -182,7 +182,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               name="itemType"
               value={form.itemType}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
 
@@ -195,7 +195,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
 
@@ -208,7 +208,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               name="brand"
               value={form.brand}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
 
@@ -249,7 +249,7 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
                 inputMode="decimal"
                 value={displayWeight}
                 onChange={(e) => setDisplayWeight(e.target.value)}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
               />
             </div>
 
@@ -291,14 +291,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+              className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
               rows={2}
             />
           </div>
         </div>
 
         {/* Worn / Consumable */}
-        <div className="flex items-center space-x-4 mt-2">
+        {/* <div className="flex items-center space-x-4 mt-2">
           <label className="inline-flex items-center text-xs sm:text-sm text-primary">
             <input
               type="checkbox"
@@ -317,15 +317,15 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
             />
             Consumable
           </label>
-        </div>
+        </div> */}
 
         {/* Actions */}
-        <div className="mt-4 flex justify-between items-center">
+        <div className="mt-3 flex justify-between items-center">
           <button
             type="button"
             onClick={() => setDeleteConfirmOpen(true)}
             disabled={saving}
-            className="px-4 py-2 bg-error text-neutral text-sm font-semibold rounded-md shadow hover:bg-error/80 focus:outline-none focus:ring-2 focus:ring-error transition"
+            className="px-2 py-1 bg-error text-neutral text-sm font-semibold rounded-md shadow hover:bg-error/80 focus:outline-none focus:ring-2 focus:ring-error transition"
           >
             Delete Item
           </button>
@@ -335,14 +335,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
+              className="px-2 py-1 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded bg-secondary text-white hover:bg-secondary/80"
+              className="px-2 py-1 rounded bg-secondary text-white hover:bg-secondary/80"
             >
               {saving ? "Saving…" : "Save"}
             </button>

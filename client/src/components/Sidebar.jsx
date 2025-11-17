@@ -218,7 +218,7 @@ export default function Sidebar({
         <button
           onClick={() => setCollapsed((c) => !c)}
           className={
-            `absolute top-2.5 bg-primaryAlt text-base-100 hover:bg-primaryAlt/80 rounded-full p-1 shadow-lg transform ` +
+            `absolute top-2 text-primaryAlt hover:text-primaryAlt/80 p-1 transform ` +
             (collapsed ? "right-[-1rem] translate-x-full" : "right-4")
           }
         >
@@ -234,7 +234,7 @@ export default function Sidebar({
               </h2>
               <div className="flex mb-3">
                 <input
-                  className="flex-1 rounded-lg p-2 bg-base-100 text-primary border-primary"
+                  className="flex-1 rounded-lg py-1 px-2 bg-base-100 text-primary border-primary"
                   placeholder="New list"
                   value={newListTitle}
                   onChange={(e) => setNewListTitle(e.target.value)}
@@ -267,7 +267,7 @@ export default function Sidebar({
                           localStorage.removeItem("lastListId");
                         }
                       }}
-                      className={`flex-1 text-left p-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
+                      className={`flex-1 text-left py-1 px-2 rounded-lg whitespace-nowrap overflow-hidden truncate ${
                         l._id === currentListId
                           ? "bg-primaryAlt text-base-100"
                           : "hover:bg-primaryAlt hover:text-neutral"
@@ -294,7 +294,7 @@ export default function Sidebar({
                 </button>
               </div>
               <input
-                className="w-full rounded-lg p-2 bg-base-100 text-primary border border-primary mb-3"
+                className="w-full rounded-lg py-1 px-2 bg-base-100 text-primary border border-primary mb-3"
                 placeholder="Search Gear Items"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -304,7 +304,7 @@ export default function Sidebar({
                 {filteredAndSortedItems.map((item) => (
                   <li
                     key={item._id}
-                    className="flex items-center p-2 bg-base-100/10 border border-primary/20 rounded-lg hover:bg-base-100/20"
+                    className="flex items-center py-1 px-2 bg-base-100/10 border border-primary/20 rounded-lg hover:bg-base-100/20"
                   >
                     <span className="flex-1 truncate text-secondaryAlt">
                       {item.itemType} – {item.name}
@@ -321,7 +321,7 @@ export default function Sidebar({
                   </li>
                 ))}
                 {filteredAndSortedItems.length === 0 && (
-                  <li className="text-base-100/70 p-2">No Gear Items</li>
+                  <li className="text-primaryAlt py-1 px-2">No Gear Items</li>
                 )}
               </ul>
 

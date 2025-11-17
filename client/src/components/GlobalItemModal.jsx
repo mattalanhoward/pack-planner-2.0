@@ -220,10 +220,10 @@ export default function GlobalItemModal({
     <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSubmit}
-        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4 min-h-[600px]"
+        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4"
       >
         {/* Header (smaller on phones) */}
-        <div className="flex justify-between items-center mb-2 sm:mb-4">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
           <h2 className="text-lg sm:text-xl font-semibold text-primary">
             New Gear Item
           </h2>
@@ -238,7 +238,7 @@ export default function GlobalItemModal({
         </div>
 
         {/* Import / Custom tabs */}
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
           <div className="flex gap-2">
             <button
               type="button"
@@ -306,7 +306,7 @@ export default function GlobalItemModal({
 
         {/* Import tab content */}
         {tab === "import" && (
-          <div className="mb-3 sm:mb-4">
+          <div className="">
             <AffiliateProductPicker
               region={regionForSearch}
               onPick={handlePickAffiliate}
@@ -329,7 +329,7 @@ export default function GlobalItemModal({
                 required
                 value={itemType}
                 onChange={(e) => setItemType(e.target.value)}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
               />
             </div>
 
@@ -344,7 +344,7 @@ export default function GlobalItemModal({
                 value={name}
                 required
                 onChange={(e) => setName(e.target.value)}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
               />
             </div>
 
@@ -358,7 +358,7 @@ export default function GlobalItemModal({
                 placeholder="Rainbow"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
               />
             </div>
 
@@ -401,7 +401,7 @@ export default function GlobalItemModal({
                   value={displayWeight}
                   placeholder={unitLabel === "g" ? "e.g. 350" : "e.g. 12.6"}
                   onChange={(e) => setDisplayWeight(e.target.value)}
-                  className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                  className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
                 />
               </div>
               <div className="flex-1">
@@ -443,7 +443,7 @@ export default function GlobalItemModal({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm"
+                className="mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm"
                 rows={2}
               />
             </div>
@@ -451,7 +451,7 @@ export default function GlobalItemModal({
         )}
 
         {/* Worn / Consumable (only on Custom tab) */}
-        {tab === "custom" && (
+        {/* {tab === "custom" && (
           <div className="flex items-center space-x-4 mt-2">
             <label className="inline-flex items-center text-xs sm:text-sm text-primary">
               <input
@@ -472,10 +472,10 @@ export default function GlobalItemModal({
               Consumable
             </label>
           </div>
-        )}
+        )} */}
 
         {/* Actions (slightly tighter) */}
-        <div className="flex justify-end space-x-2 mt-4 sm:mt-6">
+        <div className="flex justify-end space-x-2">
           <button
             type="button"
             onClick={onClose}
@@ -485,14 +485,14 @@ export default function GlobalItemModal({
                 ? "Pick a product (Import) or switch to Custom"
                 : undefined
             }
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
+            className="px-2 py-1 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-3 py-1.5 sm:px-4 sm:py-2 bg-secondary text-white rounded hover:bg-secondary-700 text-sm sm:text-base"
+            className="px-2 py-1  bg-secondary text-white rounded hover:bg-secondary-700 text-sm sm:text-base"
           >
             Save
           </button>

@@ -15,7 +15,7 @@ export default function CurrencyInput({
   locale = "en-US",
   label,
   placeholder = "0.00",
-  className = "mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm",
+  className = "mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm",
   "aria-label": ariaLabel = "Price",
   readOnly = false,
   onFocus,

@@ -82,10 +82,10 @@ export default function GearListDetailsModal({
     <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
       <form
         onSubmit={handleSave}
-        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-6 py-6 overflow-auto"
+        className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4 overflow-auto"
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
           <h2 className="text-2xl font-semibold text-primary">
             Gear List Details
           </h2>
@@ -102,7 +102,7 @@ export default function GearListDetailsModal({
         {/* Grid: 3 cols on md+ */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Weight Breakdown full row */}
-          <div className="md:col-span-3 flex flex-col items-center py-2">
+          <div className="md:col-span-3 flex flex-col items-center px-2 py-1">
             <label className="block text-sm font-medium text-primary mb-3">
               Weight Breakdown
             </label>
@@ -142,7 +142,7 @@ export default function GearListDetailsModal({
                 setTitle(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary text-sm"
+              className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
           {/* Placeholder */}
@@ -163,7 +163,7 @@ export default function GearListDetailsModal({
                 }}
                 dateFormat="P"
                 locale={dfnsLocale}
-                className="w-full border border-primary rounded p-2 text-primary text-sm"
+                className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
                 placeholderText="Select date"
               />
             </div>
@@ -180,7 +180,7 @@ export default function GearListDetailsModal({
                 }}
                 dateFormat="P"
                 locale={dfnsLocale}
-                className="w-full border border-primary rounded p-2 text-primary text-sm"
+                className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
                 placeholderText="Select date"
               />
             </div>
@@ -198,7 +198,7 @@ export default function GearListDetailsModal({
                 setLocation(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary text-sm"
+              className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
 
@@ -214,40 +214,35 @@ export default function GearListDetailsModal({
                 setNotes(e.target.value);
                 setDirty(true);
               }}
-              className="w-full border border-primary rounded p-2 text-primary text-sm"
+              className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
           {/* Stats */}
-          <div className="md:col-span-2 grid grid-cols-2 gap-4 justify-items-center md:justify-items-start">
-            <div>
-              <label className="block text-sm font-medium text-primary mb-1">
-                Total Cost
-              </label>
-              <p className="text-lg font-semibold text-primary">
-                {formattedCost}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-primary mb-1">
-                # of Items
-              </label>
-              <p className="text-base text-primary">{itemsCount}</p>
-            </div>
+          <div className="md:col-span-2 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-primary">
+            <p className="flex items-baseline gap-1">
+              <span className="text-sm font-medium">Total cost: </span>
+              <span className="text-sm font-semibold">{formattedCost}</span>
+            </p>
+
+            <p className="flex items-baseline gap-1">
+              <span className="text-sm font-medium"># of items: </span>
+              <span className="text-sm">{itemsCount}</span>
+            </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-6 flex justify-end space-x-3">
+        <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm"
+            className="px-2 py-1 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/80 text-sm"
+            className="px-2 py-1 bg-secondary text-white rounded hover:bg-secondary/80 text-sm"
           >
             Save
           </button>

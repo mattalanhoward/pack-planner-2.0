@@ -98,7 +98,7 @@ export default function AccountModal({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] p-6 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2 sm:mb-3">
           <h2 className="text-xl font-semibold text-primary">
             Account Settings
           </h2>
@@ -108,7 +108,7 @@ export default function AccountModal({ isOpen, onClose }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b mb-4">
+        <div className="flex border-b mb-2 sm:mb-3">
           {["Profile", "Security"].map((t) => (
             <button
               key={t}
@@ -129,7 +129,7 @@ export default function AccountModal({ isOpen, onClose }) {
 
         {/* Error banner */}
         {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-800 rounded text-sm">
+          <div className="mb-2 sm:mb-3 px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
             {error}
           </div>
         )}
@@ -139,7 +139,7 @@ export default function AccountModal({ isOpen, onClose }) {
           {settings ? (
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col space-y-6 h-full"
+              className="flex flex-col space-y-3 h-full"
             >
               {tab === "Profile" && (
                 <>
@@ -154,7 +154,7 @@ export default function AccountModal({ isOpen, onClose }) {
                       readOnly
                       disabled
                       aria-disabled="true"
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm px-2 py-1 bg-gray-100 text-gray-700 cursor-not-allowed"
                       title="Email can’t be changed here"
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -169,7 +169,7 @@ export default function AccountModal({ isOpen, onClose }) {
                       name="trailname"
                       value={form.trailname}
                       onChange={handleChange}
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm px-2 py-1"
                     />
                   </div>
                 </>
@@ -186,7 +186,7 @@ export default function AccountModal({ isOpen, onClose }) {
                       type="password"
                       value={form.currentPassword}
                       onChange={handleChange}
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm px-2 py-1"
                     />
                   </div>
                   <div>
@@ -198,7 +198,7 @@ export default function AccountModal({ isOpen, onClose }) {
                       type="password"
                       value={form.newPassword}
                       onChange={handleChange}
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm px-2 py-1"
                     />
                   </div>
                   <div>
@@ -210,7 +210,7 @@ export default function AccountModal({ isOpen, onClose }) {
                       type="password"
                       value={form.confirmPassword}
                       onChange={handleChange}
-                      className="mt-1 block w-full border-gray-300 rounded shadow-sm p-2"
+                      className="mt-1 block w-full border-gray-300 rounded shadow-sm px-2 py-1"
                     />
                   </div>
                 </>
@@ -221,13 +221,13 @@ export default function AccountModal({ isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-base-100 text-primary rounded hover:bg-base-100/80"
+                  className="px-2 py-1 bg-base-100 text-primary rounded hover:bg-base-100/80"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary text-base-100 rounded flex items-center hover:bg-primary/80"
+                  className="px-2 py-1 bg-primary text-base-100 rounded flex items-center hover:bg-primary/80"
                 >
                   Save
                 </button>

@@ -67,7 +67,7 @@ export default function LinkInput({
         onChange={handleChange}
         onBlur={normalizeAndValidate}
         className={
-          "mt-0.5 block w-full border border-primary rounded p-2 text-primary text-sm " +
+          "mt-0.5 block w-full border border-primary rounded px-2 py-1 text-primary text-sm " +
           (error ? "border-error" : "")
         }
       />

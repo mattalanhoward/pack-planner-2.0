@@ -36,7 +36,7 @@ export default function PreviewColumn({ category, items }) {
 
       {/* bottom: “Add Item” button placeholder */}
       <button
-        className="h-12 w-full border border-primary rounded flex items-center justify-center space-x-2 opacity-50 cursor-not-allowed"
+        className="px-2 py-1 w-full border border-primary rounded flex items-center justify-center space-x-2 opacity-50 cursor-not-allowed"
         disabled
       >
         <FaPlus />

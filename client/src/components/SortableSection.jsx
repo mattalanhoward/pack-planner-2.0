@@ -135,7 +135,7 @@ export default function SortableSection({
       </SortableContext>
       <button
         onClick={() => setShowAddModalCat(catId)}
-        className="h-10 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
+        className="p-2 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
       >
         <FaPlus />
         <span className="text-xs">Add Item</span>

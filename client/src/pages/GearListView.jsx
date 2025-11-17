@@ -730,7 +730,7 @@ export default function GearListView({
         >
           {/* Title + stats, inline-editable */}
           <div
-            className="flex-1 flex items-center justify-center space-x-4
+            className="flex-1 flex items-center justify-center space-x-8
 +                          sm:flex-none sm:justify-start"
           >
             {" "}
@@ -1012,7 +1012,7 @@ export default function GearListView({
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="h-12 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
+                  className="p-2 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
                 >
                   <FaPlus />
                   <span className="text-xs">New Category</span>
@@ -1071,7 +1071,7 @@ export default function GearListView({
               ) : (
                 <button
                   onClick={() => setAddingNewCat(true)}
-                  className="h-12 p-3 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
+                  className="p-2 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
                 >
                   <FaPlus />
                   <span className="text-xs">New Category</span>

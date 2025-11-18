@@ -1,6 +1,8 @@
-// client/src/pages/ChecklistView.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import TopBar from "../components/TopBar"; // Standard TopBar integrated
+import { useUserSettings } from "../contexts/UserSettings";
+
 import {
   FaPrint,
   FaUndoAlt,
@@ -16,7 +18,7 @@ import logo from "../assets/images/logo.png";
 /**
  * Screen: interactive checklist (2-col grid)
  * Print: dedicated two-column table DOM (mobile & desktop consistent),
- *        repeating header, totals-only, blank checkboxes, no split categories.
+ * repeating header, totals-only, blank checkboxes, no split categories.
  */
 export default function ChecklistView() {
   const { listId } = useParams();
@@ -76,6 +78,9 @@ export default function ChecklistView() {
   const packed = allItems.filter((i) => checked[i._id]).length;
   const pct = total ? Math.round((packed / total) * 100) : 0;
 
+  // ─── viewMode persistence ───
+  const { viewMode, setViewMode } = useUserSettings();
+
   const tripMeta = useMemo(() => {
     const s = full.list?.tripStart ? new Date(full.list.tripStart) : null;
     const e = full.list?.tripEnd ? new Date(full.list.tripEnd) : null;
@@ -122,19 +127,24 @@ export default function ChecklistView() {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral/50 text-primary">
-        <header className="border-b bg-base-100 print:hidden">
-          <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
+        {/* RENDER TopBar in loading state */}
+        <TopBar
+          title="TrekList.co"
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+        />
+
+        {/* NEW ACTION BAR PLACEHOLDER for loading state (max-w-3xl) */}
+        <div className="border-b bg-base-100 print:hidden sticky top-[52px] z-50">
+          <div className="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between gap-4">
             <div className="h-5 w-20 bg-base-200 rounded animate-pulse" />
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-base-200 animate-pulse" />
-              <div className="leading-tight">
-                <div className="h-4 w-24 bg-base-200 rounded animate-pulse" />
-                <div className="mt-1 h-3 w-20 bg-base-200 rounded animate-pulse" />
-              </div>
+              <div className="h-8 w-28 bg-base-200 rounded animate-pulse" />
             </div>
-            <div className="h-8 w-28 bg-base-200 rounded animate-pulse" />
           </div>
-        </header>
+        </div>
+
+        {/* OLD HEADER PLACEHOLDER REMOVED. Keeping the rest of the skeleton: */}
         <main className="mx-auto max-w-5xl px-4 py-6">
           <section className="mb-6">
             <div className="flex items-end justify-between gap-4">
@@ -180,52 +190,48 @@ export default function ChecklistView() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral/50 text-primary">
-      {/* Header: brand + actions (screen only) */}
-      <header className="border-b bg-base-100 print:hidden">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-neutral/50 text-primary print:bg-white">
+      {/* 1. NEW: Render the standard TopBar component */}
+      <TopBar
+        title="TrekList.co" // FIXED: Ensuring the title is set to the brand name
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
+
+      <div className="border-b bg-base-100 print:hidden sticky top-[48px] z-50">
+        <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
           <button
+            // Navigation remains to the specific list dashboard view
             onClick={() => navigate(`/dashboard/${listId}`)}
-            className="no-print inline-flex items-center gap-2 text-secondary hover:text-primary"
-            aria-label="Back to gear list"
+            className="flex items-center gap-2 px-2 py-1 bg-white text-secondary rounded hover:bg-secondary-700 text-sm sm:text-base"
+            aria-label="Back to dashboard"
           >
-            <FaChevronLeft /> Back
+            <FaChevronLeft /> Back to Dashboard
           </button>
 
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="TrekList logo"
-              className="h-8 w-8 rounded-full object-cover"
-            />
-            <div className="leading-tight">
-              <div className="font-semibold text-lg tracking-tight">
-                TrekList
-              </div>
-              <div className="text-xs text-secondary">treklist.co</div>
-            </div>
-          </div>
-
-          <div className="no-print flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-base-200"
-            >
-              <FaPrint /> Print
-            </button>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={reset}
-              className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-base-200"
+              className="flex items-center gap-2 px-2 py-1 bg-secondary text-white rounded hover:bg-secondary-700 text-sm sm:text-base"
+              aria-label="Reset all checks"
             >
               <FaUndoAlt /> Reset
             </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-2 py-1 bg-white text-secondary rounded hover:bg-secondary-700 text-sm sm:text-base"
+              aria-label="Print checklist"
+            >
+              <FaPrint /> Print
+            </button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* ---------- SCREEN CONTENT (interactive) ---------- */}
+      {/* Ensure main content is hidden from print view to rely solely on the print table */}
       <main className="mx-auto max-w-5xl px-4 py-6 print:hidden">
         {/* Title + progress */}
         <section className="mb-6">
@@ -342,35 +348,37 @@ export default function ChecklistView() {
             <tr>
               <th colSpan={2} className="align-bottom">
                 {/* Brand strip + list meta (repeats on every page) */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={logo}
-                      alt="TrekList logo"
-                      style={{
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: "9999px",
-                      }}
-                    />
-                    <div className="leading-tight">
-                      <div
-                        className="font-semibold"
-                        style={{ fontSize: "12pt" }}
-                      >
-                        TrekList
-                      </div>
-                      <div
-                        className="text-secondary"
-                        style={{ fontSize: "8.5pt" }}
-                      >
-                        treklist.co
-                      </div>
+                {/* FIX: Added paddingTop: '3mm' to the main content container 
+                to push the content down and center it vertically within the header space. 
+            */}
+                <div
+                  style={{
+                    paddingTop:
+                      "3mm" /* NEW: Add top padding for vertical centering */,
+                    paddingBottom: "5mm",
+                    borderBottom: "1px solid #ddd",
+                  }}
+                >
+                  {/* Row 1: Title and Total Items */}
+                  <div
+                    className="flex items-end justify-between"
+                    style={{ marginBottom: "2mm" }}
+                  >
+                    <div className="font-semibold" style={{ fontSize: "14pt" }}>
+                      {tripMeta.title}
+                    </div>
+                    <div className="text-right" style={{ fontSize: "10pt" }}>
+                      Total items: {total}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold" style={{ fontSize: "12pt" }}>
-                      {tripMeta.title}
+
+                  {/* Row 2: Location and Dates */}
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="text-secondary"
+                      style={{ fontSize: "10pt" }}
+                    >
+                      {tripMeta.location && <>{tripMeta.location}</>}
                     </div>
                     <div className="text-secondary" style={{ fontSize: "9pt" }}>
                       {tripMeta.dates}
@@ -378,14 +386,10 @@ export default function ChecklistView() {
                         ` · ${tripMeta.nights} ${
                           tripMeta.nights === 1 ? "night" : "nights"
                         }`}
-                      {tripMeta.location && ` · ${tripMeta.location}`}
-                    </div>
-                    <div className="mt-1" style={{ fontSize: "10pt" }}>
-                      Total items: {total}
                     </div>
                   </div>
                 </div>
-                <div style={{ height: "10mm" }} />{" "}
+                <div style={{ height: "10mm" }} />
                 {/* breathing room under header */}
               </th>
             </tr>
@@ -510,8 +514,15 @@ export default function ChecklistView() {
           .icons { margin-left: auto; display: inline-flex; gap: 6px; color: #555; font-size: 10pt; }
           .ico { line-height: 1; }
 
-          body { background: #fff; }
-          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          /* FIX: Ensure a pure white background on print output */
+          body, html { 
+            background-color: #fff !important; 
+            color: #000 !important; /* Ensure text is black */
+          }
+          * { 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+          }
         }
       `}</style>
     </div>

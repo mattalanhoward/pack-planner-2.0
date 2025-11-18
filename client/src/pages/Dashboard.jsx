@@ -69,7 +69,6 @@ export default function Dashboard() {
   }, [lists, listId, navigate]);
 
   // ─── viewMode persistence ───
-  // NEW: pull from server-backed Context
   const { viewMode, setViewMode } = useUserSettings();
 
   // fetch /api/dashboard/:listId/full

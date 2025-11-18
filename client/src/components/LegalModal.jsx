@@ -34,7 +34,7 @@ export default function LegalModal({ open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-modal-title"
@@ -44,7 +44,7 @@ export default function LegalModal({ open, onClose }) {
         <div className="flex justify-between items-center mb-4">
           <h2
             id="legal-modal-title"
-            className="text-xl font-semibold text-primary"
+            className="text-lg sm:text-xl font-semibold text-primary"
           >
             Legal & Policies
           </h2>

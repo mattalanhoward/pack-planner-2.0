@@ -49,7 +49,7 @@ export default function TopBar({ title, openSettings }) {
         <img src={logo} alt="Logo" className="h-8" />
         <h1 className="text-xl font-semibold">{title}</h1>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center print:hidden">
         <DropdownMenu
           trigger={
             <button

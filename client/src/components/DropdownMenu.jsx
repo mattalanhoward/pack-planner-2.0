@@ -33,12 +33,18 @@ export default function DropdownMenu({
         leaveTo="transform opacity-0 scale-95"
       >
         <Menu.Items
-          className={`absolute right-0 mt-2 ${menuWidth} origin-top-right rounded-md bg-base-100 isolate shadow-lg ring-1 ring-black/5 focus:outline-none z-50
-                       overflow-auto overscroll-contain ${menuClassName}`}
+          className={`
+            absolute right-0 mt-2 ${menuWidth}
+            origin-top-right rounded-md bg-base-100 isolate shadow-lg
+            ring-1 ring-black/5 focus:outline-none z-50
+            max-h-[calc(100dvh-4rem)] sm:max-h-[80vh]
+            overflow-y-auto overscroll-contain
+            ${menuClassName}
+          `}
         >
           {items.map((item) =>
             item.render ? (
-              <div key={item.key} className="px-4 py-2">
+              <div key={item.key} className="px-4 py-1">
                 {item.render()}
               </div>
             ) : (
@@ -49,7 +55,7 @@ export default function DropdownMenu({
                     disabled={disabled}
                     className={`${
                       active ? "bg-primaryAlt hover:text-base-100" : ""
-                    } block w-full text-left px-4 py-2 text-sm text-secondary ${
+                    } block w-full text-left px-4 py-1 text-sm text-secondary ${
                       item.className || ""
                     }`}
                   >

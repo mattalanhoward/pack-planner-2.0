@@ -188,74 +188,107 @@ router.delete("/:listId", async (req, res) => {
 });
 
 // PATCH /api/dashboard/:listId/preferences
-router.patch("/:listId/preferences", async (req, res) => {
-  const { backgroundColor, backgroundImageUrl } = req.body;
-
-  // build your update object based on what the client sent:
-  const update = {};
-  if (backgroundColor !== undefined) {
-    update.backgroundColor = backgroundColor;
-    update.backgroundImageUrl = null; // clear any image
-  }
-  if (backgroundImageUrl) {
-    update.backgroundImageUrl = backgroundImageUrl;
-    update.backgroundColor = null; // clear any color
-  }
-
+router.patch("/:listId/preferences", async (req, res, next) => {
   try {
-    const updated = await GearList.findOneAndUpdate(
-      { _id: req.params.listId, owner: req.userId },
-      update,
-      { new: true, runValidators: true }
-    );
-    if (!updated) {
-      return res.status(404).json({ error: "List not found" });
+    const { listId } = req.params;
+    const { backgroundColor, backgroundImageUrl } = req.body;
+
+    const list = await GearList.findOne({
+      _id: listId,
+      owner: req.userId,
+    });
+
+    if (!list) {
+      return res.status(404).json({ message: "List not found" });
     }
 
-    // send back the full updated list (or at least both prefs)
+    // Color-only update: clear image
+    if (backgroundColor !== undefined) {
+      list.backgroundColor = backgroundColor;
+      list.backgroundImageUrl = null;
+    }
+
+    // Image update
+    if (backgroundImageUrl) {
+      list.backgroundImageUrl = backgroundImageUrl;
+      list.backgroundColor = null;
+
+      const MAX_HISTORY = 7;
+      const history = Array.isArray(list.backgroundImageHistory)
+        ? list.backgroundImageHistory
+        : [];
+
+      // Only add if it's not already in history (no reordering on select)
+      if (!history.includes(backgroundImageUrl)) {
+        const next = [...history, backgroundImageUrl];
+        list.backgroundImageHistory =
+          next.length > MAX_HISTORY
+            ? next.slice(next.length - MAX_HISTORY)
+            : next;
+      }
+    }
+
+    await list.save();
+
     return res.json({
       list: {
-        backgroundColor: updated.backgroundColor,
-        backgroundImageUrl: updated.backgroundImageUrl,
-        // …and any other fields you care about…
+        _id: list._id,
+        backgroundColor: list.backgroundColor,
+        backgroundImageUrl: list.backgroundImageUrl,
+        backgroundImageHistory: list.backgroundImageHistory,
       },
     });
   } catch (err) {
-    console.error("Error updating preferences:", err);
-    return res.status(500).json({ error: "Could not update preferences." });
+    next(err);
   }
 });
 
-// POST /api/gear-lists/:listId/preferences/image
-// Upload and set a background image via Cloudinary
-router.post(
+// PATCH /api/dashboard/:listId/preferences/image
+router.patch(
   "/:listId/preferences/image",
-  upload.single("image"), // multer-storage-cloudinary
-  async (req, res) => {
-    console.log("📤 Hit image‐upload route, req.file:", req.file);
-
+  upload.single("image"),
+  async (req, res, next) => {
     try {
-      if (!req.file || !req.file.path) {
-        console.error("❌ No file in request");
-        return res.status(400).json({ error: "No image file provided." });
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
       }
-      console.log("✅ File uploaded, path/url:", req.file.path);
-      const imageUrl = req.file.path;
-      const updated = await GearList.findOneAndUpdate(
-        { _id: req.params.listId, owner: req.userId },
-        { backgroundImageUrl: imageUrl, backgroundColor: null },
-        { new: true }
-      );
-      if (!updated) {
-        return res.status(404).json({ error: "List not found" });
+
+      const { listId } = req.params;
+      const imageUrl = req.file.path; // from Cloudinary / storage
+
+      const list = await GearList.findOne({
+        _id: listId,
+        owner: req.userId,
+      });
+
+      if (!list) {
+        return res.status(404).json({ message: "List not found" });
       }
-      return res.json({ list: updated });
+
+      list.backgroundImageUrl = imageUrl;
+      list.backgroundColor = null;
+
+      const MAX_HISTORY = 7;
+      const history = Array.isArray(list.backgroundImageHistory)
+        ? list.backgroundImageHistory
+        : [];
+
+      if (!history.includes(imageUrl)) {
+        const next = [...history, imageUrl];
+        list.backgroundImageHistory =
+          next.length > MAX_HISTORY
+            ? next.slice(next.length - MAX_HISTORY)
+            : next;
+      }
+
+      await list.save();
+
+      return res.json({
+        imageUrl,
+        backgroundImageHistory: list.backgroundImageHistory,
+      });
     } catch (err) {
-      if (err.code === "LIMIT_FILE_SIZE") {
-        return res.status(413).json({ error: "Image too large (max 5 MB)." });
-      }
-      console.error("Image upload error:", err);
-      return res.status(500).json({ error: "Upload failed." });
+      next(err);
     }
   }
 );

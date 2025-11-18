@@ -19,6 +19,10 @@ const GearListSchema = new mongoose.Schema(
     tripEnd: { type: Date },
     location: { type: String, default: "" },
     backgroundImageUrl: { type: String, default: null },
+    backgroundImageHistory: {
+      type: [String],
+      default: [],
+    },
     backgroundColor: {
       type: String,
       enum: [...GEARLIST_SWATCHES, null],

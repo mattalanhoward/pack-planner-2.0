@@ -8,6 +8,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { useUnit } from "../hooks/useUnit";
 import { useWeightInput } from "../hooks/useWeightInput";
 import { useUserSettings } from "../contexts/UserSettings";
+import { FaTimes } from "react-icons/fa";
 
 export default function GlobalItemEditModal({ item, onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -167,6 +168,14 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           <h2 className="text-lg sm:text-xl font-semibold text-primary">
             Edit Global Item
           </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="text-error hover:text-error/80 text-xl sm:text-2xl"
+          >
+            <FaTimes />
+          </button>
         </div>
 
         {error && <div className="text-error mb-2">{error}</div>}
@@ -220,22 +229,17 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
               label="Link"
               placeholder="tarptent.com"
               required={false}
-              disabled={isAffiliate}
+              readOnly={isAffiliate}
             />
             {isAffiliate && (
               <button
                 type="button"
                 aria-label="Link is locked"
-                title="Link is locked"
+                title="Link is set by the merchant for imported items."
                 className="absolute inset-0 cursor-not-allowed bg-transparent"
                 onClick={(e) => e.preventDefault()}
               />
             )}
-            {isAffiliate ? (
-              <p className="mt-1 text-[11px] text-primary/80">
-                Link is set by the merchant for imported items.
-              </p>
-            ) : null}
           </div>
 
           {/* Weight + Price */}
@@ -263,22 +267,18 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
                   currency={currency}
                   locale={locale}
                   onChange={(val) => setForm((f) => ({ ...f, price: val }))}
+                  readOnly={isAffiliate}
                 />
                 {isAffiliate && (
                   <button
                     type="button"
                     aria-label="Price is locked"
-                    title="Price is locked"
+                    title="Price is set by the merchant for imported items."
                     className="absolute inset-0 cursor-not-allowed bg-transparent"
                     onClick={(e) => e.preventDefault()}
                   />
                 )}
               </div>
-              {isAffiliate ? (
-                <p className="mt-1 text-[11px] text-primary/80">
-                  Price is set by the merchant for imported items.
-                </p>
-              ) : null}
             </div>
           </div>
 
@@ -297,27 +297,11 @@ export default function GlobalItemEditModal({ item, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Worn / Consumable */}
-        {/* <div className="flex items-center space-x-4 mt-2">
-          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
-            <input
-              type="checkbox"
-              checked={worn}
-              onChange={(e) => setWorn(e.target.checked)}
-              className="mr-1 sm:mr-2"
-            />
-            Worn
-          </label>
-          <label className="inline-flex items-center text-xs sm:text-sm text-primary">
-            <input
-              type="checkbox"
-              checked={consumable}
-              onChange={(e) => setConsumable(e.target.checked)}
-              className="mr-1 sm:mr-2"
-            />
-            Consumable
-          </label>
-        </div> */}
+        {isAffiliate && (
+          <p className="mt-2 text-[11px] sm:text-xs text-primary">
+            Link and price set by merchant for imported items.
+          </p>
+        )}
 
         {/* Actions */}
         <div className="mt-3 flex justify-between items-center">

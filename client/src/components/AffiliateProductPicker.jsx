@@ -269,6 +269,11 @@ export default function AffiliateProductPicker({
 
       {error ? <div className="text-xs text-red-600">{error}</div> : null}
 
+      {/* <div className="flex justify-between items-center">
+        <div className="text-xs text-primary/70">
+          {busy ? "Loading…" : `Showing ${items.length}/${total}`}
+        </div>
+      </div> */}
       {/* Results (fixed height to avoid modal jumping) */}
       <div
         ref={listRef}
@@ -324,13 +329,6 @@ export default function AffiliateProductPicker({
         ))}
         {/* Infinite scroll sentinel */}
         <div ref={sentinelRef} />
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div className="text-xs text-primary/70">
-          {busy ? "Loading…" : `Showing ${items.length}/${total}`}
-        </div>
-        {/* No button needed; infinite scroll handles paging */}
       </div>
     </div>
   );

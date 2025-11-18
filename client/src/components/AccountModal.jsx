@@ -95,18 +95,17 @@ export default function AccountModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] p-6 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-primary bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-neutralAlt rounded-lg shadow-2xl max-w-xl w-full px-4 py-4 sm:px-6 sm:py-6 my-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-2 sm:mb-3">
-          <h2 className="text-xl font-semibold text-primary">
+          <h2 className="text-lg sm:text-xl font-semibold text-primary">
             Account Settings
           </h2>
           <button onClick={onClose} className="text-error hover:text-error/80">
             <FaTimes size={20} />
           </button>
         </div>
-
         {/* Tabs */}
         <div className="flex border-b mb-2 sm:mb-3">
           {["Profile", "Security"].map((t) => (
@@ -126,14 +125,12 @@ export default function AccountModal({ isOpen, onClose }) {
             </button>
           ))}
         </div>
-
         {/* Error banner */}
         {error && (
           <div className="mb-2 sm:mb-3 px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
             {error}
           </div>
         )}
-
         {/* Form */}
         <div className="flex-1 overflow-y-auto">
           {settings ? (

@@ -57,38 +57,56 @@ export default function GearListView({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleText, setTitleText] = useState(list.title);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedFileName, setSelectedFileName] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   // ⚡️ Optimistic UI for background color
   const [bgColor, setBgColor] = useState(list.backgroundColor);
   const [bgImage, setBgImage] = useState(list.backgroundImageUrl);
+  const [customBackgrounds, setCustomBackgrounds] = useState([]);
   const [shareOpen, setShareOpen] = useState(false);
   const closeShare = () => setShareOpen(false);
   const [busy, setBusy] = React.useState(false);
+
+  const MAX_CUSTOM_BACKGROUNDS = 7;
 
   // ─────────────────────────────────────────────────────────────
   // Preload dropdown thumbnails so they appear instantly on open
   // ─────────────────────────────────────────────────────────────
   const preloadBackgroundThumbs = useCallback(() => {
-    // Avoid re-running if already done this page load
     if (typeof window !== "undefined" && window.__pp_bg_preloaded) return;
     if (typeof window !== "undefined") window.__pp_bg_preloaded = true;
     try {
       defaultBackgrounds.forEach(({ url }) => {
         const img = new Image();
         img.decoding = "async";
-        img.src = url; // starts fetching into cache
+        img.src = url;
       });
     } catch {}
   }, []);
 
+  // keep local bgImage in sync with whatever the server says
   useEffect(() => {
     setBgImage(list.backgroundImageUrl);
   }, [list.backgroundImageUrl]);
 
+  // hydrate custom images from the server's history (cross-device)
   useEffect(() => {
-    setBgColor(list.backgroundColor);
-  }, [list.backgroundColor]);
+    const history = Array.isArray(list.backgroundImageHistory)
+      ? list.backgroundImageHistory
+      : [];
+
+    // Filter out built-in defaults (these are shown in the “Default images” section)
+    const nonDefault = history.filter(
+      (url) => !defaultBackgrounds.some((bg) => bg.url === url)
+    );
+
+    // Dedupe while preserving order
+    const deduped = [];
+    for (const url of nonDefault) {
+      if (!deduped.includes(url)) deduped.push(url);
+    }
+
+    setCustomBackgrounds(deduped.slice(0, MAX_CUSTOM_BACKGROUNDS));
+  }, [list]);
 
   useEffect(() => setTitleText(list.title), [list.title]);
 
@@ -145,11 +163,6 @@ export default function GearListView({
     worn: wornItems,
     consumable: consumableItems,
     total: totalItems,
-  };
-
-  const handleOpenShareModal = () => {
-    if (busy) return;
-    if (typeof onOpenShare === "function") onOpenShare();
   };
 
   function computeStats(itemsMap) {
@@ -577,7 +590,6 @@ export default function GearListView({
     e.stopPropagation();
     const file = e.target.files[0];
     if (!file) return;
-    setSelectedFileName(file.name);
 
     if (file.size > MAX_SIZE) {
       toast.error("Please select an image under 5 MB.");
@@ -588,7 +600,7 @@ export default function GearListView({
 
     setIsUploading(true);
     try {
-      await api.post(`/dashboard/${listId}/preferences/image`, fd);
+      await api.patch(`/dashboard/${listId}/preferences/image`, fd);
       toast.success("Background image updated");
       await onRefresh();
     } catch (err) {
@@ -624,8 +636,8 @@ export default function GearListView({
     }
   };
 
-  // user picks one of the default background images
-  const handleDefaultBackgroundSelect = async (url) => {
+  // user picks one of the background images (default or custom)
+  const handleBackgroundSelect = async (url) => {
     // 1️⃣ Keep the old value so we can roll back on failure
     const previousImage = bgImage;
 
@@ -729,11 +741,7 @@ export default function GearListView({
           ].join(" ")}
         >
           {/* Title + stats, inline-editable */}
-          <div
-            className="flex-1 flex items-center justify-center space-x-8
-+                          sm:flex-none sm:justify-start"
-          >
-            {" "}
+          <div className="flex-1 flex items-center justify-center space-x-8 sm:flex-none sm:justify-start">
             {isEditingTitle ? (
               <input
                 type="text"
@@ -797,46 +805,65 @@ export default function GearListView({
                     <div className="block text-sm text-primary mb-1">
                       Background
                     </div>
-                    <div className="block text-sm text-secondary mb-1">
-                      Images
-                      <div className="grid grid-cols-4 gap-2 mt-2 mx-auto w-full max-w-xs">
-                        {defaultBackgrounds.map(({ key, url }) => (
-                          <button
-                            key={key}
-                            onClick={() => handleDefaultBackgroundSelect(url)}
-                            className={
-                              `w-10 h-10 bg-cover bg-center rounded ` +
-                              (bgImage === url
-                                ? "ring-2 ring-secondary"
-                                : "ring-1 ring-transparent hover:ring-gray-300")
-                            }
-                            style={{ backgroundImage: `url(${url})` }}
-                          />
-                        ))}
-                      </div>
+
+                    {/* My images + upload tile */}
+                    <p className="text-[11px] text-primary/80 mb-1">
+                      My images
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 mt-1 mx-auto w-full max-w-xs">
+                      {customBackgrounds.map((url) => (
+                        <button
+                          key={url}
+                          onClick={() => handleBackgroundSelect(url)}
+                          className={
+                            `w-10 h-10 bg-cover bg-center rounded ` +
+                            (bgImage === url
+                              ? "ring-2 ring-secondary"
+                              : "ring-1 ring-transparent hover:ring-gray-300")
+                          }
+                          style={{ backgroundImage: `url(${url})` }}
+                        />
+                      ))}
+
+                      {/* Upload tile */}
+                      <label
+                        className={
+                          `w-10 h-10 rounded border border-dashed border-primary/60
+             flex items-center justify-center text-primary/60 text-xl
+             cursor-pointer ` +
+                          (isUploading ? "opacity-50 cursor-not-allowed" : "")
+                        }
+                      >
+                        +
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={isUploading}
+                        />
+                      </label>
                     </div>
-                  </div>
-                ),
-              },
-              {
-                key: "file-upload",
-                render: () => (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <label className="inline-flex items-center px-3 py-1 bg-base-100 border rounded cursor-pointer text-sm">
-                      Upload Image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                      />
-                    </label>
-                    {!bgImage && (
-                      <p className="text-xs text-secondary mt-2">
-                        {selectedFileName || "No file chosen"}
-                      </p>
-                    )}
+
+                    {/* Default images */}
+                    <p className="mt-3 text-[11px] text-primary/80 mb-1">
+                      Default images
+                    </p>
+                    <div className="grid grid-cols-4 gap-2 mt-1 mx-auto w-full max-w-xs">
+                      {defaultBackgrounds.map(({ key, url }) => (
+                        <button
+                          key={key}
+                          onClick={() => handleBackgroundSelect(url)}
+                          className={
+                            `w-10 h-10 bg-cover bg-center rounded ` +
+                            (bgImage === url
+                              ? "ring-2 ring-secondary"
+                              : "ring-1 ring-transparent hover:ring-gray-300")
+                          }
+                          style={{ backgroundImage: `url(${url})` }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ),
               },
@@ -845,9 +872,9 @@ export default function GearListView({
                 render: () => (
                   <div onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
-                    <div className="block text-sm text-secondary mb-1">
+                    <p className="mt-3 text-[11px] text-primary/80 mb-1">
                       Colors
-                    </div>
+                    </p>
                     {/* Swatches Grid */}
                     <div className="grid grid-cols-4 gap-2 place-items-center mt-2">
                       {swatches.map(({ key, value, class: cls }) => (

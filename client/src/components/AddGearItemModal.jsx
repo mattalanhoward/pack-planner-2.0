@@ -158,7 +158,7 @@ export default function AddGearItemModal({
 
   return (
     <div className="fixed inset-0 bg-neutral bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full h-[80vh] p-6 flex flex-col overflow-hidden">
+      <div className="bg-base-100 rounded-xl shadow-2xl max-w-lg w-full sm:h-[80vh] h-[70vh] p-6 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center mb-2 sm:mb-3">
           <h2 className="text-xl font-semibold text-primary">

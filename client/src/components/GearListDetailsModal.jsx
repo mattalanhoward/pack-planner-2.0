@@ -145,9 +145,6 @@ export default function GearListDetailsModal({
               className="w-full border border-primary rounded px-2 py-1 text-primary text-sm"
             />
           </div>
-          {/* Placeholder */}
-          <div className="md:col-span-1"></div>
-
           {/* Trip Dates */}
           <div className="md:col-span-2 grid grid-cols-2 gap-4">
             {/* Trip Start */}

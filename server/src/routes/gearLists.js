@@ -208,24 +208,12 @@ router.patch("/:listId/preferences", async (req, res, next) => {
       list.backgroundImageUrl = null;
     }
 
-    // Image update
+    // Image update (default or previously uploaded)
     if (backgroundImageUrl) {
       list.backgroundImageUrl = backgroundImageUrl;
       list.backgroundColor = null;
-
-      const MAX_HISTORY = 7;
-      const history = Array.isArray(list.backgroundImageHistory)
-        ? list.backgroundImageHistory
-        : [];
-
-      // Only add if it's not already in history (no reordering on select)
-      if (!history.includes(backgroundImageUrl)) {
-        const next = [...history, backgroundImageUrl];
-        list.backgroundImageHistory =
-          next.length > MAX_HISTORY
-            ? next.slice(next.length - MAX_HISTORY)
-            : next;
-      }
+      // ⛔️ Do NOT touch backgroundImageHistory here.
+      // We only track user uploads in /preferences/image.
     }
 
     await list.save();

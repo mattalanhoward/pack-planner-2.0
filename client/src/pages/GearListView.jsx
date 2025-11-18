@@ -94,9 +94,11 @@ export default function GearListView({
       ? list.backgroundImageHistory
       : [];
 
-    // Filter out built-in defaults (these are shown in the “Default images” section)
     const nonDefault = history.filter(
-      (url) => !defaultBackgrounds.some((bg) => bg.url === url)
+      (url) =>
+        typeof url === "string" &&
+        url.trim().length > 0 &&
+        !defaultBackgrounds.some((bg) => bg.url === url)
     );
 
     // Dedupe while preserving order
@@ -106,7 +108,7 @@ export default function GearListView({
     }
 
     setCustomBackgrounds(deduped.slice(0, MAX_CUSTOM_BACKGROUNDS));
-  }, [list]);
+  }, [list.backgroundImageHistory]);
 
   useEffect(() => setTitleText(list.title), [list.title]);
 

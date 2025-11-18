@@ -113,14 +113,6 @@ export default function GlobalItemModal({
   const currencySymbol = CURRENCY_SYMBOL[currency] || "";
   const regionForSearch = normalizeRegion(settingsRegion || detectRegion());
 
-  // Friendly popup when a locked field is focused
-  const showLockedPopup = () =>
-    Swal.fire({
-      icon: "info",
-      title: "Locked field",
-      text: "For affiliate items, price and link come from the merchant and can’t be edited.",
-    });
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -268,9 +260,9 @@ export default function GlobalItemModal({
 
           {affProduct ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-primary">
+              {/* <span className="text-xs text-primary">
                 Selected: <strong>{affProduct.name}</strong>
-              </span>
+              </span> */}
               <button
                 type="button"
                 className="text-xs underline text-primary"
@@ -298,7 +290,7 @@ export default function GlobalItemModal({
                 }}
                 disabled={loading}
               >
-                Clear
+                Clear Selection
               </button>
             </div>
           ) : null}
@@ -371,22 +363,15 @@ export default function GlobalItemModal({
                 placeholder="tarptent.com"
                 required={false}
                 readOnly={!!affProduct}
-                onFocus={affProduct ? showLockedPopup : undefined}
               />
               {affProduct && (
                 <button
                   type="button"
                   aria-label="Link is locked"
-                  title="Link is locked"
-                  // onClick={showLockedPopup}
+                  title="Link is set by the merchant for imported items."
                   className="absolute inset-0 cursor-not-allowed bg-transparent"
                 />
               )}
-              {affProduct ? (
-                <p className="mt-1 text-[11px] text-primary/80">
-                  Link is set by the merchant for imported items.
-                </p>
-              ) : null}
             </div>
 
             {/* Weight + Price: force flex on all breakpoints */}
@@ -415,23 +400,16 @@ export default function GlobalItemModal({
                     locale={locale}
                     onChange={(val) => setPrice(val)}
                     readOnly={!!affProduct}
-                    onFocus={affProduct ? showLockedPopup : undefined}
                   />
                   {affProduct && (
                     <button
                       type="button"
                       aria-label="Price is locked"
-                      title="Price is locked"
-                      // onClick={showLockedPopup}
+                      title="Price is set by the merchant for imported items."
                       className="absolute inset-0 cursor-not-allowed bg-transparent"
                     />
                   )}
                 </div>
-                {affProduct ? (
-                  <p className="mt-1 text-[11px] text-primary/80">
-                    Price is set by the merchant for imported items.
-                  </p>
-                ) : null}
               </div>
             </div>
 
@@ -474,28 +452,36 @@ export default function GlobalItemModal({
           </div>
         )} */}
 
-        {/* Actions (slightly tighter) */}
-        <div className="flex justify-end space-x-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            title={
-              tab === "import"
-                ? "Pick a product (Import) or switch to Custom"
-                : undefined
-            }
-            className="px-2 py-1 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-2 py-1  bg-secondary text-white rounded hover:bg-secondary-700 text-sm sm:text-base"
-          >
-            Save
-          </button>
+        {/* Actions + merchant note */}
+        <div className="mt-3 flex items-center gap-2">
+          {affProduct && (
+            <p className="flex-1 text-[11px] sm:text-xs text-primary">
+              Link and price set by merchant for imported items.
+            </p>
+          )}
+
+          <div className="flex space-x-2 ml-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              title={
+                tab === "import"
+                  ? "Pick a product (Import) or switch to Custom"
+                  : undefined
+              }
+              className="px-2 py-1 bg-neutralAlt rounded hover:bg-neutralAlt/90 text-primary text-sm sm:text-base"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-2 py-1 bg-secondary text-white rounded hover:bg-secondary-700 text-sm sm:text-base"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </form>
     </div>

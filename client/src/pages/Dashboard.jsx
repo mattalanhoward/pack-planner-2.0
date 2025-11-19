@@ -83,9 +83,27 @@ export default function Dashboard() {
       });
     } catch (err) {
       console.error("Failed to fetch full data", err);
-      toast.error("Could not load this gear list");
+
+      const status = err?.response?.status;
+
+      if (status === 404) {
+        // This list no longer exists (e.g. it was deleted)
+        toast.error("This gear list no longer exists");
+
+        // Clear stale lastListId if it was pointing at this deleted list
+        const stored = localStorage.getItem("lastListId");
+        if (stored === listId) {
+          localStorage.removeItem("lastListId");
+        }
+
+        // Redirect to a safe dashboard path; the redirect logic will pick a valid list
+        navigate("/dashboard", { replace: true });
+      } else {
+        // Other errors (network, 500, etc.)
+        toast.error("Could not load this gear list");
+      }
     }
-  }, [listId]);
+  }, [listId, navigate]);
 
   // — New: Optimistic reorder + persist for categories
   const onReorderCategories = useCallback(

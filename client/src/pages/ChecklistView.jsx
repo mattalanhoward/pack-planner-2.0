@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TopBar from "../components/TopBar"; // Standard TopBar integrated
 import { useUserSettings } from "../contexts/UserSettings";
@@ -13,7 +13,6 @@ import {
 import api from "../services/api";
 import useAuth from "../hooks/useAuth";
 import useChecklistProgress from "../hooks/useChecklistProgress";
-import logo from "../assets/images/logo.png";
 
 /**
  * Screen: interactive checklist (2-col grid)
@@ -99,9 +98,20 @@ export default function ChecklistView() {
     };
   }, [full.list]);
 
+  // Remember whatever the title was before opening the checklist
+  const originalTitleRef = useRef(document.title);
+
+  // While this view is active, show "<Trip> · Checklist"
   useEffect(() => {
     document.title = `${tripMeta.title} · Checklist`;
   }, [tripMeta.title]);
+
+  // When leaving this view, restore the original title
+  useEffect(() => {
+    return () => {
+      document.title = originalTitleRef.current || "TrekList.co";
+    };
+  }, []);
 
   // Build the print columns (must be before any early returns to keep hook order stable)
   const { leftCols, rightCols } = useMemo(() => {

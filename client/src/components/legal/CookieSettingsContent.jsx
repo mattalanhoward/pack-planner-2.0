@@ -15,7 +15,7 @@ export default function CookieSettingsContent() {
   useEffect(() => {
     const loaded = loadConsent();
     setConsent(loaded);
-    setSavedAt(loaded.updatedAt);
+    setSavedAt(loaded.updatedAt || null);
     if (typeof window !== "undefined") {
       window.cookieConsent = loaded;
     }
@@ -47,6 +47,7 @@ export default function CookieSettingsContent() {
     setConsent(next);
     setSavedAt(next.updatedAt);
     setDirty(false);
+    // User explicitly accepted analytics → try to load analytics script
     initAnalytics();
   };
 
@@ -58,9 +59,7 @@ export default function CookieSettingsContent() {
     setConsent(next);
     setSavedAt(next.updatedAt);
     setDirty(false);
-    if (next.analytics) {
-      initAnalytics();
-    }
+    // Intentionally do NOT call initAnalytics when turning analytics off
   };
 
   const handleSave = () => {
@@ -68,23 +67,41 @@ export default function CookieSettingsContent() {
     setConsent(next);
     setSavedAt(next.updatedAt);
     setDirty(false);
+    // If analytics are enabled via Save, try to load analytics script
+    if (next.analytics) {
+      initAnalytics();
+    }
   };
 
   return (
     <>
+      <p className="text-[11px] italic text-secondary mb-2">
+        This Cookie Settings page helps you control non-essential cookies used
+        by TrekList. It does not cover cookies placed by third-party websites
+        when you follow affiliate links or leave TrekList.co.
+      </p>
+
       <h1 className="text-2xl font-semibold mb-4">Cookie Settings</h1>
 
       <p className="mb-3 text-sm">
-        Here you can manage which <strong>non-essential cookies</strong> you
-        allow. TrekList always uses a small number of{" "}
-        <strong>essential cookies</strong> to keep the site secure and make
-        basic features work (for example, keeping you logged in).
+        TrekList uses a small number of cookies and similar technologies:
+        <br />
+        <span className="block mt-1">
+          • <strong>Essential cookies</strong> keep TrekList secure and running
+          (for example, login and basic settings).
+        </span>
+        <span className="block">
+          • <strong>Analytics cookies</strong> help us understand how people use
+          TrekList so we can improve it.
+        </span>
       </p>
 
       <p className="mb-4 text-xs text-secondary">
-        We currently do <strong>not</strong> use marketing / advertising
-        cookies. If we introduce new cookie categories in the future, they will
-        appear here with clear explanations.
+        Essential cookies are always on and cannot be switched off here (you can
+        still manage them in your browser). We currently do <strong>not</strong>{" "}
+        use marketing / advertising cookies on TrekList.co. If we introduce new
+        cookie categories in the future, they will appear here with clear
+        explanations.
       </p>
 
       <div className="border border-base-300 rounded-lg overflow-hidden mb-4">
@@ -105,9 +122,10 @@ export default function CookieSettingsContent() {
             <div>
               <div className="font-medium">Essential</div>
               <div className="text-xs text-secondary mt-1">
-                Required for TrekList to function: secure login, basic
-                preferences, and protection against abuse. These are always
-                enabled.
+                Required for TrekList to function: secure login, session
+                handling, basic preferences, and protection against abuse. These
+                cookies are always enabled. If you block them in your browser,
+                TrekList may not work correctly.
               </div>
             </div>
           </div>
@@ -130,9 +148,11 @@ export default function CookieSettingsContent() {
                 Analytics
               </label>
               <div className="text-xs text-secondary mt-1">
-                Allows us to collect anonymous usage statistics (for example,
-                which pages are most popular) to improve TrekList. We will never
-                use analytics cookies to show you ads.
+                Allows us to collect aggregated usage statistics (for example,
+                which pages are most popular) to improve TrekList. We do{" "}
+                <strong>not</strong> use analytics cookies to show you targeted
+                ads. If enabled, TrekList may load a privacy-friendly analytics
+                script in line with our Privacy and Cookie Policies.
               </div>
             </div>
           </div>
@@ -148,7 +168,7 @@ export default function CookieSettingsContent() {
         <button
           type="button"
           onClick={handleAcceptAll}
-          className="px-2 py-1 rounded bg-secondary text-white hover:bg-secondary/80"
+          className="px-2 py-1 rounded bg-secondary text-white hover:bg-secondary/80 text-sm"
         >
           Accept all
         </button>
@@ -172,6 +192,11 @@ export default function CookieSettingsContent() {
           Save preferences
         </button>
       </div>
+
+      <p className="mt-3 text-xs text-secondary">
+        You can change your mind at any time by coming back to this page or
+        opening the Cookie Settings tab from the Legal &amp; Policies menu.
+      </p>
     </>
   );
 }

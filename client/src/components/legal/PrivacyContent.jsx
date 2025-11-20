@@ -9,7 +9,16 @@ export default function PrivacyContent() {
       <p>
         <strong>Last updated:</strong> January 1, 2026
       </p>
-
+      <div className="mt-3 mb-4 rounded-md border border-base-300 bg-base-200/60 px-3 py-2 text-xs md:text-sm">
+        <p className="font-semibold mb-1">In plain language:</p>
+        <p>
+          TrekList stores the information it needs to run your account and gear
+          lists, keeps some logs to protect the service, and uses optional
+          analytics (only with your consent) to understand how people use the
+          app. We don&apos;t sell your personal data, and you can ask what we
+          store or request deletion at any time.
+        </p>
+      </div>
       <p>
         This Privacy Policy explains how TrekList.co (&quot;
         <strong>TrekList</strong>&quot;, &quot;<strong>we</strong>&quot;, &quot;
@@ -40,8 +49,6 @@ export default function PrivacyContent() {
         Eenmanszaak registered in the Netherlands
         <br />
         KvK: <strong>98785419</strong>
-        <br />
-        Registered address: <strong>[[YOUR FULL BUSINESS ADDRESS]]</strong>
         <br />
         Email:{" "}
         <a href="mailto:support@treklist.co" className="underline text-primary">
@@ -325,12 +332,12 @@ export default function PrivacyContent() {
         </li>
         <li>
           <strong>Log and security data</strong> – kept for a limited period
-          (typically up to [[X MONTHS]]) for security and troubleshooting.
+          (typically up to 12 months) for security and troubleshooting.
         </li>
         <li>
           <strong>Support communication</strong> – kept for as long as necessary
-          to handle your request and for a reasonable period afterwards (e.g.
-          [[12–24 MONTHS]]), unless required longer for legal reasons.
+          to handle your request and for a reasonable period afterwards (e.g. 12
+          months), unless required longer for legal reasons.
         </li>
         <li>
           <strong>Billing and tax records</strong> – kept for the period

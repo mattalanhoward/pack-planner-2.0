@@ -9,7 +9,16 @@ export default function CookiesContent() {
       <p>
         <strong>Last updated:</strong> January 1, 2026
       </p>
-
+      <div className="mt-3 mb-4 rounded-md border border-base-300 bg-base-200/60 px-3 py-2 text-xs md:text-sm">
+        <p className="font-semibold mb-1">In plain language:</p>
+        <p>
+          This page explains which cookies we use, why we use them, and how you
+          can control them. We use essential cookies to keep TrekList running
+          (for example, login and security), and optional analytics cookies if
+          you choose to allow them. We don&apos;t currently use marketing or
+          advertising cookies on TrekList.co.
+        </p>
+      </div>
       <p>
         This Cookie Policy explains how TrekList.co (&quot;
         <strong>TrekList</strong>&quot;, &quot;<strong>we</strong>&quot;, &quot;

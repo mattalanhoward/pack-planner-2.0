@@ -9,6 +9,16 @@ export default function AffiliateDisclosureContent() {
       <p>
         <strong>Last updated:</strong> January 1, 2026
       </p>
+      <div className="mt-3 mb-4 rounded-md border border-base-300 bg-base-200/60 px-3 py-2 text-xs md:text-sm">
+        <p className="font-semibold mb-1">In plain language:</p>
+        <p>
+          Some gear links on TrekList.co and TallJoeHikes.com are affiliate
+          links. If you click one and make a purchase, we may earn a small
+          commission at no extra cost to you. We only recommend gear we&apos;d
+          genuinely consider for our own trips, and affiliate status
+          doesn&apos;t change our opinion of a product.
+        </p>
+      </div>
 
       <p>
         TrekList.co and Tall Joe Hikes are supported in part through{" "}
@@ -54,7 +64,7 @@ export default function AffiliateDisclosureContent() {
         </li>
         <li>
           Affiliate networks such as{" "}
-          <span className="italic">[[AWIN / IMPACT]]</span>.
+          <span className="italic">Awin, Impact, and Avantlink</span>.
         </li>
         <li>
           Amazon Associates (for links to Amazon products), where applicable and

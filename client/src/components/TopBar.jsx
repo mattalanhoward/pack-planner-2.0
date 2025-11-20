@@ -1,5 +1,5 @@
 // src/components/TopBar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
@@ -21,6 +21,7 @@ const themes = [
 export default function TopBar({ title, openSettings }) {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalInitialTab, setLegalInitialTab] = useState("privacy");
   const { user, logout } = useAuth();
   const {
     weightUnit,
@@ -34,7 +35,34 @@ export default function TopBar({ title, openSettings }) {
     viewMode,
     setViewMode,
   } = useUserSettings();
+
   const navigate = useNavigate();
+
+  // Install global helpers so non-React code (footer, future cookie banner)
+  // can open the Legal & Cookies center on a specific tab.
+  useEffect(() => {
+    const openCookieSettings = () => {
+      setLegalInitialTab("cookie-settings");
+      setIsLegalOpen(true);
+    };
+
+    const openLegalCenter = (tabId) => {
+      setLegalInitialTab(tabId || "privacy");
+      setIsLegalOpen(true);
+    };
+
+    window.openCookieSettings = openCookieSettings;
+    window.openLegalCenter = openLegalCenter;
+
+    return () => {
+      if (window.openCookieSettings === openCookieSettings) {
+        delete window.openCookieSettings;
+      }
+      if (window.openLegalCenter === openLegalCenter) {
+        delete window.openLegalCenter;
+      }
+    };
+  }, [setIsLegalOpen, setLegalInitialTab]);
 
   // const currentTheme = themes.find((t) => t.name === theme)?.label || theme;
 
@@ -207,7 +235,10 @@ export default function TopBar({ title, openSettings }) {
                 "flex items-center justify-between text-sm text-secondary",
               key: "legal",
               label: "Legal & Policies",
-              onClick: () => setIsLegalOpen(true),
+              onClick: () => {
+                setLegalInitialTab("privacy");
+                setIsLegalOpen(true);
+              },
             },
             {
               key: "sep-3",
@@ -228,7 +259,11 @@ export default function TopBar({ title, openSettings }) {
           isOpen={isAccountOpen}
           onClose={() => setIsAccountOpen(false)}
         />
-        <LegalModal open={isLegalOpen} onClose={() => setIsLegalOpen(false)} />
+        <LegalModal
+          open={isLegalOpen}
+          initialTab={legalInitialTab}
+          onClose={() => setIsLegalOpen(false)}
+        />{" "}
       </div>
     </header>
   );

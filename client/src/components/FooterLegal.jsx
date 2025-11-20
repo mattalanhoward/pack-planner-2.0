@@ -57,11 +57,12 @@ export default function FooterLegal({
                 type="button"
                 className={link}
                 onClick={() => {
-                  if (window.openCookieSettings) window.openCookieSettings();
-                  else window.location.assign("/legal/cookies");
+                  if (window.openCookieSettings) {
+                    window.openCookieSettings();
+                  } else {
+                    window.location.href = "/legal/cookie-settings";
+                  }
                 }}
-                title="Cookie settings"
-                aria-label="Cookie settings"
               >
                 Cookie settings
               </button>

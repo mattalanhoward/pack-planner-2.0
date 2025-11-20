@@ -5,6 +5,8 @@ import mobileColumnScreenshot from "../assets/images/treklist-column-mobile.png"
 import desktopColumnScreenshot from "../assets/images/treklist-column-desktop-1.png";
 import AuthModal from "../components/AuthModal";
 import FooterLegal from "../components/FooterLegal";
+import PublicHeader from "../components/PublicHeader";
+import usePageTitle from "../hooks/usePageTitle";
 
 // helper to build share path safely
 const sharePath = (token) => (token ? `/share/${token}/` : null);
@@ -114,6 +116,7 @@ const Bullet = ({ title, text, color = "text-blue-600" }) => (
 );
 
 export default function Landing() {
+  usePageTitle("Pack Smart. Travel Light.");
   // Hero image carousel
   const heroImages = [
     { alt: "Hiker with blue Osprey pack", sources: heroOspreySources },
@@ -192,37 +195,12 @@ export default function Landing() {
 
   return (
     <div className="relative flex flex-col min-h-screen bg-white text-gray-800">
-      <nav className="absolute top-0 left-0 w-full flex items-center justify-between px-6 py-4 z-30 bg-white/10 backdrop-blur-md">
-        <div className="text-2xl font-semibold">TrekList.co</div>
-        <div className="space-x-6 hidden md:flex">
-          <a href="#features" className="hover:underline text-gray-800">
-            Features
-          </a>
-          <a
-            href="#recommendedGearList"
-            className="hover:underline text-gray-800"
-          >
-            Recommended Gear List
-          </a>
-          <a href="#mission" className="hover:underline text-gray-800">
-            Mission
-          </a>
-        </div>
-        <div className="space-x-4">
-          <button
-            onClick={() => openAuth("login")}
-            className="text-sm font-medium hover:underline"
-          >
-            Log In
-          </button>
-          <button
-            onClick={() => openAuth("register")}
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-full hover:opacity-90 transition"
-          >
-            Get Started
-          </button>
-        </div>
-      </nav>
+      <PublicHeader
+        variant="overlay"
+        showSections={true}
+        onLogin={() => openAuth("login")}
+        onRegister={() => openAuth("register")}
+      />
 
       {/* Hero Carousel */}
       <header className="relative h-screen flex flex-col items-center justify-center">

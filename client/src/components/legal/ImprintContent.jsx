@@ -4,12 +4,6 @@ import React from "react";
 export default function ImprintContent() {
   return (
     <div className="space-y-4 text-sm leading-6">
-      <p className="text-[11px] italic text-secondary mb-2">
-        This Imprint is provided for general informational purposes and does not
-        constitute legal advice. Please have a qualified legal professional
-        review it for your specific situation and jurisdictions.
-      </p>
-
       <h1 className="text-2xl font-semibold mb-2">Imprint / Contact</h1>
 
       <p>
@@ -31,12 +25,6 @@ export default function ImprintContent() {
         </p>
         <p>
           <strong>Chamber of Commerce (KvK) number:</strong> 98785419
-        </p>
-        <p>
-          <strong>Registered address:</strong> [[YOUR FULL BUSINESS ADDRESS]]
-        </p>
-        <p>
-          <strong>VAT / BTW number:</strong>
         </p>
       </div>
 

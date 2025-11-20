@@ -1,11 +1,13 @@
-// src/pages/legal/Terms.jsx
 import React from "react";
 import LegalLayout from "../../components/LegalLayout";
 import TermsContent from "../../components/legal/TermsContent";
+import usePageTitle from "../../hooks/usePageTitle";
 
 export default function TermsPage() {
+  usePageTitle("Terms of Use");
+
   return (
-    <LegalLayout title="Terms of Use">
+    <LegalLayout>
       <TermsContent />
     </LegalLayout>
   );

@@ -1,11 +1,13 @@
-// src/pages/legal/Cookies.jsx
 import React from "react";
 import LegalLayout from "../../components/LegalLayout";
 import CookiesContent from "../../components/legal/CookiesContent";
+import usePageTitle from "../../hooks/usePageTitle";
 
 export default function CookiesPage() {
+  usePageTitle("Cookie Policy");
+
   return (
-    <LegalLayout title="Cookie Policy">
+    <LegalLayout>
       <CookiesContent />
     </LegalLayout>
   );

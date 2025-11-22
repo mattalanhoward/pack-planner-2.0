@@ -279,6 +279,11 @@ export default function GearListView({
     setPendingDelete({ catId: null, itemId: null });
   };
 
+  const pendingDeleteCategory = React.useMemo(
+    () => categories.find((c) => c._id === pendingDeleteCatId),
+    [categories, pendingDeleteCatId]
+  );
+
   // — add category —
   const confirmAddCat = async () => {
     const title = newCatName.trim();
@@ -291,7 +296,11 @@ export default function GearListView({
       });
       // pull it down again
       await onRefresh();
+
+      // ✅ reset input state so the next "New Category" starts blank
+      setNewCatName("");
       setAddingNewCat(false);
+
       toast.success("Category Added! 🎉");
     } catch (err) {
       // show the error message from the thrown Error
@@ -299,8 +308,10 @@ export default function GearListView({
     }
   };
 
-  const cancelAddCat = () => setAddingNewCat(false);
-
+  const cancelAddCat = () => {
+    setNewCatName("");
+    setAddingNewCat(false);
+  };
   const handleDeleteCatClick = (catId) => {
     setPendingDeleteCatId(catId);
     setConfirmCatOpen(true);
@@ -1040,7 +1051,10 @@ export default function GearListView({
                 />
               ) : (
                 <button
-                  onClick={() => setAddingNewCat(true)}
+                  onClick={() => {
+                    setNewCatName(""); // ✅ ensure fresh start
+                    setAddingNewCat(true);
+                  }}
                   className="p-2 w-full border border-secondary rounded flex items-center justify-center space-x-2 bg-base-100 text-primary hover:bg-base-100/80"
                 >
                   <FaPlus />
@@ -1080,13 +1094,13 @@ export default function GearListView({
             {/* Add New Category column */}
             <div className="snap-center flex-shrink-0 mt-0 mb-0 w-90 sm:w-64 flex flex-col h-full px-2">
               {addingNewCat ? (
-                <div className="py-3">
+                <div className="">
                   <input
                     autoFocus
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="New category (Enter to save, Escape to cancel)"
-                    className="w-full p-2 border-b-2 border-accent focus:outline-none bg-neutral text-primary rounded"
+                    placeholder="New category name"
+                    className="w-full py-1 px-2 border-b-2 border-accent focus:outline-none bg-neutral text-primary rounded text-xs"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") confirmAddCat();
                       if (e.key === "Escape") cancelAddCat();
@@ -1132,8 +1146,12 @@ export default function GearListView({
 
       <ConfirmDialog
         isOpen={confirmCatOpen}
-        title="Delete this category?"
-        message="Deleting a category will remove all its items."
+        title={
+          pendingDeleteCategory
+            ? `Delete "${pendingDeleteCategory.title}" category?`
+            : "Delete this category?"
+        }
+        message="Deleting a category will remove all its items from this gear list."
         confirmText="Yes, delete"
         cancelText="Cancel"
         onConfirm={actuallyDeleteCat}
